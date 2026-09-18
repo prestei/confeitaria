@@ -22,21 +22,23 @@ export default async function GeralPage() {
         title="Configurações gerais"
         description="Conta, notificações e plano da assinatura."
       />
-      <AccountForm
-        user={{
-          name: store.user.name,
-          email: store.user.email,
-          phone: store.user.phone || "",
-        }}
-      />
-      <NotificationsForm
-        store={{
-          notifyNewOrders: store.notifyNewOrders,
-          notifyLowStock: store.notifyLowStock,
-          notifyNewCustomers: store.notifyNewCustomers,
-        }}
-      />
-      <PlanCard plan={store.plan} />
+      <div className="space-y-4">
+        <AccountForm
+          user={{
+            name: store.user.name,
+            email: store.user.email,
+            phone: store.user.phone || "",
+          }}
+        />
+        <NotificationsForm
+          store={{
+            notifyNewOrders: store.notifyNewOrders,
+            notifyLowStock: store.notifyLowStock,
+            notifyNewCustomers: store.notifyNewCustomers,
+          }}
+        />
+        <PlanCard plan={store.plan} />
+      </div>
     </div>
   );
 }
