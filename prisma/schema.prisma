@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductType {
+  READY
+  CUSTOM
+  CAKE
+  PARTY_KIT
+  CORPORATE
+}
+
+enum PriceMode {
+  FIXED
+  FROM
+  QUOTE
+}
+
+enum Availability {
+  AVAILABLE
+  SOLD_OUT
+  MADE_TO_ORDER
+  LAST_UNITS
+  SCHEDULED_DAYS
+}
+
+enum OrderKind {
+  CART
+  QUOTE
+}
+
+enum OrderStatus {
+  NEW
+  REVIEWING
+  CONFIRMED
+  IN_PRODUCTION
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum FulfillmentType {
+  PICKUP
+  DELIVERY
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  store        Store?
+}
+
+model Store {
+  id                 String         @id @default(cuid())
+  userId             String         @unique
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug               String         @unique
+  name               String
+  tagline            String?
+  description        String?
+  whatsapp           String
+  logoUrl            String?
+  coverUrl           String?
+  accentColor        String         @default("#C45B7A")
+  address            String?
+  city               String?
+  pickupEnabled      Boolean        @default(true)
+  deliveryEnabled    Boolean        @default(true)
+  minAdvanceDays     Int            @default(2)
+  productionNote     String?
+  paymentMethods     String[]       @default(["Pix", "Dinheiro", "Cartão na retirada"])
+  isPublished        Boolean        @default(true)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  categories         Category[]
+  products           Product[]
+  deliveryZones      DeliveryZone[]
+  orders             Order[]
+  blockedDates       BlockedDate[]
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name      String
+  emoji     String?
+  slug      String
+  sortOrder Int       @default(0)
+  products  Product[]
+
+  @@unique([storeId, slug])
+}
+
+model Product {
+  id            String           @id @default(cuid())
+  storeId       String
+  store         Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  category      Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  name          String
+  slug          String
+  description   String?
+  imageUrl      String?
+  gallery       String[]         @default([])
+  productType   ProductType      @default(READY)
+  priceMode     PriceMode        @default(FIXED)
+  priceCents    Int?
+  availability  Availability     @default(AVAILABLE)
+  featured      Boolean          @default(false)
+  active        Boolean          @default(true)
+  minAdvanceDays Int?
+  kitContents   String?
+  sortOrder     Int              @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  optionGroups  OptionGroup[]
+  addons        Addon[]
+  orderItems    OrderItem[]
+
+  @@unique([storeId, slug])
+}
+
+model OptionGroup {
+  id         String         @id @default(cuid())
+  productId  String
+  product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String
+  required   Boolean        @default(true)
+  minSelect  Int            @default(1)
+  maxSelect  Int            @default(1)
+  sortOrder  Int            @default(0)
+  options    ProductOption[]
+}
+
+model ProductOption {
+  id            String      @id @default(cuid())
+  groupId       String
+  group         OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name          String
+  priceDeltaCents Int       @default(0)
+  sortOrder     Int         @default(0)
+}
+
+model Addon {
+  id         String  @id @default(cuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String
+  priceCents Int
+  maxQty     Int     @default(5)
+}
+
+model DeliveryZone {
+  id         String @id @default(cuid())
+  storeId    String
+  store      Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name       String
+  feeCents   Int
+}
+
+model BlockedDate {
+  id      String   @id @default(cuid())
+  storeId String
+  store   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  date    DateTime @db.Date
+  reason  String?
+
+  @@unique([storeId, date])
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  storeId         String
+  store           Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  kind            OrderKind       @default(CART)
+  status          OrderStatus     @default(NEW)
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  companyName     String?
+  needsInvoice    Boolean         @default(false)
+  fulfillment     FulfillmentType @default(PICKUP)
+  deliveryZone    String?
+  deliveryFeeCents Int            @default(0)
+  eventDate       DateTime?
+  eventTime       String?
+  guests          Int?
+  notes           String?
+  referenceNote   String?
+  subtotalCents   Int             @default(0)
+  totalCents      Int             @default(0)
+  priceLabel      String          @default("TOTAL")
+  paymentMethod   String?
+  whatsappMessage String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id              String           @id @default(cuid())
+  orderId         String
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String?
+  product         Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName     String
+  quantity        Int              @default(1)
+  unitPriceCents  Int              @default(0)
+  lineTotalCents  Int              @default(0)
+  customizations  Json?
+  referenceImage  String?
+}

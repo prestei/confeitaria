@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DocePedido
 
-## Getting Started
+Plataforma de cardápio online para confeiteiras: pedidos organizados via WhatsApp, com loja rápida e encomenda personalizada.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + TypeScript
+- **Node** (API Routes)
+- **PostgreSQL** + Prisma
+- **NextAuth** (login da confeiteira)
+
+## Como rodar
+
+### 1. Postgres
+
+**Opção A — Docker**
+
+```bash
+docker compose up -d
+```
+
+**Opção B — Postgres local (Windows)**
+
+Crie o banco/usuário (ajuste o usuário admin se necessário):
+
+```bash
+psql -U postgres -f scripts/init-db.sql
+```
+
+No `.env`, use:
+
+```env
+DATABASE_URL="postgresql://confeitaria:confeitaria@localhost:5432/confeitaria?schema=public"
+```
+
+Se preferir outro usuário/senha, atualize o `DATABASE_URL` conforme o seu Postgres.
+
+### 2. Variáveis de ambiente
+
+Copie `.env.example` para `.env` (já existe um `.env` de desenvolvimento) e confirme `AUTH_SECRET`.
+
+### 3. Banco + seed
+
+```bash
+npm run db:setup
+```
+
+### 4. App
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| O quê | Valor |
+|------|--------|
+| Cardápio | [/doce-arte](http://localhost:3000/doce-arte) |
+| Login | `demo@docearte.com` |
+| Senha | `demo1234` |
+| Painel | [/painel](http://localhost:3000/painel) |
 
-## Learn More
+## O que já está no MVP (Fase 1+)
 
-To learn more about Next.js, take a look at the following resources:
+- Cadastro/login da confeiteira
+- Personalização da loja (nome, capa, WhatsApp, prazos, pagamentos)
+- Categorias e produtos com tipos de venda:
+  - Pronta entrega
+  - Bolo personalizado
+  - Kit festa
+  - Sob encomenda
+  - Corporativo
+- Preços fixos, “a partir de” e orçamento
+- Opções, adicionais e formulários por tipo
+- Carrinho + checkout
+- Pedido estruturado no WhatsApp
+- Link personalizado `/{slug}`
+- QR Code do cardápio
+- Painel: dashboard, produtos, pedidos (status), loja
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Fluxos
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Loja rápida:** produto → adicionais → carrinho → WhatsApp  
+2. **Encomenda:** personalizar → data/referência → orçamento no WhatsApp  
 
-## Deploy on Vercel
+## Próximas fases (roadmap)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Agenda completa (dias bloqueados, limite/dia)
+- Upload de imagem de referência
+- Relatórios e clientes
+- Integração WhatsApp Business API
