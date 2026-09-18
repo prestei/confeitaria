@@ -24,7 +24,7 @@ export function StoreFooter({
       className={cn(
         "border-t",
         dark
-          ? "border-white/10 bg-[#0b0b0b]"
+          ? "border-[#CED0D4] bg-[#F0F2F5]"
           : "border-berry/10 bg-gradient-to-b from-blush/30 to-cream",
       )}
     >
@@ -33,7 +33,7 @@ export function StoreFooter({
           <p
             className={cn(
               "font-display text-2xl",
-              dark ? "text-white" : "text-cocoa",
+              dark ? "text-[#050505]" : "text-cocoa",
             )}
           >
             {store.name}
@@ -41,7 +41,7 @@ export function StoreFooter({
           <p
             className={cn(
               "mt-2 text-sm",
-              dark ? "text-white/45" : "text-cocoa-soft/70",
+              dark ? "text-[#65676B]" : "text-cocoa-soft/70",
             )}
           >
             {[store.address, store.city].filter(Boolean).join(" · ") ||
@@ -52,7 +52,7 @@ export function StoreFooter({
           <p
             className={cn(
               "text-sm font-semibold",
-              dark ? "text-white" : "text-cocoa",
+              dark ? "text-[#050505]" : "text-cocoa",
             )}
           >
             Navegação
@@ -60,13 +60,13 @@ export function StoreFooter({
           <ul
             className={cn(
               "mt-3 space-y-2 text-sm",
-              dark ? "text-white/55" : "text-cocoa-soft/80",
+              dark ? "text-[#65676B]" : "text-cocoa-soft/80",
             )}
           >
             <li>
               <a
                 href="#cardapio-mobile"
-                className={dark ? "hover:text-white" : "hover:text-berry-deep"}
+                className={dark ? "hover:text-[#050505]" : "hover:text-berry-deep"}
               >
                 Cardápio
               </a>
@@ -74,7 +74,7 @@ export function StoreFooter({
             <li>
               <Link
                 href={`/${store.slug}/encomenda`}
-                className={dark ? "hover:text-white" : "hover:text-berry-deep"}
+                className={dark ? "hover:text-[#050505]" : "hover:text-berry-deep"}
               >
                 Encomenda
               </Link>
@@ -82,7 +82,7 @@ export function StoreFooter({
             <li>
               <Link
                 href={`/${store.slug}/carrinho`}
-                className={dark ? "hover:text-white" : "hover:text-berry-deep"}
+                className={dark ? "hover:text-[#050505]" : "hover:text-berry-deep"}
               >
                 Carrinho
               </Link>
@@ -93,7 +93,7 @@ export function StoreFooter({
           <p
             className={cn(
               "text-sm font-semibold",
-              dark ? "text-white" : "text-cocoa",
+              dark ? "text-[#050505]" : "text-cocoa",
             )}
           >
             Contato
@@ -112,7 +112,7 @@ export function StoreFooter({
         className={cn(
           "border-t py-4 text-center text-xs",
           dark
-            ? "border-white/10 text-white/35"
+            ? "border-[#CED0D4] text-[#65676B]"
             : "border-berry/10 text-cocoa-soft/55",
         )}
       >

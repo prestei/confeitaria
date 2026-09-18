@@ -7,6 +7,7 @@ import {
   useId,
   useMemo,
   useState,
+  type ButtonHTMLAttributes,
   type ReactNode,
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -85,7 +86,7 @@ export function DialogContent({
           <motion.button
             type="button"
             aria-label="Fechar"
-            className="absolute inset-0 bg-cocoa/40 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-[#2D2926]/40 backdrop-blur-[2px]"
             onClick={close}
             {...(reduced ? {} : motionPresets.modal.overlay)}
           />
@@ -94,7 +95,7 @@ export function DialogContent({
             aria-modal="true"
             aria-labelledby={titleId}
             className={cn(
-              "relative z-10 w-full overflow-hidden rounded-3xl border border-cocoa/8 bg-cream shadow-2xl shadow-cocoa/20",
+              "relative z-10 w-full overflow-hidden rounded-xl bg-white shadow-2xl shadow-[#2D2926]/20",
               sizes[size],
               className,
             )}
@@ -103,7 +104,7 @@ export function DialogContent({
             <button
               type="button"
               onClick={close}
-              className="absolute right-4 top-4 rounded-xl p-2 text-cocoa-soft hover:bg-cocoa/5"
+              className="absolute right-4 top-4 rounded-md p-1.5 text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-[#2D2926]"
               aria-label="Fechar diálogo"
             >
               <X className="h-4 w-4" />
@@ -125,12 +126,15 @@ export function DialogHeader({
 }) {
   const { titleId } = useDialog();
   return (
-    <div className="border-b border-cocoa/6 px-6 py-5 pr-12">
-      <h2 id={titleId} className="font-display text-2xl text-cocoa">
+    <div className="px-6 pb-1 pt-6 pr-12">
+      <h2
+        id={titleId}
+        className="font-sans text-xl font-bold leading-tight tracking-tight text-[#2D2926]"
+      >
         {title}
       </h2>
       {description && (
-        <p className="mt-1 text-sm text-cocoa-soft/75">{description}</p>
+        <p className="mt-1 text-sm leading-snug text-[#8C8682]">{description}</p>
       )}
     </div>
   );
@@ -156,11 +160,58 @@ export function DialogFooter({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-end gap-2 border-t border-cocoa/6 px-6 py-4",
+        "flex flex-wrap items-center justify-end gap-2 px-6 pb-5 pt-1",
         className,
       )}
     >
       {children}
     </div>
+  );
+}
+
+/** Cancelar ghost — padrão de todos os footers de modal. */
+export function DialogCancel({
+  children = "Cancelar",
+  className,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
+  const { setOpen } = useDialog();
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(false)}
+      className={cn(
+        "rounded-md px-3 py-2 text-sm font-semibold text-[#8C8682] transition",
+        "hover:bg-[#F0F2F5] hover:text-[#2D2926]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D2926]/20",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Ação primária do footer (mesma linguagem do PageAction). */
+export function DialogPrimary({
+  children,
+  className,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="submit"
+      className={cn(
+        "inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-3.5 text-sm font-semibold",
+        "bg-[#2D2926] text-white transition hover:bg-[#3D3834]",
+        "disabled:pointer-events-none disabled:opacity-50",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D2926]/25",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
   );
 }

@@ -46,7 +46,7 @@ export function TabsList({
     <div
       role="tablist"
       className={cn(
-        "flex gap-1 overflow-x-auto rounded-2xl border border-cocoa/8 bg-fog/80 p-1",
+        "flex gap-1 overflow-x-auto rounded-lg border border-cocoa/8 bg-fog/80 p-1",
         className,
       )}
     >

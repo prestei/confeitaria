@@ -9,9 +9,11 @@ const schema = z.object({
   description: z.string().optional(),
   categoryId: z.string().optional().nullable(),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  gallery: z.array(z.string()).optional(),
   productType: z.enum(["READY", "CUSTOM", "CAKE", "PARTY_KIT", "CORPORATE"]),
   priceMode: z.enum(["FIXED", "FROM", "QUOTE"]),
   priceCents: z.number().int().nonnegative().optional().nullable(),
+  promoPriceCents: z.number().int().nonnegative().optional().nullable(),
   availability: z.enum([
     "AVAILABLE",
     "SOLD_OUT",
@@ -21,6 +23,10 @@ const schema = z.object({
   ]),
   featured: z.boolean().optional(),
   active: z.boolean().optional(),
+  trackStock: z.boolean().optional(),
+  stockQty: z.number().int().optional(),
+  stockMin: z.number().int().optional(),
+  unit: z.string().optional(),
   kitContents: z.string().optional().nullable(),
   minAdvanceDays: z.number().int().optional().nullable(),
   optionGroups: z
@@ -82,6 +88,12 @@ export async function POST(req: Request) {
     });
     if (taken) slug = `${slug}-${Date.now().toString(36).slice(-3)}`;
 
+    const trackStock = data.trackStock ?? false;
+    let availability = data.availability;
+    if (trackStock && (data.stockQty ?? 0) <= 0) {
+      availability = "SOLD_OUT";
+    }
+
     const product = await prisma.product.create({
       data: {
         storeId: session.user.storeId,
@@ -90,12 +102,18 @@ export async function POST(req: Request) {
         description: data.description,
         categoryId: data.categoryId || null,
         imageUrl: data.imageUrl || null,
+        gallery: data.gallery || [],
         productType: data.productType,
         priceMode: data.priceMode,
         priceCents: data.priceMode === "QUOTE" ? null : data.priceCents ?? null,
-        availability: data.availability,
+        promoPriceCents: data.promoPriceCents ?? null,
+        availability,
         featured: data.featured ?? false,
         active: data.active ?? true,
+        trackStock,
+        stockQty: data.stockQty ?? 0,
+        stockMin: data.stockMin ?? 5,
+        unit: data.unit || "un",
         kitContents: data.kitContents,
         minAdvanceDays: data.minAdvanceDays,
         optionGroups: data.optionGroups
@@ -128,7 +146,10 @@ export async function POST(req: Request) {
     return NextResponse.json(product);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Dados inválidos", details: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: "Dados inválidos", details: error.issues },
+        { status: 400 },
+      );
     }
     console.error(error);
     return NextResponse.json({ error: "Erro ao criar produto" }, { status: 500 });

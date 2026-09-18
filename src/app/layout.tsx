@@ -16,9 +16,9 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "DocePedido — Cardápio e encomendas para confeiteiras",
+  title: "DocePedido — Vitrine comercial para confeiteiras",
   description:
-    "Organize pedidos pelo WhatsApp com cardápio inteligente: pronta entrega, bolos personalizados, kits festa e orçamentos corporativos.",
+    "Cadastre uma vez, organize sua vitrine e receba pedidos. Centro de controle da presença comercial da confeiteira.",
 };
 
 export default function RootLayout({

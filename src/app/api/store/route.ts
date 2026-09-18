@@ -8,17 +8,28 @@ const schema = z.object({
   tagline: z.string().optional(),
   description: z.string().optional(),
   whatsapp: z.string().min(10).optional(),
+  whatsappMessage: z.string().optional(),
+  instagram: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   coverUrl: z.string().url().optional().or(z.literal("")),
   logoUrl: z.string().url().optional().or(z.literal("")),
   accentColor: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  typography: z.string().optional(),
+  cardStyle: z.string().optional(),
+  pageLayout: z.string().optional(),
+  businessHours: z.string().optional(),
   pickupEnabled: z.boolean().optional(),
   deliveryEnabled: z.boolean().optional(),
   minAdvanceDays: z.number().int().min(0).optional(),
   productionNote: z.string().optional(),
   paymentMethods: z.array(z.string()).optional(),
   isPublished: z.boolean().optional(),
+  notifyNewOrders: z.boolean().optional(),
+  notifyLowStock: z.boolean().optional(),
+  notifyNewCustomers: z.boolean().optional(),
+  plan: z.string().optional(),
 });
 
 export async function PATCH(req: Request) {
@@ -35,6 +46,10 @@ export async function PATCH(req: Request) {
         ...data,
         coverUrl: data.coverUrl === "" ? null : data.coverUrl,
         logoUrl: data.logoUrl === "" ? null : data.logoUrl,
+        instagram: data.instagram === "" ? null : data.instagram,
+        whatsappMessage:
+          data.whatsappMessage === "" ? null : data.whatsappMessage,
+        businessHours: data.businessHours === "" ? null : data.businessHours,
       },
     });
     return NextResponse.json(store);

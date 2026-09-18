@@ -19,10 +19,10 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "gap-1.5 px-3.5 py-2 text-sm rounded-xl",
-  md: "gap-2 px-5 py-2.5 text-sm rounded-2xl",
-  lg: "gap-2 px-6 py-3.5 text-base rounded-2xl",
-  icon: "h-10 w-10 rounded-xl p-0",
+  sm: "gap-1.5 px-3.5 py-2 text-sm rounded-md",
+  md: "gap-2 px-5 py-2.5 text-sm rounded-lg",
+  lg: "gap-2 px-6 py-3.5 text-base rounded-lg",
+  icon: "h-10 w-10 rounded-md p-0",
 };
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

@@ -64,6 +64,21 @@ export async function POST(req: Request) {
 
     if (data.eventDate) {
       const event = new Date(data.eventDate + "T12:00:00");
+      const blocked = await prisma.blockedDate.findUnique({
+        where: {
+          storeId_date: { storeId: store.id, date: event },
+        },
+      });
+      if (blocked) {
+        return NextResponse.json(
+          {
+            error:
+              blocked.reason ||
+              "Esta data não está disponível para encomendas.",
+          },
+          { status: 400 },
+        );
+      }
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const diffDays = Math.ceil(
@@ -80,9 +95,29 @@ export async function POST(req: Request) {
       }
     }
 
+    const customer = await prisma.customer.upsert({
+      where: {
+        storeId_phone: {
+          storeId: store.id,
+          phone: data.customerPhone,
+        },
+      },
+      create: {
+        storeId: store.id,
+        name: data.customerName,
+        phone: data.customerPhone,
+        email: data.customerEmail || null,
+      },
+      update: {
+        name: data.customerName,
+        email: data.customerEmail || undefined,
+      },
+    });
+
     const order = await prisma.order.create({
       data: {
         storeId: store.id,
+        customerId: customer.id,
         kind: hasQuote ? "QUOTE" : "CART",
         customerName: data.customerName,
         customerPhone: data.customerPhone,
@@ -113,6 +148,14 @@ export async function POST(req: Request) {
         },
       },
       include: { items: true },
+    });
+
+    await prisma.analyticsEvent.create({
+      data: {
+        storeId: store.id,
+        type: "ORDER_COMPLETED",
+        meta: { orderId: order.id },
+      },
     });
 
     const message = buildWhatsAppMessage(store, order);

@@ -77,7 +77,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8 }}
                 className={cn(
-                  "pointer-events-auto flex gap-3 rounded-2xl border p-3.5 shadow-lg shadow-cocoa/10",
+                  "pointer-events-auto flex gap-3 rounded-lg border p-3.5 shadow-lg shadow-cocoa/10",
                   tones[item.tone],
                 )}
               >

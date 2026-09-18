@@ -1,0 +1,51 @@
+---
+description: Padrão visual e estrutural de todos os modais do painel
+globs: src/components/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# Modal padrão (Dialog)
+
+Todos os modais do painel seguem o mock de **Nova promoção**. Use apenas `@/components/ui/dialog`.
+
+## Estrutura obrigatória
+
+```tsx
+<Dialog open={open} onOpenChange={setOpen}>
+  <DialogContent size="md"> {/* sm | md | lg */}
+    <DialogHeader
+      title="Título da ação"
+      description="Uma frase curta explicando o que o modal faz."
+    />
+    <form>
+      <DialogBody>{/* campos */}</DialogBody>
+      <DialogFooter>
+        <DialogCancel />
+        <DialogPrimary disabled={saving}>Salvar</DialogPrimary>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
+```
+
+## Regras visuais
+
+- Fundo **branco**, `rounded-xl`, sombra suave — sem cream/cocoa de vitrine
+- Título: `font-sans` bold `#2D2926`; subtítulo: `#8C8682`
+- Sem bordas separando header/footer do body
+- Fechar: ícone X no canto superior direito
+- Footer alinhado à **direita**: `DialogCancel` (ghost) + `DialogPrimary` (`#2D2926`)
+- Não use `btn-primary` / `btn-secondary` no footer de modal
+
+## Formulários no body
+
+- Labels acima do campo (`text-[13px] font-semibold text-[#5C5652]`)
+- Obrigatório: asterisco `#C85A5A`
+- Grid: full-width para campos longos; `sm:grid-cols-2` para pares
+- Inputs: `h-10 rounded-lg border-[#CED0D4]`, focus ring `#2D2926`
+- Preferir segmented control a `<select>` quando houver 2–3 opções fechadas
+- Seções avançadas: bloco colapsável com ícone + chevron (ver `promocoes-admin.tsx`)
+
+## Referência
+
+`src/components/painel/promocoes-admin.tsx` é o modal de referência.

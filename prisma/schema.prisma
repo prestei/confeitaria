@@ -36,7 +36,6 @@ enum OrderKind {
 
 enum OrderStatus {
   NEW
-  REVIEWING
   CONFIRMED
   IN_PRODUCTION
   READY
@@ -49,10 +48,43 @@ enum FulfillmentType {
   DELIVERY
 }
 
+enum StockMovementType {
+  IN
+  OUT
+  ADJUST
+}
+
+enum PromotionType {
+  PERCENT
+  FIXED
+  PRODUCT
+}
+
+enum AnalyticsEventType {
+  STORE_VIEW
+  PRODUCT_VIEW
+  WHATSAPP_CLICK
+  PRODUCT_CLICK
+  ORDER_STARTED
+  ORDER_COMPLETED
+}
+
+enum IntegrationProvider {
+  WHATSAPP
+  INSTAGRAM
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  COMING_SOON
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
+  phone        String?
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -68,9 +100,16 @@ model Store {
   tagline            String?
   description        String?
   whatsapp           String
+  whatsappMessage    String?
+  instagram          String?
   logoUrl            String?
   coverUrl           String?
   accentColor        String         @default("#C45B7A")
+  secondaryColor     String         @default("#4A2F26")
+  typography         String         @default("elegant")
+  cardStyle          String         @default("soft")
+  pageLayout         String         @default("classic")
+  businessHours      String?
   address            String?
   city               String?
   pickupEnabled      Boolean        @default(true)
@@ -79,6 +118,10 @@ model Store {
   productionNote     String?
   paymentMethods     String[]       @default(["Pix", "Dinheiro", "Cartão na retirada"])
   isPublished        Boolean        @default(true)
+  plan               String         @default("starter")
+  notifyNewOrders    Boolean        @default(true)
+  notifyLowStock     Boolean        @default(true)
+  notifyNewCustomers Boolean        @default(true)
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   categories         Category[]
@@ -86,6 +129,11 @@ model Store {
   deliveryZones      DeliveryZone[]
   orders             Order[]
   blockedDates       BlockedDate[]
+  customers          Customer[]
+  stockMovements     StockMovement[]
+  promotions         Promotion[]
+  analyticsEvents    AnalyticsEvent[]
+  integrations       Integration[]
 }
 
 model Category {
@@ -96,59 +144,69 @@ model Category {
   emoji     String?
   slug      String
   sortOrder Int       @default(0)
+  active    Boolean   @default(true)
   products  Product[]
 
   @@unique([storeId, slug])
+  @@index([storeId])
 }
 
 model Product {
-  id            String           @id @default(cuid())
-  storeId       String
-  store         Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  categoryId    String?
-  category      Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  name          String
-  slug          String
-  description   String?
-  imageUrl      String?
-  gallery       String[]         @default([])
-  productType   ProductType      @default(READY)
-  priceMode     PriceMode        @default(FIXED)
-  priceCents    Int?
-  availability  Availability     @default(AVAILABLE)
-  featured      Boolean          @default(false)
-  active        Boolean          @default(true)
-  minAdvanceDays Int?
-  kitContents   String?
-  sortOrder     Int              @default(0)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  optionGroups  OptionGroup[]
-  addons        Addon[]
-  orderItems    OrderItem[]
+  id              String           @id @default(cuid())
+  storeId         String
+  store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId      String?
+  category        Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  name            String
+  slug            String
+  description     String?
+  imageUrl        String?
+  gallery         String[]         @default([])
+  productType     ProductType      @default(READY)
+  priceMode       PriceMode        @default(FIXED)
+  priceCents      Int?
+  promoPriceCents Int?
+  availability    Availability     @default(AVAILABLE)
+  featured        Boolean          @default(false)
+  active          Boolean          @default(true)
+  trackStock      Boolean          @default(false)
+  stockQty        Int              @default(0)
+  stockMin        Int              @default(5)
+  unit            String           @default("un")
+  minAdvanceDays  Int?
+  kitContents     String?
+  sortOrder       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  optionGroups    OptionGroup[]
+  addons          Addon[]
+  orderItems      OrderItem[]
+  stockMovements  StockMovement[]
+  analyticsEvents AnalyticsEvent[]
 
   @@unique([storeId, slug])
+  @@index([storeId])
 }
 
 model OptionGroup {
-  id         String         @id @default(cuid())
-  productId  String
-  product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name       String
-  required   Boolean        @default(true)
-  minSelect  Int            @default(1)
-  maxSelect  Int            @default(1)
-  sortOrder  Int            @default(0)
-  options    ProductOption[]
+  id        String          @id @default(cuid())
+  productId String
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  required  Boolean         @default(true)
+  minSelect Int             @default(1)
+  maxSelect Int             @default(1)
+  sortOrder Int             @default(0)
+  options   ProductOption[]
 }
 
 model ProductOption {
-  id            String      @id @default(cuid())
-  groupId       String
-  group         OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  name          String
-  priceDeltaCents Int       @default(0)
-  sortOrder     Int         @default(0)
+  id              String      @id @default(cuid())
+  groupId         String
+  group           OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name            String
+  priceDeltaCents Int         @default(0)
+  sortOrder       Int         @default(0)
 }
 
 model Addon {
@@ -161,11 +219,13 @@ model Addon {
 }
 
 model DeliveryZone {
-  id         String @id @default(cuid())
-  storeId    String
-  store      Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  name       String
-  feeCents   Int
+  id       String @id @default(cuid())
+  storeId  String
+  store    Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name     String
+  feeCents Int
+
+  @@index([storeId])
 }
 
 model BlockedDate {
@@ -176,47 +236,137 @@ model BlockedDate {
   reason  String?
 
   @@unique([storeId, date])
+  @@index([storeId])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name      String
+  phone     String
+  email     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+
+  @@unique([storeId, phone])
+  @@index([storeId])
 }
 
 model Order {
-  id              String          @id @default(cuid())
-  storeId         String
-  store           Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  kind            OrderKind       @default(CART)
-  status          OrderStatus     @default(NEW)
-  customerName    String
-  customerPhone   String
-  customerEmail   String?
-  companyName     String?
-  needsInvoice    Boolean         @default(false)
-  fulfillment     FulfillmentType @default(PICKUP)
-  deliveryZone    String?
-  deliveryFeeCents Int            @default(0)
-  eventDate       DateTime?
-  eventTime       String?
-  guests          Int?
-  notes           String?
-  referenceNote   String?
-  subtotalCents   Int             @default(0)
-  totalCents      Int             @default(0)
-  priceLabel      String          @default("TOTAL")
-  paymentMethod   String?
-  whatsappMessage String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  items           OrderItem[]
+  id               String          @id @default(cuid())
+  storeId          String
+  store            Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customerId       String?
+  customer         Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  kind             OrderKind       @default(CART)
+  status           OrderStatus     @default(NEW)
+  customerName     String
+  customerPhone    String
+  customerEmail    String?
+  companyName      String?
+  needsInvoice     Boolean         @default(false)
+  fulfillment      FulfillmentType @default(PICKUP)
+  deliveryZone     String?
+  deliveryFeeCents Int             @default(0)
+  eventDate        DateTime?
+  eventTime        String?
+  guests           Int?
+  notes            String?
+  referenceNote    String?
+  subtotalCents    Int             @default(0)
+  totalCents       Int             @default(0)
+  priceLabel       String          @default("TOTAL")
+  paymentMethod    String?
+  whatsappMessage  String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  items            OrderItem[]
+
+  @@index([storeId])
+  @@index([storeId, status])
+  @@index([customerId])
 }
 
 model OrderItem {
-  id              String           @id @default(cuid())
-  orderId         String
-  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId       String?
-  product         Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
-  productName     String
-  quantity        Int              @default(1)
-  unitPriceCents  Int              @default(0)
-  lineTotalCents  Int              @default(0)
-  customizations  Json?
-  referenceImage  String?
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String?
+  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName    String
+  quantity       Int     @default(1)
+  unitPriceCents Int     @default(0)
+  lineTotalCents Int     @default(0)
+  customizations Json?
+  referenceImage String?
+}
+
+model StockMovement {
+  id        String            @id @default(cuid())
+  storeId   String
+  store     Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      StockMovementType
+  quantity  Int
+  note      String?
+  createdAt DateTime          @default(now())
+
+  @@index([storeId])
+  @@index([productId])
+}
+
+model Promotion {
+  id              String        @id @default(cuid())
+  storeId         String
+  store           Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name            String
+  code            String?
+  type            PromotionType @default(PERCENT)
+  percentOff      Int?
+  amountOffCents  Int?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  productIds      String[]      @default([])
+  usageLimit      Int?
+  usageCount      Int           @default(0)
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([storeId])
+  @@unique([storeId, code])
+}
+
+model AnalyticsEvent {
+  id        String             @id @default(cuid())
+  storeId   String
+  store     Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  type      AnalyticsEventType
+  productId String?
+  product   Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+  source    String?
+  meta      Json?
+  createdAt DateTime           @default(now())
+
+  @@index([storeId, createdAt])
+  @@index([storeId, type])
+}
+
+model Integration {
+  id          String              @id @default(cuid())
+  storeId     String
+  store       Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  provider    IntegrationProvider
+  status      IntegrationStatus   @default(DISCONNECTED)
+  config      Json?
+  connectedAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([storeId, provider])
+  @@index([storeId])
 }

@@ -17,7 +17,6 @@ export async function PATCH(
     .object({
       status: z.enum([
         "NEW",
-        "REVIEWING",
         "CONFIRMED",
         "IN_PRODUCTION",
         "READY",

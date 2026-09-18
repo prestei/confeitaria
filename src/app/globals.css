@@ -16,10 +16,10 @@
   --warning: #b86a1c;
   --background: var(--cream);
   --foreground: var(--cocoa);
-  --radius-sm: 0.75rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;
-  --radius-xl: 2rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
   --shadow-soft: 0 1px 0 rgba(36, 20, 15, 0.04), 0 12px 32px rgba(196, 82, 122, 0.08);
 }
 
@@ -41,6 +41,13 @@
   --color-warning: var(--warning);
   --font-display: var(--font-fraunces);
   --font-sans: var(--font-sora);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.75rem;
+  --radius-4xl: 0.875rem;
 }
 
 * {
@@ -71,12 +78,47 @@ body {
   font-family: var(--font-sora), system-ui, sans-serif;
 }
 
+a,
+button,
+[role="button"],
+[role="link"],
+[role="tab"],
+[role="menuitem"],
+[role="option"],
+[role="switch"],
+[role="checkbox"],
+summary,
+label[for],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+select {
+  cursor: pointer;
+}
+
+a:disabled,
+button:disabled,
+[role="button"][aria-disabled="true"],
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
 h1,
 h2,
 h3,
 .font-display {
   font-family: var(--font-fraunces), Georgia, serif;
   font-optical-sizing: auto;
+}
+
+.painel-shell h1,
+.painel-shell h2,
+.painel-shell h3 {
+  font-family: var(--font-sora), system-ui, sans-serif;
 }
 
 ::selection {
@@ -213,18 +255,17 @@ h3,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
-  background: var(--cocoa);
+  border-radius: var(--radius-md);
+  background: #2d2926;
   color: white;
-  padding: 0.85rem 1.4rem;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-primary:hover {
-  background: var(--cocoa-soft);
-  transform: translateY(-2px);
-  box-shadow: 0 14px 32px rgba(36, 20, 15, 0.18);
+  background: #3d3834;
 }
 
 .btn-secondary {
@@ -232,19 +273,19 @@ h3,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
-  border: 1px solid color-mix(in oklab, var(--berry) 28%, transparent);
-  background: rgba(255, 255, 255, 0.75);
-  color: var(--cocoa);
-  padding: 0.85rem 1.4rem;
+  border-radius: var(--radius-md);
+  border: 1px solid #ced0d4;
+  background: white;
+  color: #2d2926;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-secondary:hover {
-  border-color: var(--berry);
-  background: white;
-  transform: translateY(-2px);
+  background: #f0f2f5;
+  border-color: #b0aaa6;
 }
 
 .btn-berry {
@@ -252,22 +293,22 @@ h3,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, var(--berry) 0%, var(--berry-deep) 100%);
+  border-radius: var(--radius-md);
+  background: #c85a5a;
   color: white;
-  padding: 0.85rem 1.4rem;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.15s ease;
 }
 
 .btn-berry:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(212, 82, 122, 0.4);
+  background: #b44e4e;
 }
 
 .input {
   width: 100%;
-  border-radius: 1rem;
+  border-radius: var(--radius-md);
   border: 1px solid color-mix(in oklab, var(--cocoa) 12%, transparent);
   background: white;
   padding: 0.8rem 1rem;
@@ -290,7 +331,7 @@ h3,
 }
 
 .panel {
-  border-radius: 1.5rem;
+  border-radius: var(--radius-lg);
   border: 1px solid color-mix(in oklab, var(--berry) 10%, transparent);
   background: color-mix(in oklab, white 88%, var(--blush));
   box-shadow: var(--shadow-soft);
@@ -299,6 +340,49 @@ h3,
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, var(--berry) 35%, transparent) transparent;
+}
+
+/* Scroll do Kanban — só o thumb, sem faixa de fundo */
+.scrollbar-kanban {
+  scrollbar-width: thin;
+  scrollbar-color: #c4c9d0 transparent;
+}
+
+.scrollbar-kanban::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+  background: transparent;
+}
+
+.scrollbar-kanban::-webkit-scrollbar-track,
+.scrollbar-kanban::-webkit-scrollbar-track-piece {
+  background: transparent !important;
+  border: none;
+  box-shadow: none;
+}
+
+.scrollbar-kanban::-webkit-scrollbar-thumb {
+  background: #c4c9d0;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.scrollbar-kanban::-webkit-scrollbar-thumb:hover {
+  background: #aeb4bc;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.scrollbar-kanban::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+.scrollbar-kanban::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Wide page shell — nearly edge-to-edge on large screens */

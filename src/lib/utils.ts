@@ -20,6 +20,21 @@ export function digitsOnly(value: string) {
   return value.replace(/\D/g, "");
 }
 
+/** Formata BR celular/fixo de forma leve (ex.: (11) 99999-8888). */
+export function formatPhone(phone: string) {
+  const d = digitsOnly(phone);
+  if (d.length === 11) {
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  }
+  if (d.length === 10) {
+    return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  }
+  if (d.length === 13 && d.startsWith("55")) {
+    return formatPhone(d.slice(2));
+  }
+  return phone;
+}
+
 export function whatsappLink(phone: string, message: string) {
   const digits = digitsOnly(phone);
   const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
@@ -43,8 +58,7 @@ export const AVAILABILITY_LABELS = {
 } as const;
 
 export const ORDER_STATUS_LABELS = {
-  NEW: "Novo",
-  REVIEWING: "Em análise",
+  NEW: "Solicitado",
   CONFIRMED: "Confirmado",
   IN_PRODUCTION: "Em produção",
   READY: "Pronto",

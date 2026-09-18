@@ -89,26 +89,26 @@ export function StoreDesktopMenuStart({
   }
 
   return (
-    <div className="menu-desktop-start relative bg-[#0b0b0b] text-white">
+    <div className="menu-desktop-start relative bg-[#F0F2F5] text-[#050505]">
       {/* Banner de fundo */}
       <div className="relative h-44 overflow-hidden lg:h-52">
         <div
           className="absolute inset-0 scale-110 bg-cover bg-center blur-[2px]"
           style={{ backgroundImage: `url(${cover})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/40 to-[#0b0b0b]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/25 to-[#F0F2F5]" />
       </div>
 
       <div className="relative z-10 mx-auto -mt-24 max-w-[1400px] px-6 lg:px-10 xl:px-12">
         {/* Header flutuante */}
-        <header className="flex items-center gap-5 rounded-2xl border border-white/8 bg-[#161616]/95 px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-md lg:gap-8 lg:px-6 lg:py-5">
+        <header className="flex items-center gap-5 rounded-2xl border border-[#CED0D4] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.06)] lg:gap-8 lg:px-6 lg:py-5">
           <Link href={`/${store.slug}`} className="flex min-w-0 items-center gap-3.5">
             {store.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={store.logoUrl}
                 alt=""
-                className="h-14 w-14 shrink-0 rounded-2xl object-cover ring-1 ring-white/10"
+                className="h-14 w-14 shrink-0 rounded-2xl object-cover ring-1 ring-black/8"
               />
             ) : (
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-berry to-berry-deep text-2xl">
@@ -120,16 +120,16 @@ export function StoreDesktopMenuStart({
                 {store.name}
               </h1>
               {store.city && (
-                <p className="mt-0.5 text-sm text-white/45">{store.city}</p>
+                <p className="mt-0.5 text-sm text-[#65676B]">{store.city}</p>
               )}
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-2.5 py-1 text-[11px] font-semibold text-emerald-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E7F8ED] px-2.5 py-1 text-[11px] font-semibold text-[#31A24C]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#31A24C]" />
                   Aberto para pedidos
                 </span>
                 {fromPriceCents != null && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-2.5 py-1 text-[11px] font-medium text-white/70">
-                    <ShoppingBag className="h-3 w-3 text-amber-300" aria-hidden />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F0F2F5] px-2.5 py-1 text-[11px] font-medium text-[#65676B]">
+                    <ShoppingBag className="h-3 w-3 text-amber-600" aria-hidden />
                     A partir de {formatBRL(fromPriceCents)}
                   </span>
                 )}
@@ -139,40 +139,40 @@ export function StoreDesktopMenuStart({
 
           <label className="relative mx-auto hidden min-w-0 max-w-xl flex-1 lg:block">
             <Search
-              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35"
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#65676B]"
               aria-hidden
             />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Pesquisar produto..."
-              className="w-full rounded-full border border-white/8 bg-[#0f0f0f] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-berry/50"
+              className="w-full rounded-full border border-[#CED0D4] bg-[#F0F2F5] py-3 pl-11 pr-4 text-sm text-[#050505] outline-none placeholder:text-[#65676B] focus:border-berry/50 focus:bg-white"
             />
           </label>
 
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <Link
               href="/entrar"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/8 text-white/80 transition hover:bg-white/14"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E4E6EB] text-[#050505] transition hover:bg-[#D8DADF]"
               aria-label="Conta"
             >
               <User className="h-5 w-5" />
             </Link>
             <Link
               href={`/${store.slug}/carrinho`}
-              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white/8 text-white/80 transition hover:bg-white/14"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[#E4E6EB] text-[#050505] transition hover:bg-[#D8DADF]"
               aria-label={`Carrinho com ${count} itens`}
             >
               <ShoppingBag className="h-5 w-5" />
               {count > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-berry px-1 text-[10px] font-bold">
+                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-berry px-1 text-[10px] font-bold text-white">
                   {count}
                 </span>
               )}
             </Link>
             <Link
               href={`/${store.slug}/encomenda`}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/8 text-white/80 transition hover:bg-white/14"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E4E6EB] text-[#050505] transition hover:bg-[#D8DADF]"
               aria-label="Menu"
             >
               <Menu className="h-5 w-5" />
@@ -181,8 +181,8 @@ export function StoreDesktopMenuStart({
         </header>
 
         {/* Faixa de aviso */}
-        <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-amber-400/35 bg-[#141210] px-4 py-3 lg:px-5">
-          <p className="text-sm text-white/75">
+        <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-amber-300/60 bg-[#FFF8E8] px-4 py-3 lg:px-5">
+          <p className="text-sm text-[#65676B]">
             {store.productionNote ||
               (store.minAdvanceDays > 0
                 ? `Encomendas de bolos personalizados com mínimo de ${store.minAdvanceDays} dias de antecedência.`
@@ -199,21 +199,21 @@ export function StoreDesktopMenuStart({
         {/* Busca mobile-desktop intermediário */}
         <label className="relative mt-4 block lg:hidden">
           <Search
-            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35"
+            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#65676B]"
             aria-hidden
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Pesquisar produto..."
-            className="w-full rounded-full border border-white/8 bg-[#161616] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/35"
+            className="w-full rounded-full border border-[#CED0D4] bg-white py-3 pl-11 pr-4 text-sm text-[#050505] outline-none placeholder:text-[#65676B]"
           />
         </label>
 
         {/* Banners de destaque */}
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {displayCards.length === 0 && (
-            <p className="col-span-full rounded-2xl border border-white/8 bg-[#161616] px-5 py-10 text-center text-white/50">
+            <p className="col-span-full rounded-2xl border border-[#CED0D4] bg-white px-5 py-10 text-center text-[#65676B]">
               Nenhum produto encontrado para “{query}”.
             </p>
           )}
@@ -221,7 +221,7 @@ export function StoreDesktopMenuStart({
             <Link
               key={p.id}
               href={`/${store.slug}/produto/${p.slug}`}
-              className="group relative aspect-[16/11] overflow-hidden rounded-2xl bg-[#1a1a1a] ring-1 ring-white/6 transition hover:ring-berry/40"
+              className="group relative aspect-[16/11] overflow-hidden rounded-2xl bg-[#E4E6EB] ring-1 ring-[#CED0D4] transition hover:ring-berry/40"
             >
               {p.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -231,9 +231,9 @@ export function StoreDesktopMenuStart({
                   className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2a2a2a] to-[#111]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#E4E6EB] to-[#CED0D4]" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
               {p.featured && (
                 <span className="absolute right-3 top-3 rounded-md bg-berry px-2 py-1 text-[10px] font-bold tracking-wide text-white">
                   DESTAQUE
@@ -244,7 +244,7 @@ export function StoreDesktopMenuStart({
                   {p.name}
                 </h2>
                 {p.description && (
-                  <p className="mt-1.5 line-clamp-2 text-sm text-white/70">
+                  <p className="mt-1.5 line-clamp-2 text-sm text-white/80">
                     {p.description}
                   </p>
                 )}
@@ -263,7 +263,7 @@ export function StoreDesktopMenuStart({
         >
           <button
             type="button"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1c1c1c] text-white/70 transition hover:bg-[#262626]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#65676B] shadow-sm ring-1 ring-[#CED0D4] transition hover:bg-[#E4E6EB]"
             aria-label="Ver todas"
             onClick={() => {
               setActiveCat("destaques");
@@ -284,7 +284,7 @@ export function StoreDesktopMenuStart({
                 "inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition",
                 activeCat === "destaques"
                   ? "bg-berry text-white shadow-lg shadow-berry/30"
-                  : "bg-[#1c1c1c] text-white/75 hover:bg-[#262626]",
+                  : "bg-white text-[#050505] ring-1 ring-[#CED0D4] hover:bg-[#E4E6EB]",
               )}
             >
               <Star className="h-3.5 w-3.5" aria-hidden />
@@ -299,7 +299,7 @@ export function StoreDesktopMenuStart({
                   "inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition",
                   activeCat === c.slug
                     ? "bg-berry text-white shadow-lg shadow-berry/30"
-                    : "bg-[#1c1c1c] text-white/75 hover:bg-[#262626]",
+                    : "bg-white text-[#050505] ring-1 ring-[#CED0D4] hover:bg-[#E4E6EB]",
                 )}
               >
                 <span aria-hidden>{c.emoji || "•"}</span>
@@ -312,7 +312,7 @@ export function StoreDesktopMenuStart({
             <button
               type="button"
               onClick={() => scrollCats(-1)}
-              className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1c1c1c] text-white/70 transition hover:bg-[#262626]"
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#65676B] shadow-sm ring-1 ring-[#CED0D4] transition hover:bg-[#E4E6EB]"
               aria-label="Categorias anteriores"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -320,7 +320,7 @@ export function StoreDesktopMenuStart({
             <button
               type="button"
               onClick={() => scrollCats(1)}
-              className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1c1c1c] text-white/70 transition hover:bg-[#262626]"
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#65676B] shadow-sm ring-1 ring-[#CED0D4] transition hover:bg-[#E4E6EB]"
               aria-label="Próximas categorias"
             >
               <ChevronRight className="h-5 w-5" />

@@ -7,7 +7,6 @@ const toneMap: Record<
   "neutral" | "berry" | "success" | "warning" | "danger" | "outline"
 > = {
   NEW: "berry",
-  REVIEWING: "warning",
   CONFIRMED: "outline",
   IN_PRODUCTION: "berry",
   READY: "success",
