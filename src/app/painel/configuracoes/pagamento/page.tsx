@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
+import { maskSecret, storeHasMercadoPago } from "@/lib/mercadopago";
 import { leanDoc } from "@/lib/serialize";
 import { requireStoreSession } from "@/lib/tenant";
 import { Store } from "@/models/Store";
@@ -18,16 +19,21 @@ export default async function PagamentoPage() {
         deliveryEnabled: 1,
         minAdvanceDays: 1,
         productionNote: 1,
+        mpPublicKey: 1,
+        mpAccessToken: 1,
+        mpWebhookSecret: 1,
+        mpEnabled: 1,
+        autoDeductStock: 1,
       })
       .lean(),
   );
   if (!store) redirect("/entrar");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SettingsSectionHeader
         title="Pagamento"
-        description="Formas de pagamento e opções de retirada ou entrega."
+        description="Mercado Pago no checkout; Pix e sinal (50%) pelo WhatsApp."
       />
       <PaymentForm
         store={{
@@ -36,6 +42,16 @@ export default async function PagamentoPage() {
           deliveryEnabled: store.deliveryEnabled,
           minAdvanceDays: store.minAdvanceDays,
           productionNote: store.productionNote || "",
+          mpEnabled: store.mpEnabled,
+          mpPublicKey: store.mpPublicKey || "",
+          mpAccessTokenMasked: maskSecret(store.mpAccessToken),
+          mpWebhookSecretMasked: maskSecret(store.mpWebhookSecret),
+          mpConfigured: storeHasMercadoPago({
+            mpEnabled: store.mpEnabled,
+            mpPublicKey: store.mpPublicKey,
+            mpAccessToken: store.mpAccessToken,
+          }),
+          autoDeductStock: store.autoDeductStock !== false,
         }}
       />
     </div>

@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { withIds } from "@/lib/serialize";
 import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
+import { mediaUrlSchema } from "@/lib/media-url";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -11,7 +12,7 @@ const schema = z.object({
   name: z.string().min(2),
   description: z.string().optional(),
   categoryId: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: mediaUrlSchema,
   gallery: z.array(z.string()).optional(),
   productType: z.enum(["READY", "CUSTOM", "CAKE", "PARTY_KIT", "CORPORATE"]),
   priceMode: z.enum(["FIXED", "FROM", "QUOTE"]),

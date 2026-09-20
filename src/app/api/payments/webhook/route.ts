@@ -2,8 +2,32 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Order } from "@/models/Order";
 import { Store } from "@/models/Store";
-import { getPayment, mapMpStatus } from "@/lib/mercadopago";
+import {
+  getPayment,
+  mapMpStatus,
+  resolveMpAccessToken,
+  resolveMpWebhookSecret,
+  validateMpWebhookSignature,
+} from "@/lib/mercadopago";
 import { ONLINE_PAYMENT_METHOD } from "@/lib/utils";
+import { notifyNewOrder } from "@/lib/notify";
+import { maybeDeductStockForOrder } from "@/lib/stock-order";
+
+async function collectWebhookSecrets() {
+  const envSecret = process.env.MP_WEBHOOK_SECRET?.trim() || null;
+  const stores = await Store.find({
+    mpEnabled: true,
+    mpWebhookSecret: { $ne: null },
+  })
+    .select({ mpWebhookSecret: 1 })
+    .limit(200)
+    .lean();
+
+  return [
+    envSecret,
+    ...stores.map((s) => resolveMpWebhookSecret(s)),
+  ];
+}
 
 async function resolveAndSync(paymentId: string) {
   await connectDB();
@@ -13,8 +37,9 @@ async function resolveAndSync(paymentId: string) {
     const store = await Store.findOne({ _id: byPaymentId.storeId })
       .select({ mpAccessToken: 1 })
       .lean();
-    if (store?.mpAccessToken) {
-      const payment = await getPayment(store.mpAccessToken, paymentId);
+    const token = store ? resolveMpAccessToken(store) : null;
+    if (token) {
+      const payment = await getPayment(token, paymentId);
       return applyPayment(String(byPaymentId._id), paymentId, payment.status);
     }
   }
@@ -32,7 +57,7 @@ async function resolveAndSync(paymentId: string) {
     const store = await Store.findOne({ _id: candidate.storeId })
       .select({ mpAccessToken: 1 })
       .lean();
-    const token = store?.mpAccessToken;
+    const token = store ? resolveMpAccessToken(store) : null;
     if (!token || tried.has(token)) continue;
     tried.add(token);
     try {
@@ -60,7 +85,10 @@ async function applyPayment(
   const order = await Order.findOne({ _id: orderId }).lean();
   if (!order) return null;
 
-  return Order.findOneAndUpdate(
+  const becameApproved =
+    paymentStatus === "APPROVED" && order.paymentStatus !== "APPROVED";
+
+  const updated = await Order.findOneAndUpdate(
     { _id: orderId },
     {
       $set: {
@@ -74,6 +102,24 @@ async function applyPayment(
     },
     { new: true },
   ).lean();
+
+  if (becameApproved && updated) {
+    void notifyNewOrder({
+      storeId: updated.storeId,
+      orderId: String(updated._id),
+      customerName: updated.customerName,
+      totalCents: updated.totalCents,
+      priceLabel: updated.priceLabel,
+    }).catch((err) => console.error("[notify:order]", err));
+
+    void maybeDeductStockForOrder({
+      orderId: String(updated._id),
+      storeId: updated.storeId,
+      reason: "pay",
+    }).catch((err) => console.error("[stock:deduct]", err));
+  }
+
+  return updated;
 }
 
 export async function POST(req: Request) {
@@ -88,16 +134,41 @@ export async function POST(req: Request) {
       "";
 
     const dataId =
+      url.searchParams.get("data.id") ||
+      url.searchParams.get("id") ||
       (body.data &&
         typeof body.data === "object" &&
         body.data !== null &&
         "id" in body.data &&
         String((body.data as { id: unknown }).id)) ||
-      url.searchParams.get("data.id") ||
-      url.searchParams.get("id") ||
       "";
 
     const topic = url.searchParams.get("topic") || type;
+    const xSignature = req.headers.get("x-signature");
+    const xRequestId = req.headers.get("x-request-id");
+
+    await connectDB();
+    const secrets = await collectWebhookSecrets();
+    const signatureOk = validateMpWebhookSignature({
+      xSignature,
+      xRequestId,
+      // MP signs using the query `data.id` when present; fall back to body id.
+      dataId: url.searchParams.get("data.id") || dataId || null,
+      secrets,
+    });
+
+    if (signatureOk === false) {
+      console.warn("[payments/webhook] invalid signature", {
+        xRequestId,
+        dataId,
+      });
+      return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
+    }
+    if (signatureOk === null) {
+      console.warn(
+        "[payments/webhook] nenhum segredo configurado (MP_WEBHOOK_SECRET ou mpWebhookSecret da loja) — validação pulada",
+      );
+    }
 
     if ((topic.includes("payment") || type.includes("payment")) && dataId) {
       await resolveAndSync(dataId);

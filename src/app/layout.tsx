@@ -35,9 +35,10 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      data-scroll-behavior="smooth"
       className={`${display.variable} ${sans.variable} ${sora.variable} h-full`}
     >
-      <body className="min-h-full antialiased">
+      <body className="min-h-full antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

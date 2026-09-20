@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const resetOk = searchParams.get("reset") === "1";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,20 +24,71 @@ export default function LoginPage() {
         redirect: false,
       });
       if (res?.error) {
-        setError("E-mail ou senha inválidos — ou o banco ainda não está disponível.");
+        setError(
+          "E-mail ou senha inválidos — ou o banco ainda não está disponível.",
+        );
         return;
       }
       router.push("/painel");
       router.refresh();
     } catch {
       setError(
-        "Falha de conexão. Verifique se o Postgres está ativo e se AUTH_SECRET está configurado no .env.",
+        "Falha de conexão. Verifique se o banco está ativo e se AUTH_SECRET está configurado no .env.",
       );
     } finally {
       setLoading(false);
     }
   }
 
+  return (
+    <>
+      {resetOk ? (
+        <p className="mt-4 rounded-md bg-emerald-50 px-3 py-2.5 text-sm text-success">
+          Senha atualizada. Entre com a nova senha.
+        </p>
+      ) : null}
+      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <div>
+          <label className="label" htmlFor="email">
+            E-mail
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            className="input"
+            defaultValue="demo@doceencanto.com"
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="password">
+            Senha
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            className="input"
+            defaultValue="demo1234"
+          />
+          <p className="mt-2 text-right text-xs">
+            <Link href="/esqueci-senha" className="font-medium text-rosewood">
+              Esqueci minha senha
+            </Link>
+          </p>
+        </div>
+        {error && <p className="text-sm text-berry-deep">{error}</p>}
+        <button type="submit" className="btn-primary w-full" disabled={loading}>
+          {loading ? "Entrando..." : "Entrar"}
+        </button>
+      </form>
+    </>
+  );
+}
+
+export default function LoginPage() {
   return (
     <div className="bg-atelier bg-grain flex min-h-screen items-center justify-center px-5 py-12">
       <div className="panel w-full max-w-md p-8">
@@ -46,38 +99,13 @@ export default function LoginPage() {
         <p className="mt-2 text-sm text-cocoa-soft/75">
           Acesse o painel da sua confeitaria.
         </p>
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <div>
-            <label className="label" htmlFor="email">
-              E-mail
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="input"
-              defaultValue="demo@doceencanto.com"
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="password">
-              Senha
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className="input"
-              defaultValue="demo1234"
-            />
-          </div>
-          {error && <p className="text-sm text-berry-deep">{error}</p>}
-          <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
-          </button>
-        </form>
+        <Suspense
+          fallback={
+            <p className="mt-6 text-sm text-cocoa-soft">Carregando...</p>
+          }
+        >
+          <LoginForm />
+        </Suspense>
         <p className="mt-5 text-center text-sm text-cocoa-soft/70">
           Ainda não tem conta?{" "}
           <Link href="/cadastrar" className="font-semibold text-rosewood">
@@ -85,11 +113,12 @@ export default function LoginPage() {
           </Link>
         </p>
         <p className="mt-4 rounded-md bg-sand/80 px-3 py-2.5 text-center text-xs leading-relaxed text-cocoa-soft">
-          Demo: <span className="font-medium text-cocoa">demo@doceencanto.com</span> /{" "}
+          Demo:{" "}
+          <span className="font-medium text-cocoa">demo@doceencanto.com</span> /{" "}
           <span className="font-medium text-cocoa">demo1234</span>
           <br />
-          Se o login falhar, suba o Postgres:{" "}
-          <code className="text-cocoa">npm run db:up && npm run db:setup</code>
+          Se o login falhar, suba o Mongo:{" "}
+          <code className="text-cocoa">npm run db:mongo-local</code>
         </p>
       </div>
     </div>

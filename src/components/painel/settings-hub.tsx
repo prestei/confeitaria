@@ -4,7 +4,7 @@ import {
   ExternalLink,
   type LucideIcon,
 } from "lucide-react";
-import { SETTINGS_SECTIONS } from "@/components/painel/settings-nav";
+import { SETTINGS_SECTIONS } from "@/components/painel/settings-sections";
 import { cn } from "@/lib/cn";
 
 export type SettingsHubStatus = {
@@ -14,6 +14,7 @@ export type SettingsHubStatus = {
   hasHours: boolean;
   hasAddress: boolean;
   paymentCount: number;
+  mpConfigured: boolean;
   storeSlug: string | null;
 };
 
@@ -29,10 +30,18 @@ const SECTION_HINT: Record<
     s.hasHours
       ? { label: "Definido", tone: "ok" }
       : { label: "Não definido", tone: "warn" },
-  "/painel/configuracoes/pagamento": (s) => ({
-    label: `${s.paymentCount} forma${s.paymentCount === 1 ? "" : "s"}`,
-    tone: s.paymentCount > 0 ? "ok" : "warn",
-  }),
+  "/painel/configuracoes/pagamento": (s) => {
+    if (s.mpConfigured) {
+      return { label: "Online ativo", tone: "ok" as const };
+    }
+    if (s.paymentCount > 0) {
+      return {
+        label: `${s.paymentCount} manual${s.paymentCount === 1 ? "" : "is"} · online off`,
+        tone: "warn" as const,
+      };
+    }
+    return { label: "Pendente", tone: "warn" as const };
+  },
   "/painel/configuracoes/geral": (s) => ({
     label: `Plano ${s.planLabel}`,
     tone: "neutral",

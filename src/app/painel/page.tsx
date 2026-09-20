@@ -20,7 +20,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import { connectDB } from "@/lib/db";
 import { leanDoc, leanList } from "@/lib/serialize";
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, isAbandonedOnlineCheckout } from "@/lib/utils";
 import { requireStoreSession } from "@/lib/tenant";
 import { Store } from "@/models/Store";
 import { Order } from "@/models/Order";
@@ -195,9 +195,14 @@ export default async function PainelPage() {
   const inProgress = allRecentOrders.filter((o) =>
     (ACTIVE_STATUSES as readonly string[]).includes(o.status),
   );
-  const waiting = inProgress.filter(
-    (o) => o.status === "NEW",
-  ).length;
+  const waiting = inProgress.filter((o) => {
+    if (o.status !== "NEW") return false;
+    return !isAbandonedOnlineCheckout({
+      paymentMethod: o.paymentMethod,
+      paymentStatus: o.paymentStatus,
+      mpPaymentId: o.mpPaymentId,
+    });
+  }).length;
   const nextHourDeliveries = inProgress.filter((o) => {
     if (!o.eventDate || !isSameDay(o.eventDate, now) || !o.eventTime)
       return false;

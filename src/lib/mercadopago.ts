@@ -1,5 +1,13 @@
 import { MercadoPagoConfig, Payment } from "mercadopago";
+import {
+  InvalidWebhookSignatureError,
+  WebhookSignatureValidator,
+} from "mercadopago";
 import type { PaymentStatus } from "@/lib/enums";
+import {
+  decryptSecretOrNull,
+  encryptSecretIfNeeded,
+} from "@/lib/crypto-secrets";
 
 export function createMercadoPagoClient(accessToken: string) {
   return new MercadoPagoConfig({
@@ -28,9 +36,34 @@ export function mapMpStatus(status: string | undefined): PaymentStatus {
 }
 
 export function maskSecret(value: string | null | undefined) {
-  if (!value) return null;
-  if (value.length <= 4) return "****";
-  return `****${value.slice(-4)}`;
+  const plain = value ? decryptSecretOrNull(value) ?? value : null;
+  if (!plain) return null;
+  if (plain.length <= 4) return "****";
+  return `****${plain.slice(-4)}`;
+}
+
+export function resolveMpAccessToken(
+  store: { mpAccessToken: string | null },
+): string | null {
+  return decryptSecretOrNull(store.mpAccessToken);
+}
+
+export function resolveMpWebhookSecret(
+  store: { mpWebhookSecret: string | null },
+): string | null {
+  return decryptSecretOrNull(store.mpWebhookSecret);
+}
+
+export function prepareMpAccessTokenForStorage(
+  value: string | null | undefined,
+): string | null {
+  return encryptSecretIfNeeded(value);
+}
+
+export function prepareMpWebhookSecretForStorage(
+  value: string | null | undefined,
+): string | null {
+  return encryptSecretIfNeeded(value);
 }
 
 export function storeHasMercadoPago(store: {
@@ -38,8 +71,9 @@ export function storeHasMercadoPago(store: {
   mpPublicKey: string | null;
   mpAccessToken: string | null;
 }) {
+  const token = resolveMpAccessToken(store);
   return Boolean(
-    store.mpEnabled && store.mpPublicKey?.trim() && store.mpAccessToken?.trim(),
+    store.mpEnabled && store.mpPublicKey?.trim() && token?.trim(),
   );
 }
 
@@ -61,4 +95,41 @@ export async function getPayment(accessToken: string, paymentId: string | number
   const client = createMercadoPagoClient(accessToken);
   const payment = new Payment(client);
   return payment.get({ id: paymentId });
+}
+
+/**
+ * Validates Mercado Pago webhook signature against any of the candidate secrets.
+ * Returns true if valid; false if secrets exist but none match.
+ * Returns null when no secrets are configured (caller may allow in local/dev).
+ */
+export function validateMpWebhookSignature(input: {
+  xSignature: string | null;
+  xRequestId: string | null;
+  dataId: string | null;
+  secrets: Array<string | null | undefined>;
+}): boolean | null {
+  const secrets = [
+    ...new Set(
+      input.secrets
+        .map((s) => s?.trim())
+        .filter((s): s is string => Boolean(s)),
+    ),
+  ];
+  if (secrets.length === 0) return null;
+
+  for (const secret of secrets) {
+    try {
+      WebhookSignatureValidator.validate({
+        xSignature: input.xSignature,
+        xRequestId: input.xRequestId,
+        dataId: input.dataId,
+        secret,
+        toleranceSeconds: 300,
+      });
+      return true;
+    } catch (error) {
+      if (!(error instanceof InvalidWebhookSignatureError)) throw error;
+    }
+  }
+  return false;
 }

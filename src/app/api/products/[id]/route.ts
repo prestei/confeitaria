@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { withIds } from "@/lib/serialize";
 import { Product } from "@/models/Product";
+import { mediaUrlSchema } from "@/lib/media-url";
+import { maybeNotifyLowStockTransition } from "@/lib/notify";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -23,7 +25,7 @@ const putSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional(),
   categoryId: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: mediaUrlSchema,
   gallery: z.array(z.string()).optional(),
   productType: z.enum(["READY", "CUSTOM", "CAKE", "PARTY_KIT", "CORPORATE"]),
   priceMode: z.enum(["FIXED", "FROM", "QUOTE"]),
@@ -119,6 +121,7 @@ export async function PUT(
     let availability = data.availability;
     if (trackStock && stockQty <= 0) availability = "SOLD_OUT";
 
+    const stockMin = data.stockMin ?? product.stockMin;
     const updated = await Product.findOneAndUpdate(
       { _id: id, storeId: session.user.storeId },
       {
@@ -137,7 +140,7 @@ export async function PUT(
           active: data.active ?? true,
           trackStock,
           stockQty,
-          stockMin: data.stockMin ?? 5,
+          stockMin,
           unit: data.unit || "un",
           optionGroups: (data.optionGroups ?? []).map((g, gi) => ({
             name: g.name,
@@ -157,6 +160,15 @@ export async function PUT(
       },
       { new: true },
     ).lean();
+
+    void maybeNotifyLowStockTransition({
+      storeId: session.user.storeId,
+      productName: data.name,
+      previousQty: product.stockQty,
+      nextQty: stockQty,
+      stockMin,
+      trackStock,
+    }).catch((err) => console.error("[notify:stock]", err));
 
     return NextResponse.json(withIds(updated));
   } catch (error) {

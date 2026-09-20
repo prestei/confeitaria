@@ -6,6 +6,7 @@ import { Store } from "@/models/Store";
 import { Order } from "@/models/Order";
 import { Product } from "@/models/Product";
 import { OrderStatus } from "@/lib/enums";
+import { isAbandonedOnlineCheckout } from "@/lib/utils";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { PainelTopbar } from "@/components/painel/painel-topbar";
 
@@ -22,12 +23,20 @@ export default async function PainelLayout({
     ? leanDoc(await Store.findOne({ _id: session.user.storeId }).lean())
     : null;
 
-  const newOrders = store
-    ? await Order.countDocuments({
+  let newOrders = 0;
+  if (store) {
+    try {
+      const fresh = await Order.find({
         storeId: store.id,
         status: OrderStatus.NEW,
       })
-    : 0;
+        .select({ paymentMethod: 1, paymentStatus: 1, mpPaymentId: 1 })
+        .lean();
+      newOrders = fresh.filter((o) => !isAbandonedOnlineCheckout(o)).length;
+    } catch (err) {
+      console.error("[painel/layout] newOrders count failed", err);
+    }
+  }
 
   const lowStock = store
     ? (
@@ -73,7 +82,7 @@ export default async function PainelLayout({
           userName={session.user.name || "Confeiteira"}
           notificationCount={newOrders}
         />
-        <main className="flex w-full min-h-0 flex-1 flex-col px-4 py-4 sm:px-6 sm:py-5 lg:px-8 xl:px-10">
+        <main className="flex w-full min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 lg:px-8 xl:px-10">
           {children}
         </main>
       </div>

@@ -36,7 +36,13 @@ import {
   Truck,
   X,
 } from "lucide-react";
-import { formatBRL, ORDER_STATUS_LABELS } from "@/lib/utils";
+import {
+  formatBRL,
+  isOnlinePaymentOutstanding,
+  ONLINE_PAYMENT_METHOD,
+  ORDER_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+} from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   PageAction,
@@ -47,6 +53,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 
 type OrderStatus = keyof typeof ORDER_STATUS_LABELS;
+type PaymentStatus = keyof typeof PAYMENT_STATUS_LABELS;
 
 type OrderItem = {
   productName: string;
@@ -65,6 +72,8 @@ type Order = {
   eventDate: string | null;
   eventTime: string | null;
   paymentMethod: string | null;
+  paymentStatus: PaymentStatus;
+  mpPaymentId: string | null;
   fulfillment: "PICKUP" | "DELIVERY";
   deliveryZone: string | null;
   notes: string | null;
@@ -73,6 +82,8 @@ type Order = {
   updatedAt: string;
   items: OrderItem[];
 };
+
+const POLL_MS = 3000;
 
 const KANBAN_COLUMNS = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[];
 
@@ -146,19 +157,41 @@ function formatEventWhen(eventDate: string | null, eventTime: string | null) {
   return `${format(d, "dd/MM")} às ${time}`;
 }
 
-function paymentBadge(method: string | null, status: OrderStatus) {
+function paymentBadge(order: Order) {
+  const method = order.paymentMethod;
+  const pay = order.paymentStatus || "NONE";
+
+  if (method === ONLINE_PAYMENT_METHOD) {
+    if (pay === "APPROVED") {
+      return { label: "Pago · Mercado Pago", className: "bg-[#E5F6E8] text-[#2F8A3E]" };
+    }
+    if (pay === "PENDING") {
+      return {
+        label: "Aguardando pagamento",
+        className: "bg-[#FBF0C8] text-[#9A7A1A]",
+      };
+    }
+    if (pay === "REJECTED") {
+      return {
+        label: "Pagamento recusado",
+        className: "bg-[#FDE8E8] text-[#B33A3A]",
+      };
+    }
+    return {
+      label: PAYMENT_STATUS_LABELS[pay] || "Mercado Pago",
+      className: "bg-[#DCEAF8] text-[#2E6F9E]",
+    };
+  }
+
   const m = (method || "").toLowerCase();
   if (m.includes("pix")) {
-    return { label: "PIX Pago", className: "bg-[#E5F6E8] text-[#2F8A3E]" };
+    return { label: "PIX", className: "bg-[#E5F6E8] text-[#2F8A3E]" };
   }
   if (m.includes("cartão") || m.includes("cartao") || m.includes("card")) {
-    return { label: "Cartão Online", className: "bg-[#DCEAF8] text-[#2E6F9E]" };
+    return { label: "Cartão", className: "bg-[#DCEAF8] text-[#2E6F9E]" };
   }
   if (m.includes("sinal")) {
-    return { label: "Sinal 50% pago", className: "bg-[#FBF0C8] text-[#9A7A1A]" };
-  }
-  if (status !== "NEW" && method) {
-    return { label: "Pago", className: "bg-[#E5F6E8] text-[#2F8A3E]" };
+    return { label: "Sinal 50%", className: "bg-[#FBF0C8] text-[#9A7A1A]" };
   }
   if (method) {
     return { label: method, className: "bg-[#F0F2F5] text-[#5C656F]" };
@@ -224,16 +257,20 @@ function OrderCardContent({
   busy?: boolean;
   detailHref?: string;
 }) {
-  const pay = paymentBadge(order.paymentMethod, order.status);
+  const pay = paymentBadge(order);
   const channel = channelLabel(order);
   const hint = statusHint(order);
   const when = formatEventWhen(order.eventDate, order.eventTime);
   const note = order.referenceNote || order.notes;
   const theme = COLUMN_THEME[order.status];
   const isNew = order.status === "NEW";
+  const awaitingOnlinePay = isOnlinePaymentOutstanding(order);
   const paidLooksReady =
-    (order.paymentMethod || "").toLowerCase().includes("pix") ||
-    (order.paymentMethod || "").toLowerCase().includes("pago");
+    order.paymentStatus === "APPROVED" ||
+    (order.paymentMethod !== ONLINE_PAYMENT_METHOD &&
+      ((order.paymentMethod || "").toLowerCase().includes("pix") ||
+        (order.paymentMethod || "").toLowerCase() === "pago"));
+  const canAccept = !awaitingOnlinePay;
   const showActions = Boolean(onAdvance || onCancel);
 
   return (
@@ -241,7 +278,8 @@ function OrderCardContent({
       className={cn(
         "relative rounded-xl border border-[#E8E2DE] bg-white p-3.5 shadow-[0_1px_3px_rgba(45,41,38,0.06)]",
         order.status === "IN_PRODUCTION" && `border-l-[3px] ${theme.accent}`,
-        isNew && paidLooksReady && "border-[#F5D9A8]",
+        isNew && paidLooksReady && !awaitingOnlinePay && "border-[#F5D9A8]",
+        awaitingOnlinePay && "border-[#F5D9A8]/80",
         dragging && "shadow-lg ring-2 ring-[#2D2926]/10",
       )}
     >
@@ -302,7 +340,8 @@ function OrderCardContent({
             return (
               <div key={`${item.productName}-${idx}`}>
                 <p className="text-[13px] font-semibold leading-snug text-[#C85A5A]">
-                  {item.quantity}x {item.productName}
+                  <span className="tabular-nums">{item.quantity}×</span>{" "}
+                  {item.productName}
                 </p>
                 {extras.map((line) => (
                   <p
@@ -369,7 +408,13 @@ function OrderCardContent({
 
         {showActions && (
           <div className="pointer-events-auto mt-3 flex items-center gap-2">
-            {isNew && paidLooksReady && onAdvance && (
+            {isNew && awaitingOnlinePay && (
+              <p className="w-full rounded-lg border border-[#F0D48A] bg-[#FFF8E8] px-3 py-2 text-center text-[12px] font-medium text-[#8A6A18]">
+                Aguardando confirmação do Mercado Pago
+              </p>
+            )}
+
+            {isNew && canAccept && paidLooksReady && onAdvance && (
               <>
                 <button
                   type="button"
@@ -402,7 +447,7 @@ function OrderCardContent({
               </>
             )}
 
-            {isNew && !paidLooksReady && onAdvance && (
+            {isNew && canAccept && !paidLooksReady && onAdvance && (
               <button
                 type="button"
                 disabled={busy}
@@ -686,6 +731,8 @@ function KanbanColumn({
 function normalizeOrder(raw: Order): Order {
   return {
     ...raw,
+    paymentStatus: raw.paymentStatus || "NONE",
+    mpPaymentId: raw.mpPaymentId ?? null,
     items: (raw.items || []).map((item) => ({
       ...item,
       customizations:
@@ -714,18 +761,33 @@ export function OrdersAdmin({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  async function load() {
-    const res = await fetch("/api/admin/orders");
+  async function load(opts?: { silent?: boolean }) {
+    const res = await fetch("/api/admin/orders", { cache: "no-store" });
     if (res.ok) {
       const data = (await res.json()) as Order[];
       setOrders(data.map(normalizeOrder));
     }
-    setLoading(false);
+    if (!opts?.silent) setLoading(false);
   }
 
   useEffect(() => {
-    if (initialOrders.length === 0) load();
+    if (initialOrders.length === 0) void load();
     else setLoading(false);
+
+    // Atualiza o kanban a cada poucos segundos para pedidos pagos aparecerem na hora.
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load({ silent: true });
+    }, POLL_MS);
+
+    function onFocus() {
+      void load({ silent: true });
+    }
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

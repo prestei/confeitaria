@@ -14,6 +14,24 @@ export function priceLabel(mode: PriceMode, cents: number | null) {
   return formatBRL(cents);
 }
 
+function stockLabel(product: {
+  trackStock?: boolean;
+  stockQty?: number;
+  unit?: string;
+  availability: Availability;
+}) {
+  if (!product.trackStock) {
+    return AVAILABILITY_LABELS[product.availability];
+  }
+  const qty = product.stockQty ?? 0;
+  const unit = product.unit || "un";
+  if (qty <= 0 || product.availability === "SOLD_OUT") {
+    return "Esgotado";
+  }
+  if (qty === 1) return `1 ${unit} disponível`;
+  return `${qty} ${unit} disponíveis`;
+}
+
 export function ProductCard({
   storeSlug,
   product,
@@ -29,6 +47,9 @@ export function ProductCard({
     priceCents: number | null;
     availability: Availability;
     featured: boolean;
+    trackStock?: boolean;
+    stockQty?: number;
+    unit?: string;
   };
 }) {
   const reduced = useReducedMotion();
@@ -39,6 +60,11 @@ export function ProductCard({
     product.priceMode === "QUOTE"
       ? "Pedir orçamento"
       : "Adicionar";
+
+  const availabilityText = stockLabel(product);
+  const soldOut =
+    product.availability === "SOLD_OUT" ||
+    (product.trackStock && (product.stockQty ?? 0) <= 0);
 
   return (
     <>
@@ -60,6 +86,13 @@ export function ProductCard({
           <p className="mt-2 text-sm font-bold text-sky-deep">
             {priceLabel(product.priceMode, product.priceCents)}
           </p>
+          <p
+            className={`mt-1 text-[11px] font-medium ${
+              soldOut ? "text-rosewood" : "text-sky/80"
+            }`}
+          >
+            {availabilityText}
+          </p>
         </button>
         <div className="relative shrink-0">
           <button type="button" onClick={() => setOpen(true)} className="block">
@@ -79,14 +112,16 @@ export function ProductCard({
               )}
             </div>
           </button>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-rosewood text-white shadow-md ring-2 ring-ivory transition hover:bg-rosewood-deep"
-            aria-label={`Adicionar ${product.name}`}
-          >
-            <Plus className="h-4 w-4" strokeWidth={2.75} />
-          </button>
+          {!soldOut && (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-rosewood text-white shadow-md ring-2 ring-ivory transition hover:bg-rosewood-deep"
+              aria-label={`Adicionar ${product.name}`}
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.75} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -139,18 +174,28 @@ export function ProductCard({
         </button>
 
         <div className="mt-auto space-y-3 p-4 pt-3">
-          <motion.button
-            type="button"
-            onClick={() => setOpen(true)}
-            whileHover={reduced ? undefined : { y: -1 }}
-            whileTap={reduced ? undefined : { scale: 0.98 }}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rosewood px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep"
+          {!soldOut ? (
+            <motion.button
+              type="button"
+              onClick={() => setOpen(true)}
+              whileHover={reduced ? undefined : { y: -1 }}
+              whileTap={reduced ? undefined : { scale: 0.98 }}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rosewood px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              {addLabel}
+            </motion.button>
+          ) : (
+            <div className="inline-flex w-full items-center justify-center rounded-xl border border-cocoa/10 bg-sand/40 px-4 py-2.5 text-sm font-semibold text-cocoa-soft">
+              Indisponível
+            </div>
+          )}
+          <p
+            className={`text-[11px] font-medium uppercase tracking-[0.12em] ${
+              soldOut ? "text-rosewood" : "text-sky/80"
+            }`}
           >
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
-            {addLabel}
-          </motion.button>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-sky/80">
-            {AVAILABILITY_LABELS[product.availability]}
+            {availabilityText}
           </p>
         </div>
       </motion.article>

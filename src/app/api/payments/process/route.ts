@@ -7,8 +7,10 @@ import { Store } from "@/models/Store";
 import {
   createPayment,
   mapMpStatus,
+  resolveMpAccessToken,
   storeHasMercadoPago,
 } from "@/lib/mercadopago";
+import { maybeDeductStockForOrder } from "@/lib/stock-order";
 import { ONLINE_PAYMENT_METHOD } from "@/lib/utils";
 
 const schema = z.object({
@@ -39,16 +41,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Pedido não encontrado" }, { status: 404 });
     }
 
-    if (!storeHasMercadoPago(store) || !store.mpAccessToken) {
+    const accessToken = resolveMpAccessToken(store);
+    if (!storeHasMercadoPago(store) || !accessToken) {
       return NextResponse.json(
         { error: "Pagamento online não configurado nesta loja" },
         { status: 400 },
       );
     }
 
-    if (order.priceLabel !== "TOTAL") {
+    if (order.priceLabel === "TO_CONFIRM" || order.totalCents <= 0) {
       return NextResponse.json(
-        { error: "Só é possível pagar online pedidos com total fechado" },
+        { error: "Só é possível pagar online pedidos com valor definido" },
         { status: 400 },
       );
     }
@@ -98,13 +101,14 @@ export async function POST(req: Request) {
     };
 
     const result = await createPayment(
-      store.mpAccessToken,
+      accessToken,
       body,
       `order-${orderIdStr}-${randomUUID()}`,
     );
 
     const paymentStatus = mapMpStatus(result.status);
     const paymentId = result.id != null ? String(result.id) : null;
+    const becameApproved = paymentStatus === "APPROVED";
 
     await Order.updateOne(
       { _id: order._id },
@@ -117,6 +121,14 @@ export async function POST(req: Request) {
         },
       },
     );
+
+    if (becameApproved) {
+      void maybeDeductStockForOrder({
+        orderId: orderIdStr,
+        storeId: order.storeId,
+        reason: "pay",
+      }).catch((err) => console.error("[stock:deduct]", err));
+    }
 
     return NextResponse.json({
       status: result.status,

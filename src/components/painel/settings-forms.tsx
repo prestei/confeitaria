@@ -12,9 +12,11 @@ import {
   UserRound,
 } from "lucide-react";
 import { SectionCard } from "@/components/painel/page-header";
+import { ImageField } from "@/components/painel/image-field";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
+import { OFFLINE_PAYMENT_PRESETS } from "@/lib/utils";
 
 async function patchStore(payload: Record<string, unknown>) {
   return fetch("/api/store", {
@@ -47,7 +49,7 @@ function FormFooter({
 }
 
 function FieldHint({ children }: { children: React.ReactNode }) {
-  return <p className="mt-1.5 text-xs leading-snug text-[#8C8682]">{children}</p>;
+  return <p className="mt-2 text-xs leading-relaxed text-[#8C8682]">{children}</p>;
 }
 
 function ToggleRow({
@@ -66,17 +68,17 @@ function ToggleRow({
   icon?: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
+    <div className="flex items-start justify-between gap-4 py-4">
       <div className="flex min-w-0 items-start gap-3">
         {Icon ? (
           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F0F2F5] text-[#5C5652]">
             <Icon className="h-4 w-4" aria-hidden />
           </div>
         ) : null}
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-1">
           <p className="text-sm font-semibold text-[#2D2926]">{title}</p>
           {description ? (
-            <p className="mt-0.5 text-xs leading-snug text-[#8C8682]">
+            <p className="text-xs leading-relaxed text-[#8C8682]">
               {description}
             </p>
           ) : null}
@@ -159,13 +161,7 @@ function normalizeTime(t: string): string {
   return `${h.padStart(2, "0")}:${m.padStart(2, "0")}`;
 }
 
-const PAYMENT_PRESETS = [
-  "Pix",
-  "Dinheiro",
-  "Cartão na retirada",
-  "Cartão na entrega",
-  "Transferência",
-] as const;
+const PAYMENT_PRESETS = OFFLINE_PAYMENT_PRESETS;
 
 export function EstablishmentForm({
   store,
@@ -181,6 +177,7 @@ export function EstablishmentForm({
 }) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(store.logoUrl);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -190,7 +187,7 @@ export function EstablishmentForm({
       name: String(fd.get("name")),
       whatsapp: String(fd.get("whatsapp")),
       description: String(fd.get("description") || ""),
-      logoUrl: String(fd.get("logoUrl") || ""),
+      logoUrl,
       address: String(fd.get("address") || ""),
       city: String(fd.get("city") || ""),
     });
@@ -244,15 +241,10 @@ export function EstablishmentForm({
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="label" htmlFor="store-logo">
-              Logo (URL)
-            </label>
-            <input
-              id="store-logo"
-              name="logoUrl"
-              className="input"
-              defaultValue={store.logoUrl}
-              placeholder="https://…"
+            <ImageField
+              label="Logo"
+              value={logoUrl}
+              onChange={setLogoUrl}
             />
           </div>
         </div>
@@ -477,6 +469,12 @@ export function PaymentForm({
     deliveryEnabled: boolean;
     minAdvanceDays: number;
     productionNote: string;
+    mpEnabled: boolean;
+    mpPublicKey: string;
+    mpAccessTokenMasked: string | null;
+    mpWebhookSecretMasked: string | null;
+    mpConfigured: boolean;
+    autoDeductStock: boolean;
   };
 }) {
   const { toast } = useToast();
@@ -485,6 +483,18 @@ export function PaymentForm({
   const [customMethod, setCustomMethod] = useState("");
   const [pickupEnabled, setPickupEnabled] = useState(store.pickupEnabled);
   const [deliveryEnabled, setDeliveryEnabled] = useState(store.deliveryEnabled);
+  const [autoDeductStock, setAutoDeductStock] = useState(store.autoDeductStock);
+  const [mpEnabled, setMpEnabled] = useState(store.mpEnabled);
+  const [mpPublicKey, setMpPublicKey] = useState(store.mpPublicKey);
+  const [mpAccessToken, setMpAccessToken] = useState("");
+  const [mpTokenMasked, setMpTokenMasked] = useState(store.mpAccessTokenMasked);
+  const [mpWebhookSecret, setMpWebhookSecret] = useState("");
+  const [mpWebhookMasked, setMpWebhookMasked] = useState(
+    store.mpWebhookSecretMasked,
+  );
+  const [mpConfigured, setMpConfigured] = useState(store.mpConfigured);
+  const [clearToken, setClearToken] = useState(false);
+  const [clearWebhookSecret, setClearWebhookSecret] = useState(false);
 
   function toggleMethod(method: string) {
     setMethods((prev) =>
@@ -510,18 +520,86 @@ export function PaymentForm({
       });
       return;
     }
+
+    const publicKey = mpPublicKey.trim();
+    const tokenInput = mpAccessToken.trim();
+    const hasToken = Boolean(mpTokenMasked && !clearToken) || Boolean(tokenInput);
+    // Ligar online automaticamente se o lojista informou as duas credenciais.
+    const enableOnline = mpEnabled || (Boolean(publicKey) && hasToken);
+
+    if (enableOnline && !publicKey) {
+      toast({
+        title: "Informe a Public Key do Mercado Pago",
+        tone: "warning",
+      });
+      return;
+    }
+    if (enableOnline && !hasToken) {
+      toast({
+        title: "Informe o Access Token do Mercado Pago",
+        tone: "warning",
+      });
+      return;
+    }
+
     setSaving(true);
     const fd = new FormData(e.currentTarget);
-    const res = await patchStore({
+    const payload: Record<string, unknown> = {
       paymentMethods: methods,
       pickupEnabled,
       deliveryEnabled,
+      autoDeductStock,
       minAdvanceDays: Number(fd.get("minAdvanceDays") || 0),
       productionNote: String(fd.get("productionNote") || ""),
-    });
+      mpEnabled: enableOnline,
+      mpPublicKey: publicKey,
+    };
+    if (clearToken) {
+      payload.mpAccessToken = "";
+    } else if (tokenInput) {
+      payload.mpAccessToken = tokenInput;
+    }
+    if (clearWebhookSecret) {
+      payload.mpWebhookSecret = "";
+    } else if (mpWebhookSecret.trim()) {
+      payload.mpWebhookSecret = mpWebhookSecret.trim();
+    }
+
+    const res = await patchStore(payload);
+    const json = (await res.json().catch(() => null)) as {
+      mpConfigured?: boolean;
+      mpAccessTokenMasked?: string | null;
+      mpWebhookSecretMasked?: string | null;
+      mpPublicKey?: string | null;
+      mpEnabled?: boolean;
+      error?: string;
+    } | null;
     setSaving(false);
+
+    if (res.ok) {
+      setMpConfigured(Boolean(json?.mpConfigured));
+      setMpTokenMasked(json?.mpAccessTokenMasked ?? null);
+      setMpWebhookMasked(json?.mpWebhookSecretMasked ?? null);
+      setMpAccessToken("");
+      setMpWebhookSecret("");
+      setClearToken(false);
+      setClearWebhookSecret(false);
+      if (typeof json?.mpPublicKey === "string" || json?.mpPublicKey === null) {
+        setMpPublicKey(json.mpPublicKey || "");
+      }
+      if (typeof json?.mpEnabled === "boolean") {
+        setMpEnabled(json.mpEnabled);
+      } else if (enableOnline) {
+        setMpEnabled(true);
+      }
+    }
+
     toast({
-      title: res.ok ? "Pagamento salvo" : "Erro ao salvar",
+      title: res.ok
+        ? json?.mpConfigured
+          ? "Pagamento online ativo na vitrine"
+          : "Pagamento salvo"
+        : json?.error || "Erro ao salvar",
       tone: res.ok ? "success" : "error",
     });
   }
@@ -531,29 +609,209 @@ export function PaymentForm({
   );
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <SectionCard title="Formas de pagamento">
-        <div className="p-5">
-          <p className="mb-3 text-xs text-[#8C8682]">
-            Selecione as opções exibidas no checkout da vitrine.
+    <form onSubmit={onSubmit} className="space-y-6">
+      <SectionCard title="Pagamento online (Mercado Pago)">
+        <div className="divide-y divide-[#E8E2DE]">
+          <div className="px-5 sm:px-6">
+            <ToggleRow
+              id="mp-enabled"
+              checked={mpEnabled}
+              onCheckedChange={setMpEnabled}
+              title="Aceitar pagamento online"
+              description="Cliente paga no checkout com Pix, cartão ou boleto via Mercado Pago. Pedidos só com itens sob orçamento continuam pelo WhatsApp."
+              icon={CreditCard}
+            />
+          </div>
+
+          <div className="space-y-5 p-5 sm:p-6">
+            <div
+              className={cn(
+                "rounded-md border px-3.5 py-2.5 text-xs font-medium leading-relaxed",
+                mpConfigured
+                  ? "border-emerald-200 bg-emerald-50 text-success"
+                  : "border-amber-200 bg-amber-50 text-warning",
+              )}
+            >
+              {mpConfigured
+                ? "Checkout online ativo na vitrine — o cliente vê Mercado Pago no carrinho."
+                : "Ainda sem pagamento online na vitrine. Ligue o switch, cole Public Key + Access Token e clique em Salvar."}
+            </div>
+
+            <div>
+              <label className="label" htmlFor="mp-public-key">
+                Public Key
+              </label>
+              <input
+                id="mp-public-key"
+                className="input font-mono text-sm"
+                value={mpPublicKey}
+                onChange={(e) => {
+                  setMpPublicKey(e.target.value);
+                  if (e.target.value.trim() && !mpEnabled) setMpEnabled(true);
+                }}
+                placeholder="APP_USR-…"
+                autoComplete="off"
+              />
+              <FieldHint>
+                Em{" "}
+                <a
+                  href="https://www.mercadopago.com.br/developers/panel/app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-[#2D2926] underline-offset-2 hover:underline"
+                >
+                  Suas integrações
+                </a>
+                , copie a chave pública de produção ou de teste.
+              </FieldHint>
+            </div>
+
+            <div>
+              <label className="label" htmlFor="mp-access-token">
+                Access Token
+              </label>
+              <input
+                id="mp-access-token"
+                type="password"
+                className="input font-mono text-sm"
+                value={mpAccessToken}
+                onChange={(e) => {
+                  setMpAccessToken(e.target.value);
+                  if (e.target.value.trim()) {
+                    setClearToken(false);
+                    if (!mpEnabled) setMpEnabled(true);
+                  }
+                }}
+                placeholder={
+                  mpTokenMasked && !clearToken
+                    ? `Token salvo (${mpTokenMasked}) — digite outro para trocar`
+                    : "APP_USR-…"
+                }
+                autoComplete="off"
+                disabled={clearToken}
+              />
+              <FieldHint>
+                Nunca compartilhe o Access Token. Em produção, configure o
+                webhook para{" "}
+                <code className="rounded bg-[#F0F2F5] px-1 py-0.5 text-[11px]">
+                  /api/payments/webhook
+                </code>
+                .
+              </FieldHint>
+              {mpTokenMasked ? (
+                <button
+                  type="button"
+                  className="mt-2.5 text-xs font-semibold text-[#C2410C] hover:underline"
+                  onClick={() => {
+                    setClearToken((v) => !v);
+                    setMpAccessToken("");
+                  }}
+                >
+                  {clearToken ? "Manter token atual" : "Remover token salvo"}
+                </button>
+              ) : null}
+              {clearToken ? (
+                <p className="mt-2 text-xs font-medium text-warning">
+                  O token será removido ao salvar.
+                </p>
+              ) : null}
+            </div>
+
+            <div>
+              <label className="label" htmlFor="mp-webhook-secret">
+                Segredo do webhook
+              </label>
+              <input
+                id="mp-webhook-secret"
+                type="password"
+                className="input font-mono text-sm"
+                value={mpWebhookSecret}
+                onChange={(e) => {
+                  setMpWebhookSecret(e.target.value);
+                  if (e.target.value.trim()) setClearWebhookSecret(false);
+                }}
+                placeholder={
+                  mpWebhookMasked && !clearWebhookSecret
+                    ? `Segredo salvo (${mpWebhookMasked}) — digite outro para trocar`
+                    : "Chave secreta do Webhooks"
+                }
+                autoComplete="off"
+                disabled={clearWebhookSecret}
+              />
+              <FieldHint>
+                Em Suas integrações → Webhooks → Configurar notificação, revele a
+                assinatura secreta. Usada para validar notificações de pagamento.
+              </FieldHint>
+              {mpWebhookMasked ? (
+                <button
+                  type="button"
+                  className="mt-2.5 text-xs font-semibold text-[#C2410C] hover:underline"
+                  onClick={() => {
+                    setClearWebhookSecret((v) => !v);
+                    setMpWebhookSecret("");
+                  }}
+                >
+                  {clearWebhookSecret
+                    ? "Manter segredo atual"
+                    : "Remover segredo salvo"}
+                </button>
+              ) : null}
+              {clearWebhookSecret ? (
+                <p className="mt-2 text-xs font-medium text-warning">
+                  O segredo será removido ao salvar.
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <FormFooter saving={saving} label="Salvar pagamento online" />
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Formas manuais (WhatsApp)">
+        <div className="space-y-5 p-5 sm:p-6">
+          <p className="text-xs leading-relaxed text-[#8C8682]">
+            Além do Mercado Pago (Pix, cartão e boleto online), o cliente pode
+            escolher combinar pelo WhatsApp:{" "}
+            <span className="font-semibold text-[#2D2926]">Pix</span> na
+            retirada/entrega, ou{" "}
+            <span className="font-semibold text-[#2D2926]">
+              Sinal para encomenda
+            </span>{" "}
+            (50% de entrada + 50% ao finalizar).
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {PAYMENT_PRESETS.map((method) => {
               const active = methods.includes(method);
+              const hint =
+                method === "Pix"
+                  ? "Combinar no WhatsApp"
+                  : "50% entrada + 50% final";
               return (
                 <button
                   key={method}
                   type="button"
                   onClick={() => toggleMethod(method)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold transition",
+                    "inline-flex flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left transition",
                     active
                       ? "border-[#2D2926] bg-[#2D2926] text-white"
                       : "border-[#CED0D4] bg-white text-[#65676B] hover:bg-[#F0F2F5]",
                   )}
                 >
-                  {active ? <Check className="h-3.5 w-3.5" aria-hidden /> : null}
-                  {method}
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                    {active ? (
+                      <Check className="h-3.5 w-3.5" aria-hidden />
+                    ) : null}
+                    {method}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[10px] font-medium",
+                      active ? "text-white/70" : "text-[#8C8682]",
+                    )}
+                  >
+                    {hint}
+                  </span>
                 </button>
               );
             })}
@@ -562,14 +820,14 @@ export function PaymentForm({
                 key={method}
                 type="button"
                 onClick={() => toggleMethod(method)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-[#2D2926] bg-[#2D2926] px-3 py-1.5 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1.5 rounded-md border border-[#2D2926] bg-[#2D2926] px-3 py-2 text-xs font-semibold text-white"
               >
                 <Check className="h-3.5 w-3.5" aria-hidden />
                 {method}
               </button>
             ))}
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             <input
               className="input max-w-xs flex-1 !py-2 text-sm"
               value={customMethod}
@@ -591,7 +849,7 @@ export function PaymentForm({
             </button>
           </div>
           {methods.length === 0 ? (
-            <p className="mt-3 text-xs font-medium text-warning">
+            <p className="text-xs font-medium text-warning">
               Selecione ao menos uma forma de pagamento.
             </p>
           ) : null}
@@ -599,7 +857,7 @@ export function PaymentForm({
       </SectionCard>
 
       <SectionCard title="Retirada e entrega">
-        <div className="divide-y divide-[#E8E2DE] px-5">
+        <div className="divide-y divide-[#E8E2DE] px-5 sm:px-6">
           <ToggleRow
             id="pickup"
             checked={pickupEnabled}
@@ -619,8 +877,21 @@ export function PaymentForm({
         </div>
       </SectionCard>
 
+      <SectionCard title="Estoque">
+        <div className="divide-y divide-[#E8E2DE] px-5 sm:px-6">
+          <ToggleRow
+            id="auto-deduct-stock"
+            checked={autoDeductStock}
+            onCheckedChange={setAutoDeductStock}
+            title="Baixa automática de estoque ao confirmar/pagar pedido"
+            description="Desconta do estoque os produtos controlados quando o pedido for confirmado ou o pagamento online for aprovado. Cancela o pedido e o estoque volta."
+            icon={Package}
+          />
+        </div>
+      </SectionCard>
+
       <SectionCard title="Prazo e produção">
-        <div className="grid gap-4 p-5 sm:grid-cols-2">
+        <div className="grid gap-5 p-5 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-5 sm:p-6">
           <div>
             <label className="label" htmlFor="min-advance">
               Prazo mínimo (dias)
@@ -762,6 +1033,8 @@ export function NotificationsForm({
     notifyNewOrders: boolean;
     notifyLowStock: boolean;
     notifyNewCustomers: boolean;
+    notifyViaEmail: boolean;
+    notifyViaWhatsApp: boolean;
   };
 }) {
   const { toast } = useToast();
@@ -771,14 +1044,27 @@ export function NotificationsForm({
   const [notifyNewCustomers, setNotifyNewCustomers] = useState(
     store.notifyNewCustomers,
   );
+  const [notifyViaEmail, setNotifyViaEmail] = useState(store.notifyViaEmail);
+  const [notifyViaWhatsApp, setNotifyViaWhatsApp] = useState(
+    store.notifyViaWhatsApp,
+  );
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!notifyViaEmail && !notifyViaWhatsApp) {
+      toast({
+        title: "Escolha ao menos um canal (e-mail ou WhatsApp)",
+        tone: "warning",
+      });
+      return;
+    }
     setSaving(true);
     const res = await patchStore({
       notifyNewOrders,
       notifyLowStock,
       notifyNewCustomers,
+      notifyViaEmail,
+      notifyViaWhatsApp,
     });
     setSaving(false);
     toast({
@@ -794,11 +1080,25 @@ export function NotificationsForm({
         action={
           <span className="inline-flex items-center gap-1.5 text-xs text-[#8C8682]">
             <Bell className="h-3.5 w-3.5" aria-hidden />
-            Alertas do painel
+            E-mail e WhatsApp
           </span>
         }
       >
         <div className="divide-y divide-[#E8E2DE] px-5 pt-2">
+          <ToggleRow
+            id="notify-via-email"
+            checked={notifyViaEmail}
+            onCheckedChange={setNotifyViaEmail}
+            title="Canal: e-mail"
+            description="Envia para o e-mail da conta do painel (SMTP)."
+          />
+          <ToggleRow
+            id="notify-via-whatsapp"
+            checked={notifyViaWhatsApp}
+            onCheckedChange={setNotifyViaWhatsApp}
+            title="Canal: WhatsApp"
+            description="Envia para o WhatsApp da loja (Meta, Evolution ou webhook)."
+          />
           <ToggleRow
             id="notify-orders"
             checked={notifyNewOrders}
@@ -818,7 +1118,7 @@ export function NotificationsForm({
             checked={notifyNewCustomers}
             onCheckedChange={setNotifyNewCustomers}
             title="Novos clientes"
-            description="Quando um cliente for cadastrado automaticamente."
+            description="Quando um cliente for cadastrado pela primeira vez."
           />
         </div>
         <FormFooter saving={saving} label="Salvar notificações" />

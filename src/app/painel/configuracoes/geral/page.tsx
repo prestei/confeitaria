@@ -42,6 +42,8 @@ export default async function GeralPage() {
             notifyNewOrders: store.notifyNewOrders,
             notifyLowStock: store.notifyLowStock,
             notifyNewCustomers: store.notifyNewCustomers,
+            notifyViaEmail: store.notifyViaEmail !== false,
+            notifyViaWhatsApp: store.notifyViaWhatsApp !== false,
           }}
         />
         <PlanCard plan={store.plan} />

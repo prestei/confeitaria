@@ -77,6 +77,83 @@ export const PAYMENT_STATUS_LABELS = {
 
 export const ONLINE_PAYMENT_METHOD = "Mercado Pago";
 
+/** Formas manuais sugeridas no painel (além do Mercado Pago online). */
+export const OFFLINE_PAYMENT_PRESETS = [
+  "Pix",
+  "Sinal para encomenda",
+] as const;
+
+export const DEPOSIT_PAYMENT_METHOD = "Sinal para encomenda";
+
+export function isDepositPaymentMethod(method: string | null | undefined) {
+  return (method || "").toLowerCase().includes("sinal");
+}
+
+/** Texto curto sob cada opção no checkout. */
+export function paymentMethodHint(
+  method: string,
+  opts?: { mpReady?: boolean },
+): string {
+  if (method === ONLINE_PAYMENT_METHOD) {
+    return opts?.mpReady === false
+      ? "Carregando checkout online…"
+      : "Pague agora com Pix, cartão ou boleto";
+  }
+  if (isDepositPaymentMethod(method)) {
+    return "50% de entrada + 50% na retirada ou entrega";
+  }
+  if (method.toLowerCase() === "pix") {
+    return "Combinar pelo WhatsApp na retirada ou entrega";
+  }
+  return "Combinar pelo WhatsApp com a loja";
+}
+
+/** Texto de confirmação / resumo do método escolhido. */
+export function paymentMethodSummary(
+  method: string,
+  totalCents?: number,
+): string {
+  if (method === ONLINE_PAYMENT_METHOD) {
+    return "Você será direcionado ao checkout seguro";
+  }
+  if (isDepositPaymentMethod(method) && totalCents != null && totalCents > 0) {
+    const half = Math.round(totalCents / 2);
+    return `Entrada de ${formatBRL(half)} (50%) + ${formatBRL(totalCents - half)} ao finalizar`;
+  }
+  if (isDepositPaymentMethod(method)) {
+    return "50% de entrada agora e 50% ao finalizar o produto";
+  }
+  if (method.toLowerCase() === "pix") {
+    return "A loja combina o Pix com você pelo WhatsApp";
+  }
+  return "Será combinado com a loja no WhatsApp";
+}
+
+/** Checkout online abandonado: pedido criado, mas o cliente ainda não iniciou o pagamento no MP. */
+export function isAbandonedOnlineCheckout(order: {
+  paymentMethod?: string | null;
+  paymentStatus?: string | null;
+  mpPaymentId?: string | null;
+}) {
+  return (
+    order.paymentMethod === ONLINE_PAYMENT_METHOD &&
+    order.paymentStatus === "PENDING" &&
+    !order.mpPaymentId
+  );
+}
+
+/** Pedido online que ainda não teve pagamento aprovado (Pix/cartão pendente ou abandonado). */
+export function isOnlinePaymentOutstanding(order: {
+  paymentMethod?: string | null;
+  paymentStatus?: string | null;
+}) {
+  return (
+    order.paymentMethod === ONLINE_PAYMENT_METHOD &&
+    order.paymentStatus !== "APPROVED" &&
+    order.paymentStatus !== "NONE"
+  );
+}
+
 export function isQuoteFlow(type: keyof typeof PRODUCT_TYPE_LABELS) {
   return type === "CUSTOM" || type === "CAKE" || type === "CORPORATE";
 }

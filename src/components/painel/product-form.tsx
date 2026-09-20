@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { PageAction, PageHeader, PageShell } from "@/components/painel/page-header";
+import { GalleryField, ImageField } from "@/components/painel/image-field";
 import { cn } from "@/lib/cn";
 
 type Category = { id: string; name: string };
@@ -274,12 +275,10 @@ export function ProductForm({
               />
             </div>
             <div>
-              <label className="label">Foto principal (URL)</label>
-              <input
-                className="input"
+              <ImageField
+                label="Foto principal"
                 value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://…"
+                onChange={setImageUrl}
               />
             </div>
             <div>
@@ -298,12 +297,10 @@ export function ProductForm({
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="label">Galeria (uma URL por linha)</label>
-              <textarea
-                className="input min-h-20"
+              <GalleryField
+                label="Galeria"
                 value={gallery}
-                onChange={(e) => setGallery(e.target.value)}
-                placeholder="https://foto-1.jpg"
+                onChange={setGallery}
               />
             </div>
             <div className="sm:col-span-2">

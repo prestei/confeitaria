@@ -2,51 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Clock3,
-  CreditCard,
-  Settings2,
-  Store,
-  type LucideIcon,
-} from "lucide-react";
+import { SETTINGS_SECTIONS } from "@/components/painel/settings-sections";
 import { cn } from "@/lib/cn";
 
-export const SETTINGS_SECTIONS: {
-  href: string;
-  title: string;
-  short: string;
-  description: string;
-  icon: LucideIcon;
-}[] = [
-  {
-    href: "/painel/configuracoes/estabelecimento",
-    title: "Estabelecimento",
-    short: "Loja",
-    description: "Nome, WhatsApp, endereço, logo e dados da loja.",
-    icon: Store,
-  },
-  {
-    href: "/painel/configuracoes/horarios",
-    title: "Horários",
-    short: "Horários",
-    description: "Dias e horários de funcionamento exibidos na vitrine.",
-    icon: Clock3,
-  },
-  {
-    href: "/painel/configuracoes/pagamento",
-    title: "Pagamento",
-    short: "Pagamento",
-    description: "Formas de pagamento, retirada, entrega e prazo mínimo.",
-    icon: CreditCard,
-  },
-  {
-    href: "/painel/configuracoes/geral",
-    title: "Configurações gerais",
-    short: "Geral",
-    description: "Conta, notificações e plano da assinatura.",
-    icon: Settings2,
-  },
-];
+export { SETTINGS_SECTIONS } from "@/components/painel/settings-sections";
 
 export function SettingsSubnav() {
   const pathname = usePathname();

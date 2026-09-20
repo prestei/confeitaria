@@ -1,4 +1,4 @@
-import { formatBRL } from "./utils";
+import { formatBRL, isDepositPaymentMethod } from "./utils";
 
 type StoreLike = {
   name: string;
@@ -56,7 +56,16 @@ export function buildWhatsAppMessage(store: StoreLike, order: OrderLike) {
     `Retirada/Entrega: ${order.fulfillment === "DELIVERY" ? "Entrega" : "Retirada"}`,
   );
   if (order.deliveryZone) lines.push(`Região: ${order.deliveryZone}`);
-  if (order.paymentMethod) lines.push(`Pagamento: ${order.paymentMethod}`);
+  if (order.paymentMethod) {
+    if (isDepositPaymentMethod(order.paymentMethod) && order.totalCents > 0) {
+      const half = Math.round(order.totalCents / 2);
+      lines.push(
+        `Pagamento: Sinal — entrada ${formatBRL(half)} (50%) + ${formatBRL(order.totalCents - half)} ao finalizar`,
+      );
+    } else {
+      lines.push(`Pagamento: ${order.paymentMethod}`);
+    }
+  }
   lines.push("");
   lines.push("Itens:");
 

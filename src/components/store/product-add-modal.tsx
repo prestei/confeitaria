@@ -41,6 +41,10 @@ type ProductDetail = {
   priceCents: number | null;
   kitContents: string | null;
   minAdvanceDays: number | null;
+  trackStock?: boolean;
+  stockQty?: number;
+  unit?: string;
+  availability?: string;
   optionGroups: OptionGroup[];
   addons: Addon[];
 };

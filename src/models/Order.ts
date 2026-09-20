@@ -67,6 +67,7 @@ const orderSchema = baseSchema(
     },
     mpPaymentId: { type: String, default: null, index: true },
     paidAt: { type: Date, default: null },
+    stockDeducted: { type: Boolean, default: false },
     whatsappMessage: { type: String, default: null },
     items: { type: [orderItemSchema], default: [] },
   },
@@ -114,6 +115,7 @@ export type OrderDoc = {
   paymentStatus: PaymentStatusT;
   mpPaymentId: string | null;
   paidAt: Date | null;
+  stockDeducted: boolean;
   whatsappMessage: string | null;
   items: OrderItemDoc[];
   createdAt: Date;

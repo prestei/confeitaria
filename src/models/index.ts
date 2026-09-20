@@ -9,3 +9,4 @@ export { StockMovement } from "./StockMovement";
 export { Promotion } from "./Promotion";
 export { AnalyticsEvent } from "./AnalyticsEvent";
 export { Integration } from "./Integration";
+export { PasswordResetToken } from "./PasswordResetToken";

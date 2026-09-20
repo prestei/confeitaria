@@ -6,10 +6,12 @@ import { Store } from "@/models/Store";
 import { BlockedDate } from "@/models/BlockedDate";
 import { Customer } from "@/models/Customer";
 import { Order } from "@/models/Order";
+import { Product } from "@/models/Product";
 import { AnalyticsEvent } from "@/models/AnalyticsEvent";
 import { buildWhatsAppMessage } from "@/lib/whatsapp";
 import { storeHasMercadoPago } from "@/lib/mercadopago";
 import { ONLINE_PAYMENT_METHOD, whatsappLink } from "@/lib/utils";
+import { notifyNewCustomer, notifyNewOrder } from "@/lib/notify";
 
 const itemSchema = z.object({
   productId: z.string().optional(),
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
     else if (hasFrom) priceLabel = "ESTIMATE";
 
     const wantsOnlinePayment =
-      data.paymentMethod === ONLINE_PAYMENT_METHOD && priceLabel === "TOTAL";
+      data.paymentMethod === ONLINE_PAYMENT_METHOD && !hasQuote;
 
     if (wantsOnlinePayment && !storeHasMercadoPago(store)) {
       return NextResponse.json(
@@ -101,6 +103,35 @@ export async function POST(req: Request) {
         { error: "Escolha uma forma de pagamento" },
         { status: 400 },
       );
+    }
+
+    const requestedByProduct = new Map<string, number>();
+    for (const item of data.items) {
+      if (!item.productId) continue;
+      requestedByProduct.set(
+        item.productId,
+        (requestedByProduct.get(item.productId) ?? 0) + item.quantity,
+      );
+    }
+    if (requestedByProduct.size > 0) {
+      const stockProducts = await Product.find({
+        _id: { $in: [...requestedByProduct.keys()] },
+        storeId,
+        trackStock: true,
+      })
+        .select({ name: 1, stockQty: 1, unit: 1 })
+        .lean();
+      for (const product of stockProducts) {
+        const requested = requestedByProduct.get(String(product._id)) ?? 0;
+        if (requested > product.stockQty) {
+          return NextResponse.json(
+            {
+              error: `Estoque insuficiente para "${product.name}". Disponível: ${product.stockQty} ${product.unit || "un"}.`,
+            },
+            { status: 400 },
+          );
+        }
+      }
     }
 
     if (data.eventDate) {
@@ -139,11 +170,13 @@ export async function POST(req: Request) {
       storeId,
       phone: data.customerPhone,
     });
+    let isNewCustomer = false;
     if (customer) {
       customer.name = data.customerName;
       if (data.customerEmail) customer.email = data.customerEmail;
       await customer.save();
     } else {
+      isNewCustomer = true;
       customer = await Customer.create({
         storeId,
         name: data.customerName,
@@ -171,6 +204,7 @@ export async function POST(req: Request) {
       referenceNote: data.referenceNote || null,
       paymentMethod: data.paymentMethod || null,
       paymentStatus: wantsOnlinePayment ? "PENDING" : "NONE",
+      stockDeducted: false,
       subtotalCents,
       totalCents,
       priceLabel,
@@ -203,6 +237,22 @@ export async function POST(req: Request) {
       { _id: order._id },
       { $set: { whatsappMessage: message } },
     );
+
+    void notifyNewOrder({
+      storeId,
+      orderId: orderPlain.id,
+      customerName: data.customerName,
+      totalCents,
+      priceLabel,
+    }).catch((err) => console.error("[notify:order]", err));
+
+    if (isNewCustomer) {
+      void notifyNewCustomer({
+        storeId,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+      }).catch((err) => console.error("[notify:customer]", err));
+    }
 
     return NextResponse.json({
       orderId: orderPlain.id,

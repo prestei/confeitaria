@@ -37,16 +37,20 @@ const storeSchema = baseSchema(
     productionNote: { type: String, default: null },
     paymentMethods: {
       type: [String],
-      default: ["Pix", "Dinheiro", "Cartão na retirada"],
+      default: ["Pix", "Sinal para encomenda"],
     },
     mpPublicKey: { type: String, default: null },
     mpAccessToken: { type: String, default: null },
+    mpWebhookSecret: { type: String, default: null },
     mpEnabled: { type: Boolean, default: false },
     isPublished: { type: Boolean, default: true },
     plan: { type: String, default: "starter" },
     notifyNewOrders: { type: Boolean, default: true },
     notifyLowStock: { type: Boolean, default: true },
     notifyNewCustomers: { type: Boolean, default: true },
+    notifyViaEmail: { type: Boolean, default: true },
+    notifyViaWhatsApp: { type: Boolean, default: true },
+    autoDeductStock: { type: Boolean, default: true },
     deliveryZones: { type: [deliveryZoneSchema], default: [] },
   },
   { timestamps: true },
@@ -87,12 +91,16 @@ export type StoreDoc = {
   paymentMethods: string[];
   mpPublicKey: string | null;
   mpAccessToken: string | null;
+  mpWebhookSecret: string | null;
   mpEnabled: boolean;
   isPublished: boolean;
   plan: string;
   notifyNewOrders: boolean;
   notifyLowStock: boolean;
   notifyNewCustomers: boolean;
+  notifyViaEmail: boolean;
+  notifyViaWhatsApp: boolean;
+  autoDeductStock: boolean;
   deliveryZones: DeliveryZoneDoc[];
   createdAt: Date;
   updatedAt: Date;

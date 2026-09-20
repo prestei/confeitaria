@@ -9,7 +9,7 @@ export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-cocoa text-white hover:bg-cocoa-soft shadow-sm hover:shadow-md hover:shadow-cocoa/15",
+    "bg-rosewood text-white hover:bg-rosewood-deep shadow-sm hover:shadow-md hover:shadow-rosewood/25",
   secondary:
     "border border-cocoa/15 bg-white/80 text-cocoa hover:border-berry/50 hover:text-berry-deep",
   berry:

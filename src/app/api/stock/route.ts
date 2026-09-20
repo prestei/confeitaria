@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { withIds } from "@/lib/serialize";
 import { Product } from "@/models/Product";
 import { StockMovement } from "@/models/StockMovement";
+import { maybeNotifyLowStockTransition } from "@/lib/notify";
 import { z } from "zod";
 
 export async function GET() {
@@ -98,6 +99,15 @@ export async function POST(req: Request) {
       },
     ),
   ]);
+
+  void maybeNotifyLowStockTransition({
+    storeId: session.user.storeId,
+    productName: product.name,
+    previousQty: product.stockQty,
+    nextQty,
+    stockMin: product.stockMin,
+    trackStock: true,
+  }).catch((err) => console.error("[notify:stock]", err));
 
   return NextResponse.json(withIds(movement.toObject()));
 }

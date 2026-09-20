@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { withIds } from "@/lib/serialize";
 import { Customer } from "@/models/Customer";
 import { digitsOnly } from "@/lib/utils";
+import { notifyNewCustomer } from "@/lib/notify";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -61,6 +62,12 @@ export async function POST(req: Request) {
       email: data.email?.trim() || null,
       notes: data.notes?.trim() || null,
     });
+
+    void notifyNewCustomer({
+      storeId: session.user.storeId,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+    }).catch((err) => console.error("[notify:customer]", err));
 
     return NextResponse.json(withIds(customer.toObject()), { status: 201 });
   } catch (err) {

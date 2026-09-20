@@ -102,12 +102,7 @@ async function main() {
     minAdvanceDays: 3,
     productionNote:
       "Encomendas de bolos personalizados com mínimo de 3 dias úteis. Retirada na Rua Conselheiro Franco ou delivery nos bairros listados.",
-    paymentMethods: [
-      "Pix",
-      "Dinheiro",
-      "Cartão na retirada",
-      "Sinal para encomenda",
-    ],
+    paymentMethods: ["Pix", "Sinal para encomenda"],
     plan: "starter",
     deliveryZones: [
       { name: "Centro", feeCents: 800 },

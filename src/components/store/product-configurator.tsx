@@ -44,6 +44,10 @@ type ProductDetail = {
   kitContents: string | null;
   minAdvanceDays: number | null;
   featured?: boolean;
+  trackStock?: boolean;
+  stockQty?: number;
+  unit?: string;
+  availability?: string;
   optionGroups: OptionGroup[];
   addons: Addon[];
 };
@@ -66,6 +70,13 @@ export function ProductConfigurator({
   const { addItem } = useCart();
   const router = useRouter();
   const quote = isQuoteFlow(product.productType) || product.priceMode === "QUOTE";
+  const maxQty =
+    product.trackStock && typeof product.stockQty === "number"
+      ? Math.max(0, product.stockQty)
+      : null;
+  const soldOut =
+    product.availability === "SOLD_OUT" ||
+    (maxQty != null && maxQty <= 0);
 
   const [selected, setSelected] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -131,11 +142,14 @@ export function ProductConfigurator({
   }
 
   function handleAdd() {
+    if (soldOut) return;
+    const safeQty =
+      maxQty != null ? Math.min(Math.max(1, qty), maxQty) : Math.max(1, qty);
     addItem({
       productId: product.id,
       productName: product.name,
       productType: product.productType,
-      quantity: qty,
+      quantity: safeQty,
       unitPriceCents: unitPrice,
       priceMode: product.priceMode as "FIXED" | "FROM" | "QUOTE",
       customizations: buildCustomizations(),
@@ -237,6 +251,19 @@ export function ProductConfigurator({
           </p>
         )}
       </div>
+      {product.trackStock && (
+        <p
+          className={`mt-2 text-sm font-medium ${
+            soldOut ? "text-rosewood" : "text-cocoa-soft"
+          }`}
+        >
+          {soldOut
+            ? "Esgotado no momento"
+            : maxQty === 1
+              ? `1 ${product.unit || "un"} disponível`
+              : `${maxQty} ${product.unit || "un"} disponíveis`}
+        </p>
+      )}
     </div>
   );
 
@@ -474,7 +501,7 @@ export function ProductConfigurator({
             <button
               type="button"
               aria-label="Diminuir quantidade"
-              disabled={qty <= 1}
+              disabled={qty <= 1 || soldOut}
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-cocoa transition hover:bg-surface disabled:opacity-40"
             >
@@ -486,12 +513,22 @@ export function ProductConfigurator({
             <button
               type="button"
               aria-label="Aumentar quantidade"
-              onClick={() => setQty((q) => q + 1)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-cocoa transition hover:bg-surface"
+              disabled={soldOut || (maxQty != null && qty >= maxQty)}
+              onClick={() =>
+                setQty((q) =>
+                  maxQty != null ? Math.min(maxQty, q + 1) : q + 1,
+                )
+              }
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-cocoa transition hover:bg-surface disabled:opacity-40"
             >
               <Plus className="h-4 w-4" />
             </button>
           </div>
+          {maxQty != null && !soldOut && (
+            <p className="mt-1.5 text-xs text-cocoa-soft">
+              Máximo: {maxQty} {product.unit || "un"}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -501,14 +538,15 @@ export function ProductConfigurator({
     <button
       type="button"
       onClick={handleAdd}
+      disabled={soldOut}
       className={
         compact
-          ? "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rosewood px-5 py-3.5 text-[0.95rem] font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep"
-          : "inline-flex mt-8 w-full items-center justify-center gap-2 rounded-lg bg-rosewood px-5 py-3.5 text-base font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep"
+          ? "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rosewood px-5 py-3.5 text-[0.95rem] font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep disabled:cursor-not-allowed disabled:opacity-50"
+          : "inline-flex mt-8 w-full items-center justify-center gap-2 rounded-lg bg-rosewood px-5 py-3.5 text-base font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep disabled:cursor-not-allowed disabled:opacity-50"
       }
     >
-      {ctaLabel}
-      {!quote && product.priceMode !== "QUOTE" && lineTotal > 0 && (
+      {soldOut ? "Esgotado" : ctaLabel}
+      {!soldOut && !quote && product.priceMode !== "QUOTE" && lineTotal > 0 && (
         <span className="ml-1.5 opacity-90">· {formatBRL(lineTotal)}</span>
       )}
     </button>

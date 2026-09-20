@@ -20,7 +20,13 @@ import {
   Wallet,
 } from "lucide-react";
 import { useCart } from "@/components/cart/cart-context";
-import { formatBRL, ONLINE_PAYMENT_METHOD } from "@/lib/utils";
+import {
+  formatBRL,
+  ONLINE_PAYMENT_METHOD,
+  isDepositPaymentMethod,
+  paymentMethodHint,
+  paymentMethodSummary,
+} from "@/lib/utils";
 import { cn } from "@/lib/cn";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
@@ -94,15 +100,16 @@ export function CheckoutForm({
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mpOnlineEnabled, setMpOnlineEnabled] = useState(store.mpOnlineEnabled);
   const [mpPublicKey, setMpPublicKey] = useState<string | null>(null);
   const [payOrder, setPayOrder] = useState<{
     orderId: string;
     totalCents: number;
   } | null>(null);
 
-  const hasOpenPrice =
-    hasQuoteItems || items.some((i) => i.priceMode === "FROM");
-  const onlineEligible = store.mpOnlineEnabled && !hasOpenPrice;
+  // Orçamento (QUOTE) não tem valor cobrável; FIXED e "a partir de" (FROM)
+  // usam o valor listado no carrinho e podem pagar online.
+  const onlineEligible = mpOnlineEnabled && !hasQuoteItems;
 
   const paymentOptions = useMemo(() => {
     const offline = store.paymentMethods;
@@ -120,28 +127,37 @@ export function CheckoutForm({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState(
-    store.paymentMethods[0] || "",
+  const [paymentMethod, setPaymentMethod] = useState(() =>
+    store.mpOnlineEnabled
+      ? ONLINE_PAYMENT_METHOD
+      : store.paymentMethods[0] || "",
   );
   const [notes, setNotes] = useState("");
   const [referenceNote, setReferenceNote] = useState("");
 
   useEffect(() => {
-    if (!store.mpOnlineEnabled) return;
     let cancelled = false;
     fetch(`/api/payments/config?slug=${encodeURIComponent(store.slug)}`)
       .then((r) => r.json())
       .then((json) => {
         if (cancelled) return;
-        if (json.enabled && json.publicKey) {
-          setMpPublicKey(json.publicKey);
+        const enabled = Boolean(json.enabled && json.publicKey);
+        setMpOnlineEnabled(enabled);
+        setMpPublicKey(enabled ? json.publicKey : null);
+        if (enabled) {
+          setPaymentMethod(ONLINE_PAYMENT_METHOD);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) {
+          setMpOnlineEnabled(false);
+          setMpPublicKey(null);
+        }
+      });
     return () => {
       cancelled = true;
     };
-  }, [store.mpOnlineEnabled, store.slug]);
+  }, [store.slug]);
 
   useEffect(() => {
     if (!paymentOptions.length) return;
@@ -356,8 +372,8 @@ export function CheckoutForm({
                     disabled={s.id > step}
                     className={cn(
                       "group -mb-px flex w-full flex-col items-center gap-2 border-b-2 px-1 pb-3 pt-4 text-center transition sm:px-2 sm:pb-3.5 sm:pt-5",
-                      active && "border-cocoa",
-                      done && !active && "border-cocoa/35",
+                      active && "border-rosewood",
+                      done && !active && "border-rosewood/35",
                       !active && !done && "border-transparent",
                       s.id < step && "cursor-pointer",
                     )}
@@ -365,10 +381,10 @@ export function CheckoutForm({
                     <span
                       className={cn(
                         "flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition sm:h-10 sm:w-10",
-                        active && "bg-cocoa text-white",
+                        active && "bg-rosewood text-white",
                         done &&
                           !active &&
-                          "bg-sand text-cocoa ring-1 ring-cocoa/15",
+                          "bg-sand text-rosewood ring-1 ring-rosewood/20",
                         !active &&
                           !done &&
                           "bg-sand/60 text-cocoa-soft/45 ring-1 ring-cocoa/8",
@@ -383,7 +399,7 @@ export function CheckoutForm({
                     <span
                       className={cn(
                         "text-[11px] font-semibold leading-tight sm:text-xs",
-                        active && "text-cocoa",
+                        active && "text-rosewood",
                         done && !active && "text-cocoa-soft",
                         !active && !done && "text-cocoa-soft/45",
                       )}
@@ -412,7 +428,7 @@ export function CheckoutForm({
             >
               <div className="flex items-center justify-between gap-4 border-b border-cocoa/8 bg-sand/40 px-5 py-4 sm:px-6">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-cocoa text-ivory">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rosewood text-ivory">
                     {step === 1 && <ShoppingBag className="h-5 w-5" />}
                     {step === 2 && <UserRound className="h-5 w-5" />}
                     {step === 3 && <Truck className="h-5 w-5" />}
@@ -660,15 +676,15 @@ export function CheckoutForm({
                             className={cn(
                               "flex items-start gap-3 rounded-2xl border p-4 text-left transition",
                               fulfillment === "PICKUP"
-                                ? "border-cocoa/25 bg-sand shadow-[0_8px_24px_rgba(51,37,34,0.06)]"
-                                : "border-cocoa/10 bg-sand/40 hover:border-cocoa/20",
+                                ? "border-rosewood/30 bg-sand shadow-[0_8px_24px_rgba(185,111,125,0.1)]"
+                                : "border-cocoa/10 bg-sand/40 hover:border-rosewood/25",
                             )}
                           >
                             <span
                               className={cn(
                                 "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
                                 fulfillment === "PICKUP"
-                                  ? "bg-cocoa text-white"
+                                  ? "bg-rosewood text-white"
                                   : "bg-surface text-cocoa-soft ring-1 ring-cocoa/8",
                               )}
                             >
@@ -691,15 +707,15 @@ export function CheckoutForm({
                             className={cn(
                               "flex items-start gap-3 rounded-2xl border p-4 text-left transition",
                               fulfillment === "DELIVERY"
-                                ? "border-cocoa/25 bg-sand shadow-[0_8px_24px_rgba(51,37,34,0.06)]"
-                                : "border-cocoa/10 bg-sand/40 hover:border-cocoa/20",
+                                ? "border-rosewood/30 bg-sand shadow-[0_8px_24px_rgba(185,111,125,0.1)]"
+                                : "border-cocoa/10 bg-sand/40 hover:border-rosewood/25",
                             )}
                           >
                             <span
                               className={cn(
                                 "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
                                 fulfillment === "DELIVERY"
-                                  ? "bg-cocoa text-white"
+                                  ? "bg-rosewood text-white"
                                   : "bg-surface text-cocoa-soft ring-1 ring-cocoa/8",
                               )}
                             >
@@ -794,15 +810,15 @@ export function CheckoutForm({
                               className={cn(
                                 "flex items-start gap-3 rounded-2xl border p-4 text-left transition",
                                 selected
-                                  ? "border-cocoa/25 bg-sand shadow-[0_8px_24px_rgba(51,37,34,0.06)]"
-                                  : "border-cocoa/10 bg-sand/40 hover:border-cocoa/20",
+                                  ? "border-rosewood/30 bg-sand shadow-[0_8px_24px_rgba(185,111,125,0.1)]"
+                                  : "border-cocoa/10 bg-sand/40 hover:border-rosewood/25",
                               )}
                             >
                               <span
                                 className={cn(
                                   "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
                                   selected
-                                    ? "bg-cocoa text-white"
+                                    ? "bg-rosewood text-white"
                                     : "bg-surface text-cocoa-soft ring-1 ring-cocoa/8",
                                 )}
                               >
@@ -817,11 +833,9 @@ export function CheckoutForm({
                                   {online ? "Mercado Pago" : m}
                                 </span>
                                 <span className="mt-0.5 block text-xs text-cocoa-soft">
-                                  {online
-                                    ? mpPublicKey
-                                      ? "Pague agora com Pix, cartão ou boleto"
-                                      : "Carregando checkout online…"
-                                    : "Combinar na retirada ou entrega"}
+                                  {paymentMethodHint(m, {
+                                    mpReady: Boolean(mpPublicKey),
+                                  })}
                                 </span>
                               </span>
                             </button>
@@ -830,16 +844,16 @@ export function CheckoutForm({
                       </div>
                     )}
 
-                    {store.mpOnlineEnabled && hasOpenPrice && (
+                    {mpOnlineEnabled && hasQuoteItems && (
                       <p className="rounded-xl border border-cocoa/10 bg-sand/50 px-4 py-3 text-sm text-cocoa-soft">
-                        Pagamento online fica disponível só para pedidos com
-                        valor fechado. Itens sob orçamento ou “a partir de”
-                        seguem pelo WhatsApp.
+                        Pagamento online fica disponível quando o pedido tem
+                        valor definido. Itens sob orçamento seguem pelo
+                        WhatsApp.
                       </p>
                     )}
 
                     {isOnlinePayment && (
-                      <div className="rounded-2xl border border-cocoa/8 bg-cocoa px-4 py-3.5 text-ivory">
+                      <div className="rounded-2xl border border-rosewood/15 bg-rosewood px-4 py-3.5 text-ivory">
                         <p className="text-sm leading-relaxed text-ivory/85">
                           Na próxima etapa você revisa o pedido e segue para o
                           checkout seguro do Mercado Pago.
@@ -850,12 +864,38 @@ export function CheckoutForm({
                     {!isOnlinePayment && paymentMethod && (
                       <div className="rounded-2xl border border-cocoa/8 bg-sand/40 px-4 py-3.5">
                         <p className="text-sm leading-relaxed text-cocoa-soft">
-                          Você escolheu{" "}
-                          <span className="font-semibold text-cocoa">
-                            {paymentMethod}
-                          </span>
-                          . O pedido será enviado pelo WhatsApp para a loja
-                          confirmar.
+                          {isDepositPaymentMethod(paymentMethod) ? (
+                            <>
+                              Você escolheu{" "}
+                              <span className="font-semibold text-cocoa">
+                                sinal (50%)
+                              </span>
+                              . O pedido vai no WhatsApp para a loja combinar a
+                              entrada
+                              {total > 0 ? (
+                                <>
+                                  {" "}
+                                  de{" "}
+                                  <span className="font-semibold text-cocoa">
+                                    {formatBRL(Math.round(total / 2))}
+                                  </span>{" "}
+                                  e o restante ao finalizar
+                                </>
+                              ) : (
+                                " e o restante ao finalizar"
+                              )}
+                              .
+                            </>
+                          ) : (
+                            <>
+                              Você escolheu{" "}
+                              <span className="font-semibold text-cocoa">
+                                {paymentMethod}
+                              </span>
+                              . O pedido será enviado pelo WhatsApp para a loja
+                              confirmar e combinar o pagamento.
+                            </>
+                          )}
                         </p>
                       </div>
                     )}
@@ -965,9 +1005,10 @@ export function CheckoutForm({
                             : paymentMethod || "Não informado"}
                         </p>
                         <p className="mt-1 text-xs text-cocoa-soft">
-                          {isOnlinePayment
-                            ? "Você será direcionado ao checkout seguro"
-                            : "Será combinado com a loja no WhatsApp"}
+                          {paymentMethodSummary(
+                            paymentMethod || "",
+                            hasQuoteItems ? undefined : total,
+                          )}
                         </p>
                       </div>
                     </div>
@@ -983,7 +1024,7 @@ export function CheckoutForm({
                       </div>
                     )}
 
-                    <div className="flex items-start gap-3 rounded-2xl bg-cocoa px-4 py-3.5 text-ivory">
+                    <div className="flex items-start gap-3 rounded-2xl bg-rosewood px-4 py-3.5 text-ivory">
                       {isOnlinePayment ? (
                         <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-ivory/70" />
                       ) : (
