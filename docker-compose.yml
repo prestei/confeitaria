@@ -1,16 +1,9 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: confeitaria-db
+  mongo:
+    image: mongo:7
+    container_name: confeitaria-mongo
     restart: unless-stopped
     ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: confeitaria
-      POSTGRES_PASSWORD: confeitaria
-      POSTGRES_DB: confeitaria
+      - "27017:27017"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - ./.data/mongo:/data/db

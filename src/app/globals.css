@@ -1,33 +1,77 @@
 @import "tailwindcss";
 
 :root {
-  --cocoa: #1f120e;
-  --cocoa-soft: #4a2f26;
-  --berry: #d4527a;
-  --berry-deep: #a83258;
-  --blush: #ffe0ea;
-  --cream: #fff6f1;
-  --butter: #ffd9b8;
-  --caramel: #e8a06a;
-  --fog: #f5ebe4;
-  --stone: #e6d5cb;
-  --rose: #f2a0b8;
-  --success: #2f6b4f;
-  --warning: #b86a1c;
-  --background: var(--cream);
+  /* Soft baby blue (catalog) */
+  --baby: #f3f7fb;
+  --baby-soft: #e8f0f7;
+  --baby-mid: #d4e4f0;
+  --sky: #8eb4c8;
+  --sky-deep: #6a9bb8;
+
+  /* Surfaces */
+  --ivory: #f8f5f0;
+  --sand: #efe7de;
+  --surface: #fffdfc;
+  --cream: var(--ivory);
+
+  /* Brand */
+  --rosewood: #b96f7d;
+  --rosewood-deep: #9a5966;
+  --terracotta: #c98f86;
+  --sage: #a8b2a0;
+
+  /* Text */
+  --cocoa: #332522;
+  --cocoa-soft: #756761;
+  --ink-muted: #8a7f79;
+
+  /* Semantic aliases (legacy class names) */
+  --berry: var(--rosewood);
+  --berry-deep: var(--rosewood-deep);
+  --blush: #f3e8e6;
+  --butter: #e8dccf;
+  --caramel: var(--terracotta);
+  --fog: var(--sand);
+  --stone: #e4d9ce;
+  --rose: #d4a8b0;
+  --success: #5a6f5c;
+  --warning: #a67c52;
+  --danger: #9b4d4d;
+
+  --background: var(--ivory);
   --foreground: var(--cocoa);
-  --radius-sm: 0.75rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;
-  --radius-xl: 2rem;
-  --shadow-soft: 0 1px 0 rgba(36, 20, 15, 0.04), 0 12px 32px rgba(196, 82, 122, 0.08);
+
+  /* Radius — restrained */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+
+  --shadow-soft: 0 1px 0 rgba(51, 37, 34, 0.04), 0 8px 24px rgba(51, 37, 34, 0.05);
+  --shadow-lift: 0 12px 40px rgba(51, 37, 34, 0.08);
+
+  --hairline: color-mix(in oklab, var(--cocoa) 10%, transparent);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ivory: var(--ivory);
+  --color-sand: var(--sand);
+  --color-surface: var(--surface);
+  --color-baby: var(--baby);
+  --color-baby-soft: var(--baby-soft);
+  --color-baby-mid: var(--baby-mid);
+  --color-sky: var(--sky);
+  --color-sky-deep: var(--sky-deep);
+  --color-rosewood: var(--rosewood);
+  --color-rosewood-deep: var(--rosewood-deep);
+  --color-terracotta: var(--terracotta);
+  --color-sage: var(--sage);
   --color-cocoa: var(--cocoa);
   --color-cocoa-soft: var(--cocoa-soft);
+  --color-ink-muted: var(--ink-muted);
   --color-berry: var(--berry);
   --color-berry-deep: var(--berry-deep);
   --color-blush: var(--blush);
@@ -39,8 +83,9 @@
   --color-rose: var(--rose);
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --font-display: var(--font-fraunces);
-  --font-sans: var(--font-sora);
+  --color-danger: var(--danger);
+  --font-display: var(--font-cormorant);
+  --font-sans: var(--font-manrope);
 }
 
 * {
@@ -68,144 +113,62 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sora), system-ui, sans-serif;
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  font-feature-settings: "ss01" on, "cv11" on;
 }
 
 h1,
 h2,
 h3,
 .font-display {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
   font-optical-sizing: auto;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.painel-shell {
+  font-family: var(--font-sora), system-ui, sans-serif;
+}
+
+.painel-shell h1,
+.painel-shell h2,
+.painel-shell h3 {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--berry) 40%, white);
+  background: color-mix(in oklab, var(--rosewood) 28%, white);
 }
 
 :focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--berry) 70%, transparent);
+  outline: 2px solid color-mix(in oklab, var(--rosewood) 55%, transparent);
   outline-offset: 2px;
 }
 
+/* Calm paper background — no candy gradients */
 .bg-atelier {
-  background:
-    radial-gradient(ellipse 90% 70% at 0% -10%, rgba(212, 82, 122, 0.28), transparent 55%),
-    radial-gradient(ellipse 70% 55% at 100% 0%, rgba(255, 217, 184, 0.95), transparent 50%),
-    radial-gradient(ellipse 50% 40% at 70% 80%, rgba(242, 160, 184, 0.22), transparent 55%),
-    radial-gradient(ellipse 40% 35% at 15% 70%, rgba(232, 160, 106, 0.18), transparent 50%),
-    linear-gradient(165deg, #fff7f2 0%, #ffe9ef 42%, #fff3e8 100%);
+  background: var(--ivory);
 }
 
 .bg-grain {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
 }
 
-.blob {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(48px);
-  pointer-events: none;
-  will-change: transform;
+.bg-sand {
+  background: var(--sand);
 }
 
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.bg-surface {
+  background: var(--surface);
 }
 
-@keyframes floatY {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-
-@keyframes drift {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(18px, -14px) scale(1.06);
-  }
-}
-
-@keyframes shimmerText {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 200% 50%;
-  }
-}
-
-@keyframes softPulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.03);
-  }
-}
-
-.animate-rise {
-  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.animate-rise-delay {
-  animation: rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
-}
-
-.animate-rise-late {
-  animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
-}
-
-.animate-float {
-  animation: floatY 5.5s ease-in-out infinite;
-}
-
-.animate-drift {
-  animation: drift 9s ease-in-out infinite;
-}
-
-.animate-soft-pulse {
-  animation: softPulse 5s ease-in-out infinite;
-}
-
-.text-shimmer {
-  background: linear-gradient(
-    110deg,
-    var(--cocoa) 20%,
-    var(--berry) 40%,
-    var(--caramel) 55%,
-    var(--cocoa) 75%
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shimmerText 6s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .text-shimmer {
-    animation: none;
-    background: none;
-    color: var(--cocoa);
-    -webkit-background-clip: unset;
-    background-clip: unset;
-  }
+.rule {
+  height: 1px;
+  background: var(--hairline);
+  border: 0;
 }
 
 .btn-primary {
@@ -213,18 +176,23 @@ h3,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
+  border-radius: var(--radius-md);
   background: var(--cocoa);
   color: white;
-  padding: 0.85rem 1.4rem;
+  padding: 0.8rem 1.35rem;
   font-weight: 600;
-  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.2s ease,
+    box-shadow 0.25s ease;
 }
 
 .btn-primary:hover {
-  background: var(--cocoa-soft);
-  transform: translateY(-2px);
-  box-shadow: 0 14px 32px rgba(36, 20, 15, 0.18);
+  background: color-mix(in oklab, var(--cocoa) 88%, white);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
 }
 
 .btn-secondary {
@@ -232,19 +200,23 @@ h3,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
-  border: 1px solid color-mix(in oklab, var(--berry) 28%, transparent);
-  background: rgba(255, 255, 255, 0.75);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+  background: var(--surface);
   color: var(--cocoa);
-  padding: 0.85rem 1.4rem;
+  padding: 0.8rem 1.35rem;
   font-weight: 600;
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  font-size: 0.9375rem;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .btn-secondary:hover {
-  border-color: var(--berry);
+  border-color: color-mix(in oklab, var(--rosewood) 35%, transparent);
   background: white;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .btn-berry {
@@ -252,59 +224,85 @@ h3,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, var(--berry) 0%, var(--berry-deep) 100%);
+  border-radius: var(--radius-md);
+  background: var(--berry);
   color: white;
-  padding: 0.85rem 1.4rem;
+  padding: 0.8rem 1.35rem;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.9375rem;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.2s ease,
+    box-shadow 0.25s ease;
 }
 
 .btn-berry:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(212, 82, 122, 0.4);
+  background: color-mix(in oklab, var(--berry) 82%, var(--cocoa));
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px color-mix(in oklab, var(--berry) 28%, transparent);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--cocoa-soft);
+  padding: 0.8rem 1rem;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.btn-ghost:hover {
+  color: var(--cocoa);
+  background: color-mix(in oklab, var(--cocoa) 4%, transparent);
 }
 
 .input {
   width: 100%;
-  border-radius: 1rem;
-  border: 1px solid color-mix(in oklab, var(--cocoa) 12%, transparent);
-  background: white;
-  padding: 0.8rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  padding: 0.75rem 1rem;
   color: var(--cocoa);
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .input:focus {
-  border-color: var(--berry);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--berry) 22%, transparent);
+  border-color: color-mix(in oklab, var(--rosewood) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rosewood) 16%, transparent);
 }
 
 .label {
   display: block;
   margin-bottom: 0.35rem;
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--cocoa-soft);
 }
 
 .panel {
-  border-radius: 1.5rem;
-  border: 1px solid color-mix(in oklab, var(--berry) 10%, transparent);
-  background: color-mix(in oklab, white 88%, var(--blush));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklab, var(--berry) 35%, transparent) transparent;
+  scrollbar-color: color-mix(in oklab, var(--rosewood) 30%, transparent) transparent;
 }
 
-/* Wide page shell — nearly edge-to-edge on large screens */
+/* Editorial page shell */
 .shell {
   width: 100%;
-  max-width: 100%;
+  max-width: 72rem;
   margin-inline: auto;
   padding-inline: 1.25rem;
 }
@@ -317,18 +315,68 @@ h3,
 
 @media (min-width: 1024px) {
   .shell {
-    padding-inline: 2.5rem;
+    padding-inline: 2rem;
   }
 }
 
 @media (min-width: 1280px) {
   .shell {
-    padding-inline: 3.5rem;
+    max-width: 76rem;
+    padding-inline: 2.5rem;
+  }
+}
+
+.shell-wide {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .shell-wide {
+    padding-inline: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .shell-wide {
+    padding-inline: 2.5rem;
   }
 }
 
 @media (min-width: 1536px) {
-  .shell {
-    padding-inline: 4.5rem;
+  .shell-wide {
+    padding-inline: 4rem;
+  }
+}
+
+.section-pad {
+  padding-block: 4.5rem;
+}
+
+@media (min-width: 768px) {
+  .section-pad {
+    padding-block: 6.5rem;
+  }
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rosewood);
+}
+
+.lead {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--cocoa-soft);
+}
+
+@media (min-width: 768px) {
+  .lead {
+    font-size: 1.125rem;
   }
 }

@@ -32,8 +32,8 @@ export function Switch({
         onClick={() => onCheckedChange(!checked)}
         className={cn(
           "relative h-6 w-11 rounded-full transition",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-berry/40",
-          checked ? "bg-berry" : "bg-cocoa/20",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rosewood/40",
+          checked ? "bg-rosewood" : "bg-cocoa/20",
         )}
       >
         <span
@@ -72,7 +72,7 @@ export function Checkbox({
       <input
         id={id}
         type="checkbox"
-        className="mt-0.5 h-4 w-4 rounded border-cocoa/25 text-berry focus:ring-berry/30"
+        className="mt-0.5 h-4 w-4 rounded border-cocoa/25 text-rosewood focus:ring-rosewood/30"
         checked={checked}
         disabled={disabled}
         onChange={(e) => onCheckedChange(e.target.checked)}

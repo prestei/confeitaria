@@ -12,7 +12,7 @@ export function Card({
   return (
     <Comp
       className={cn(
-        "rounded-3xl border border-cocoa/8 bg-white shadow-[0_1px_0_rgba(36,20,15,0.04)]",
+        "rounded-xl border border-cocoa/8 bg-white shadow-[0_1px_0_rgba(36,20,15,0.04)]",
         className,
       )}
     >

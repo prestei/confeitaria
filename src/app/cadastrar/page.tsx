@@ -50,7 +50,7 @@ export default function RegisterPage() {
     <div className="bg-atelier bg-grain flex min-h-screen items-center justify-center px-5 py-12">
       <div className="panel w-full max-w-lg p-8">
         <Link href="/" className="font-display text-2xl text-cocoa">
-          Doce<span className="text-berry">Pedido</span>
+          Doce<span className="text-rosewood">Pedido</span>
         </Link>
         <h1 className="mt-6 font-display text-3xl text-cocoa">Criar cardápio</h1>
         <p className="mt-2 text-sm text-cocoa-soft/75">
@@ -115,7 +115,7 @@ export default function RegisterPage() {
             </div>
           </div>
           {error && (
-            <p className="sm:col-span-2 text-sm text-berry-deep">{error}</p>
+            <p className="sm:col-span-2 text-sm text-rosewood-deep">{error}</p>
           )}
           <button
             type="submit"
@@ -127,7 +127,7 @@ export default function RegisterPage() {
         </form>
         <p className="mt-5 text-center text-sm text-cocoa-soft/70">
           Já tem conta?{" "}
-          <Link href="/entrar" className="font-semibold text-berry">
+          <Link href="/entrar" className="font-semibold text-rosewood">
             Entrar
           </Link>
         </p>

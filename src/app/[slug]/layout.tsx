@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { connectDB } from "@/lib/db";
+import { leanDoc, leanList } from "@/lib/serialize";
+import { Store } from "@/models/Store";
+import { Category } from "@/models/Category";
+import { Product } from "@/models/Product";
 import { CartProvider } from "@/components/cart/cart-context";
 import { StoreHeader } from "@/components/store/store-header";
+import { StoreCartBar } from "@/components/store/store-cart-bar";
 
 export default async function StoreLayout({
   children,
@@ -11,33 +16,37 @@ export default async function StoreLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const store = await prisma.store.findUnique({
-    where: { slug },
-    include: {
-      categories: {
-        orderBy: { sortOrder: "asc" },
-        select: { slug: true, name: true, emoji: true },
-      },
-      products: {
-        where: { active: true },
-        select: { slug: true, name: true },
-        orderBy: { name: "asc" },
-      },
-      deliveryZones: {
-        select: { feeCents: true },
-        orderBy: { feeCents: "asc" },
-        take: 1,
-      },
-    },
-  });
-  if (!store || !store.isPublished) notFound();
+  await connectDB();
 
-  const minDeliveryFeeCents = store.deliveryZones[0]?.feeCents ?? null;
+  const store = leanDoc(
+    await Store.findOne({ slug, isPublished: true }).lean(),
+  );
+  if (!store) notFound();
+
+  const [categories, products] = await Promise.all([
+    leanList(
+      await Category.find({ storeId: store.id })
+        .sort({ sortOrder: 1 })
+        .select({ slug: 1, name: 1, emoji: 1 })
+        .lean(),
+    ),
+    leanList(
+      await Product.find({ storeId: store.id, active: true })
+        .select({ slug: 1, name: 1 })
+        .sort({ name: 1 })
+        .lean(),
+    ),
+  ]);
+
+  const zones = [...(store.deliveryZones || [])].sort(
+    (a, b) => a.feeCents - b.feeCents,
+  );
+  const minDeliveryFeeCents = zones[0]?.feeCents ?? null;
 
   return (
     <CartProvider slug={slug}>
       <div
-        className="bg-atelier bg-grain min-h-screen"
+        className="min-h-screen bg-ivory"
         style={
           {
             ["--berry" as string]: store.accentColor || "#d4527a",
@@ -45,12 +54,13 @@ export default async function StoreLayout({
         }
       >
         <StoreHeader
-          store={store}
-          categories={store.categories}
-          products={store.products}
+          store={store as any}
+          categories={categories as any}
+          products={products as any}
           minDeliveryFeeCents={minDeliveryFeeCents}
         />
         {children}
+        <StoreCartBar storeSlug={store.slug} />
       </div>
     </CartProvider>
   );

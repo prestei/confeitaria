@@ -1,130 +1,121 @@
-import { redirect } from "next/navigation";
-import { format } from "date-fns";
-import { Users } from "lucide-react";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { formatBRL } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
+import { Plus, Users } from "lucide-react";
+import { connectDB } from "@/lib/db";
+import { leanList } from "@/lib/serialize";
+import { requireStoreSession } from "@/lib/tenant";
+import { Customer } from "@/models/Customer";
+import { Order } from "@/models/Order";
+import { OrderStatus } from "@/lib/enums";
+import { PageAction, PageHeader } from "@/components/painel/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  CustomersTable,
+  type CustomerRow,
+} from "@/components/painel/customers-table";
 
 export default async function ClientesPage() {
-  const session = await auth();
-  if (!session?.user?.storeId) redirect("/entrar");
-  const storeId = session.user.storeId;
+  const session = await requireStoreSession();
+  const storeId = session.storeId;
+  await connectDB();
 
-  const orders = await prisma.order.findMany({
-    where: { storeId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      customerName: true,
-      customerPhone: true,
-      customerEmail: true,
-      totalCents: true,
-      priceLabel: true,
-      createdAt: true,
-      status: true,
-    },
-  });
-
-  const map = new Map<
-    string,
-    {
-      name: string;
-      phone: string;
-      email: string | null;
-      orders: number;
-      lastOrder: Date;
-      spent: number;
-    }
-  >();
-
-  for (const o of orders) {
-    const key = o.customerPhone;
-    const existing = map.get(key);
-    if (!existing) {
-      map.set(key, {
-        name: o.customerName,
-        phone: o.customerPhone,
-        email: o.customerEmail,
-        orders: 1,
-        lastOrder: o.createdAt,
-        spent: o.status !== "CANCELLED" && o.priceLabel !== "TO_CONFIRM" ? o.totalCents : 0,
-      });
-    } else {
-      existing.orders += 1;
-      if (o.createdAt > existing.lastOrder) {
-        existing.lastOrder = o.createdAt;
-        existing.name = o.customerName;
-        existing.email = o.customerEmail || existing.email;
-      }
-      if (o.status !== "CANCELLED" && o.priceLabel !== "TO_CONFIRM") {
-        existing.spent += o.totalCents;
-      }
-    }
-  }
-
-  const clients = [...map.values()].sort(
-    (a, b) => b.lastOrder.getTime() - a.lastOrder.getTime(),
+  const customers = leanList(
+    await Customer.find({ storeId }).sort({ updatedAt: -1 }).lean(),
   );
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl text-cocoa sm:text-4xl">Clientes</h1>
-        <p className="mt-1 text-cocoa-soft/75">
-          Contatos reunidos a partir dos pedidos recebidos.
-        </p>
-      </div>
+  const customerIds = customers.map((c) => c.id);
+  const customerOrders = customerIds.length
+    ? leanList(
+        await Order.find({
+          storeId,
+          customerId: { $in: customerIds },
+          status: { $ne: OrderStatus.CANCELLED },
+        })
+          .sort({ createdAt: -1 })
+          .lean(),
+      )
+    : [];
 
-      {clients.length === 0 ? (
+  const ordersByCustomer = new Map<string, typeof customerOrders>();
+  for (const o of customerOrders) {
+    if (!o.customerId) continue;
+    const list = ordersByCustomer.get(o.customerId) || [];
+    list.push(o);
+    ordersByCustomer.set(o.customerId, list);
+  }
+
+  let rows: CustomerRow[] = customers.map((c) => {
+    const orders = ordersByCustomer.get(c.id) || [];
+    const spent = orders
+      .filter((o) => o.priceLabel !== "TO_CONFIRM")
+      .reduce((s, o) => s + o.totalCents, 0);
+    return {
+      id: c.id,
+      name: c.name,
+      phone: c.phone,
+      email: c.email,
+      orders: orders.length,
+      spent,
+      lastOrder: (orders[0]?.createdAt || c.createdAt).toISOString(),
+      href: `/painel/clientes/${c.id}`,
+    };
+  });
+
+  if (rows.length === 0) {
+    const orders = leanList(
+      await Order.find({ storeId }).sort({ createdAt: -1 }).lean(),
+    );
+    const map = new Map<string, CustomerRow>();
+    for (const o of orders) {
+      const existing = map.get(o.customerPhone);
+      const add =
+        o.status !== "CANCELLED" && o.priceLabel !== "TO_CONFIRM"
+          ? o.totalCents
+          : 0;
+      if (!existing) {
+        map.set(o.customerPhone, {
+          id: o.customerPhone,
+          name: o.customerName,
+          phone: o.customerPhone,
+          email: o.customerEmail,
+          orders: 1,
+          spent: add,
+          lastOrder: o.createdAt.toISOString(),
+          href: `/painel/clientes/phone/${encodeURIComponent(o.customerPhone)}`,
+        });
+      } else {
+        existing.orders += 1;
+        existing.spent += add;
+        if (o.createdAt.toISOString() > existing.lastOrder) {
+          existing.lastOrder = o.createdAt.toISOString();
+          existing.name = o.customerName;
+          existing.email = o.customerEmail || existing.email;
+        }
+      }
+    }
+    rows = [...map.values()];
+  }
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        title="Clientes"
+        description="CRM simples: quem pediu, quanto gastou e quando voltou."
+        actions={
+          <PageAction href="/painel/clientes/novo">
+            <Plus className="h-4 w-4" />
+            Novo cliente
+          </PageAction>
+        }
+      />
+
+      {rows.length === 0 ? (
         <EmptyState
           icon={Users}
           title="Nenhum cliente ainda"
-          description="Assim que chegarem pedidos, os contatos serão listados aqui automaticamente."
+          description="Cadastre um contato ou aguarde os pedidos da vitrine."
+          action={{ label: "Novo cliente", href: "/painel/clientes/novo" }}
         />
       ) : (
-        <>
-          <div className="hidden overflow-hidden rounded-3xl border border-cocoa/8 bg-white md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-cocoa/8 bg-fog/50 text-xs uppercase tracking-wide text-cocoa-soft/60">
-                <tr>
-                  <th className="px-5 py-3 font-semibold">Nome</th>
-                  <th className="px-5 py-3 font-semibold">WhatsApp</th>
-                  <th className="px-5 py-3 font-semibold">Pedidos</th>
-                  <th className="px-5 py-3 font-semibold">Último</th>
-                  <th className="px-5 py-3 font-semibold">Total calc.</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-cocoa/6">
-                {clients.map((c) => (
-                  <tr key={c.phone} className="hover:bg-fog/30">
-                    <td className="px-5 py-3.5 font-medium text-cocoa">{c.name}</td>
-                    <td className="px-5 py-3.5 text-cocoa-soft">{c.phone}</td>
-                    <td className="px-5 py-3.5">{c.orders}</td>
-                    <td className="px-5 py-3.5 text-cocoa-soft">
-                      {format(c.lastOrder, "dd/MM/yyyy")}
-                    </td>
-                    <td className="px-5 py-3.5">{formatBRL(c.spent)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="grid gap-3 md:hidden">
-            {clients.map((c) => (
-              <Card key={c.phone} className="p-4">
-                <p className="font-semibold text-cocoa">{c.name}</p>
-                <p className="mt-1 text-sm text-cocoa-soft">{c.phone}</p>
-                <div className="mt-3 flex flex-wrap gap-3 text-xs text-cocoa-soft/70">
-                  <span>{c.orders} pedido{c.orders > 1 ? "s" : ""}</span>
-                  <span>Último: {format(c.lastOrder, "dd/MM/yyyy")}</span>
-                  <span>{formatBRL(c.spent)}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </>
+        <CustomersTable rows={rows} />
       )}
     </div>
   );

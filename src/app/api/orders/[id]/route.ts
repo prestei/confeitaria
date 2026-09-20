@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { connectDB } from "@/lib/db";
+import { withIds } from "@/lib/serialize";
+import { Order } from "@/models/Order";
 import { z } from "zod";
 
 export async function PATCH(
@@ -27,17 +29,20 @@ export async function PATCH(
     })
     .parse(await req.json());
 
-  const order = await prisma.order.findFirst({
-    where: { id, storeId: session.user.storeId },
-  });
+  await connectDB();
+  const order = await Order.findOne({
+    _id: id,
+    storeId: session.user.storeId,
+  }).lean();
   if (!order) {
     return NextResponse.json({ error: "Pedido não encontrado" }, { status: 404 });
   }
 
-  const updated = await prisma.order.update({
-    where: { id },
-    data: { status },
-  });
+  const updated = await Order.findOneAndUpdate(
+    { _id: id, storeId: session.user.storeId },
+    { $set: { status } },
+    { new: true },
+  ).lean();
 
-  return NextResponse.json(updated);
+  return NextResponse.json(withIds(updated));
 }

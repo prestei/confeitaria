@@ -16,6 +16,9 @@ export function StoreProductGrid({
 
   useEffect(() => {
     if (reduced || !ref.current) return;
+    // Mobile lista deve aparecer imediatamente (estilo cardápio delivery)
+    if (window.matchMedia("(max-width: 767px)").matches) return;
+
     let ctx: { revert: () => void } | undefined;
     let cancelled = false;
 
@@ -28,14 +31,14 @@ export function StoreProductGrid({
       ctx = gsap.context(() => {
         gsap.from(ref.current!.children, {
           opacity: 0,
-          y: 42,
-          scale: 0.96,
-          duration: 0.6,
-          stagger: 0.08,
-          ease: "power3.out",
+          y: 28,
+          duration: 0.55,
+          stagger: 0.06,
+          ease: "power2.out",
+          immediateRender: false,
           scrollTrigger: {
             trigger: ref.current,
-            start: "top 88%",
+            start: "top 90%",
             once: true,
           },
         });

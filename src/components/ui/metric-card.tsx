@@ -24,7 +24,7 @@ export function MetricCard({
           {hint && <p className="mt-1.5 text-xs text-cocoa-soft/60">{hint}</p>}
         </div>
         {Icon && (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blush text-berry">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blush text-berry">
             <Icon className="h-5 w-5" aria-hidden />
           </div>
         )}

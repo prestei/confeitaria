@@ -1,10 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "motion/react";
+import { Camera, MapPin, MessageCircle } from "lucide-react";
 import { digitsOnly } from "@/lib/utils";
-import { cn } from "@/lib/cn";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 export function StoreFooter({
   store,
-  tone = "light",
 }: {
   store: {
     slug: string;
@@ -13,110 +16,94 @@ export function StoreFooter({
     whatsapp: string;
     city: string | null;
     address: string | null;
+    tagline?: string | null;
   };
-  tone?: "light" | "dark";
 }) {
+  const reduced = useReducedMotion();
   const wa = `https://wa.me/55${digitsOnly(store.whatsapp)}`;
-  const dark = tone === "dark";
+  const location = [store.address, store.city].filter(Boolean).join(" · ");
+  const phoneDisplay = store.whatsapp.replace(
+    /(\d{2})(\d{4,5})(\d{4})/,
+    "($1) $2-$3",
+  );
 
   return (
-    <footer
-      className={cn(
-        "border-t",
-        dark
-          ? "border-white/10 bg-[#0b0b0b]"
-          : "border-berry/10 bg-gradient-to-b from-blush/30 to-cream",
-      )}
-    >
-      <div className="shell grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-3">
+    <footer className="bg-[#241916] text-ivory">
+      <div className="shell grid gap-10 py-14 md:grid-cols-[1.2fr_1fr] md:gap-16">
         <div>
-          <p
-            className={cn(
-              "font-display text-2xl",
-              dark ? "text-white" : "text-cocoa",
-            )}
-          >
-            {store.name}
-          </p>
-          <p
-            className={cn(
-              "mt-2 text-sm",
-              dark ? "text-white/45" : "text-cocoa-soft/70",
-            )}
-          >
-            {[store.address, store.city].filter(Boolean).join(" · ") ||
-              "Pedidos pelo cardápio online"}
-          </p>
-        </div>
-        <div>
-          <p
-            className={cn(
-              "text-sm font-semibold",
-              dark ? "text-white" : "text-cocoa",
-            )}
-          >
-            Navegação
-          </p>
-          <ul
-            className={cn(
-              "mt-3 space-y-2 text-sm",
-              dark ? "text-white/55" : "text-cocoa-soft/80",
-            )}
-          >
-            <li>
-              <a
-                href="#cardapio-mobile"
-                className={dark ? "hover:text-white" : "hover:text-berry-deep"}
-              >
-                Cardápio
-              </a>
-            </li>
-            <li>
-              <Link
-                href={`/${store.slug}/encomenda`}
-                className={dark ? "hover:text-white" : "hover:text-berry-deep"}
-              >
-                Encomenda
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${store.slug}/carrinho`}
-                className={dark ? "hover:text-white" : "hover:text-berry-deep"}
-              >
-                Carrinho
-              </Link>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <p
-            className={cn(
-              "text-sm font-semibold",
-              dark ? "text-white" : "text-cocoa",
-            )}
-          >
-            Contato
-          </p>
-          <a
+          <p className="font-display text-3xl tracking-tight">{store.name}</p>
+          {store.tagline && (
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-ivory/60">
+              {store.tagline}
+            </p>
+          )}
+          {location && (
+            <p className="mt-5 flex items-start gap-2 text-sm text-ivory/70">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-terracotta" />
+              {location}
+            </p>
+          )}
+          <motion.a
             href={wa}
             target="_blank"
             rel="noreferrer"
-            className="btn-berry mt-3 inline-flex !py-2 text-sm"
+            whileHover={reduced ? undefined : { y: -1 }}
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-rosewood px-4 py-2.5 text-sm font-semibold text-white"
           >
-            WhatsApp
-          </a>
+            <MessageCircle className="h-4 w-4" />
+            {phoneDisplay || "WhatsApp"}
+          </motion.a>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
+          <div className="space-y-2.5">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-terracotta">
+              Explorar
+            </p>
+            <a href="#destaques" className="block text-ivory/70 hover:text-ivory">
+              Destaques
+            </a>
+            <a href="#cardapio" className="block text-ivory/70 hover:text-ivory">
+              Cardápio
+            </a>
+            <Link
+              href={`/${store.slug}/encomenda`}
+              className="block text-ivory/70 hover:text-ivory"
+            >
+              Encomenda
+            </Link>
+          </div>
+          <div className="space-y-2.5">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-terracotta">
+              Pedido
+            </p>
+            <Link
+              href={`/${store.slug}/carrinho`}
+              className="block text-ivory/70 hover:text-ivory"
+            >
+              Carrinho
+            </Link>
+            <a href={wa} target="_blank" rel="noreferrer" className="block text-ivory/70 hover:text-ivory">
+              WhatsApp
+            </a>
+          </div>
+          <div className="col-span-2 space-y-2.5 sm:col-span-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-terracotta">
+              Redes
+            </p>
+            <span className="inline-flex items-center gap-2 text-ivory/50">
+              <Camera className="h-4 w-4" />
+              Em breve
+            </span>
+          </div>
         </div>
       </div>
-      <div
-        className={cn(
-          "border-t py-4 text-center text-xs",
-          dark
-            ? "border-white/10 text-white/35"
-            : "border-berry/10 text-cocoa-soft/55",
-        )}
-      >
-        Powered by DocePedido
+
+      <div className="border-t border-white/10">
+        <div className="shell flex flex-col gap-2 py-4 text-xs text-ivory/40 sm:flex-row sm:items-center sm:justify-between">
+          <p>Feito com cuidado para quem vende e para quem encomenda.</p>
+          <p>Powered by DocePedido</p>
+        </div>
       </div>
     </footer>
   );

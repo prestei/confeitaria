@@ -15,25 +15,32 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     const fd = new FormData(e.currentTarget);
-    const res = await signIn("credentials", {
-      email: String(fd.get("email")),
-      password: String(fd.get("password")),
-      redirect: false,
-    });
-    setLoading(false);
-    if (res?.error) {
-      setError("E-mail ou senha inválidos");
-      return;
+    try {
+      const res = await signIn("credentials", {
+        email: String(fd.get("email")),
+        password: String(fd.get("password")),
+        redirect: false,
+      });
+      if (res?.error) {
+        setError("E-mail ou senha inválidos — ou o banco ainda não está disponível.");
+        return;
+      }
+      router.push("/painel");
+      router.refresh();
+    } catch {
+      setError(
+        "Falha de conexão. Verifique se o Postgres está ativo e se AUTH_SECRET está configurado no .env.",
+      );
+    } finally {
+      setLoading(false);
     }
-    router.push("/painel");
-    router.refresh();
   }
 
   return (
     <div className="bg-atelier bg-grain flex min-h-screen items-center justify-center px-5 py-12">
       <div className="panel w-full max-w-md p-8">
         <Link href="/" className="font-display text-2xl text-cocoa">
-          Doce<span className="text-berry">Pedido</span>
+          Doce<span className="text-rosewood">Pedido</span>
         </Link>
         <h1 className="mt-6 font-display text-3xl text-cocoa">Entrar</h1>
         <p className="mt-2 text-sm text-cocoa-soft/75">
@@ -50,7 +57,7 @@ export default function LoginPage() {
               type="email"
               required
               className="input"
-              defaultValue="demo@docearte.com"
+              defaultValue="demo@doceencanto.com"
             />
           </div>
           <div>
@@ -73,9 +80,16 @@ export default function LoginPage() {
         </form>
         <p className="mt-5 text-center text-sm text-cocoa-soft/70">
           Ainda não tem conta?{" "}
-          <Link href="/cadastrar" className="font-semibold text-berry">
+          <Link href="/cadastrar" className="font-semibold text-rosewood">
             Criar cardápio
           </Link>
+        </p>
+        <p className="mt-4 rounded-md bg-sand/80 px-3 py-2.5 text-center text-xs leading-relaxed text-cocoa-soft">
+          Demo: <span className="font-medium text-cocoa">demo@doceencanto.com</span> /{" "}
+          <span className="font-medium text-cocoa">demo1234</span>
+          <br />
+          Se o login falhar, suba o Postgres:{" "}
+          <code className="text-cocoa">npm run db:up && npm run db:setup</code>
         </p>
       </div>
     </div>

@@ -2,7 +2,9 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { prisma } from "./prisma";
+import { connectDB } from "./db";
+import { User } from "@/models/User";
+import { Store } from "@/models/Store";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -20,21 +22,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email.toLowerCase() },
-          include: { store: true },
-        });
+        await connectDB();
+        const user = await User.findOne({
+          email: parsed.data.email.toLowerCase(),
+        }).lean();
         if (!user) return null;
 
-        const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
+        const ok = await bcrypt.compare(
+          parsed.data.password,
+          user.passwordHash,
+        );
         if (!ok) return null;
 
+        const store = await Store.findOne({ userId: user._id })
+          .select("_id slug")
+          .lean();
+
         return {
-          id: user.id,
+          id: String(user._id),
           email: user.email,
           name: user.name,
-          storeId: user.store?.id ?? null,
-          storeSlug: user.store?.slug ?? null,
+          storeId: store ? String(store._id) : null,
+          storeSlug: store?.slug ?? null,
         };
       },
     }),
@@ -47,8 +56,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.storeId = (user as { storeId?: string | null }).storeId ?? null;
-        token.storeSlug = (user as { storeSlug?: string | null }).storeSlug ?? null;
+      }
+      if (token.id) {
+        await connectDB();
+        const dbUser = await User.findById(token.id as string).lean();
+        const store = dbUser
+          ? await Store.findOne({ userId: dbUser._id })
+              .select("_id slug")
+              .lean()
+          : null;
+        token.storeId = store ? String(store._id) : null;
+        token.storeSlug = store?.slug ?? null;
+        if (user) {
+          token.name = user.name;
+          token.email = user.email;
+        } else if (dbUser) {
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+        }
       }
       return token;
     },

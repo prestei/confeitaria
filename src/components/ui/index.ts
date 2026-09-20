@@ -13,6 +13,8 @@ export {
   DialogHeader,
   DialogBody,
   DialogFooter,
+  DialogCancel,
+  DialogPrimary,
 } from "./dialog";
 export { Drawer } from "./drawer";
 export { ToastProvider, useToast } from "./toast";

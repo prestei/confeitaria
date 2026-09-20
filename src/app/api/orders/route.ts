@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { connectDB } from "@/lib/db";
+import { withIds } from "@/lib/serialize";
+import { Store } from "@/models/Store";
+import { BlockedDate } from "@/models/BlockedDate";
+import { Customer } from "@/models/Customer";
+import { Order } from "@/models/Order";
+import { AnalyticsEvent } from "@/models/AnalyticsEvent";
 import { buildWhatsAppMessage } from "@/lib/whatsapp";
-import { whatsappLink } from "@/lib/utils";
+import { storeHasMercadoPago } from "@/lib/mercadopago";
+import { ONLINE_PAYMENT_METHOD, whatsappLink } from "@/lib/utils";
 
 const itemSchema = z.object({
   productId: z.string().optional(),
   productName: z.string(),
   quantity: z.number().int().positive(),
   unitPriceCents: z.number().int().nonnegative(),
-  customizations: z.record(z.string(), z.union([z.string(), z.number(), z.array(z.string())])).optional(),
+  customizations: z
+    .record(z.string(), z.union([z.string(), z.number(), z.array(z.string())]))
+    .optional(),
   priceMode: z.enum(["FIXED", "FROM", "QUOTE"]),
 });
 
@@ -34,21 +43,20 @@ const schema = z.object({
 export async function POST(req: Request) {
   try {
     const data = schema.parse(await req.json());
+    await connectDB();
 
-    const store = await prisma.store.findUnique({
-      where: { slug: data.storeSlug },
-      include: { deliveryZones: true },
-    });
+    const store = await Store.findOne({ slug: data.storeSlug }).lean();
     if (!store || !store.isPublished) {
       return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
     }
 
+    const storeId = String(store._id);
     const hasQuote = data.items.some((i) => i.priceMode === "QUOTE");
     const hasFrom = data.items.some((i) => i.priceMode === "FROM");
 
     let deliveryFeeCents = 0;
     if (data.fulfillment === "DELIVERY" && data.deliveryZone) {
-      const zone = store.deliveryZones.find((z) => z.name === data.deliveryZone);
+      const zone = store.deliveryZones?.find((z) => z.name === data.deliveryZone);
       deliveryFeeCents = zone?.feeCents ?? 0;
     }
 
@@ -62,8 +70,55 @@ export async function POST(req: Request) {
     if (hasQuote) priceLabel = "TO_CONFIRM";
     else if (hasFrom) priceLabel = "ESTIMATE";
 
+    const wantsOnlinePayment =
+      data.paymentMethod === ONLINE_PAYMENT_METHOD && priceLabel === "TOTAL";
+
+    if (wantsOnlinePayment && !storeHasMercadoPago(store)) {
+      return NextResponse.json(
+        { error: "Pagamento online não está disponível nesta loja" },
+        { status: 400 },
+      );
+    }
+
+    const offlineMethods = store.paymentMethods ?? [];
+    if (
+      data.paymentMethod &&
+      data.paymentMethod !== ONLINE_PAYMENT_METHOD &&
+      offlineMethods.length > 0 &&
+      !offlineMethods.includes(data.paymentMethod)
+    ) {
+      return NextResponse.json(
+        { error: "Forma de pagamento não aceita nesta loja" },
+        { status: 400 },
+      );
+    }
+
+    if (
+      !data.paymentMethod &&
+      (offlineMethods.length > 0 || storeHasMercadoPago(store))
+    ) {
+      return NextResponse.json(
+        { error: "Escolha uma forma de pagamento" },
+        { status: 400 },
+      );
+    }
+
     if (data.eventDate) {
       const event = new Date(data.eventDate + "T12:00:00");
+      const blocked = await BlockedDate.findOne({
+        storeId,
+        date: event,
+      }).lean();
+      if (blocked) {
+        return NextResponse.json(
+          {
+            error:
+              blocked.reason ||
+              "Esta data não está disponível para encomendas.",
+          },
+          { status: 400 },
+        );
+      }
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const diffDays = Math.ceil(
@@ -80,57 +135,89 @@ export async function POST(req: Request) {
       }
     }
 
-    const order = await prisma.order.create({
-      data: {
-        storeId: store.id,
-        kind: hasQuote ? "QUOTE" : "CART",
-        customerName: data.customerName,
-        customerPhone: data.customerPhone,
-        customerEmail: data.customerEmail || null,
-        companyName: data.companyName || null,
-        needsInvoice: data.needsInvoice ?? false,
-        fulfillment: data.fulfillment,
-        deliveryZone: data.deliveryZone || null,
-        deliveryFeeCents,
-        eventDate: data.eventDate ? new Date(data.eventDate + "T12:00:00") : null,
-        eventTime: data.eventTime || null,
-        guests: data.guests || null,
-        notes: data.notes || null,
-        referenceNote: data.referenceNote || null,
-        paymentMethod: data.paymentMethod || null,
-        subtotalCents,
-        totalCents,
-        priceLabel,
-        items: {
-          create: data.items.map((i) => ({
-            productId: i.productId || null,
-            productName: i.productName,
-            quantity: i.quantity,
-            unitPriceCents: i.unitPriceCents,
-            lineTotalCents: i.unitPriceCents * i.quantity,
-            customizations: i.customizations ?? undefined,
-          })),
-        },
-      },
-      include: { items: true },
+    let customer = await Customer.findOne({
+      storeId,
+      phone: data.customerPhone,
+    });
+    if (customer) {
+      customer.name = data.customerName;
+      if (data.customerEmail) customer.email = data.customerEmail;
+      await customer.save();
+    } else {
+      customer = await Customer.create({
+        storeId,
+        name: data.customerName,
+        phone: data.customerPhone,
+        email: data.customerEmail || null,
+      });
+    }
+
+    const order = await Order.create({
+      storeId,
+      customerId: String(customer._id),
+      kind: hasQuote ? "QUOTE" : "CART",
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      customerEmail: data.customerEmail || null,
+      companyName: data.companyName || null,
+      needsInvoice: data.needsInvoice ?? false,
+      fulfillment: data.fulfillment,
+      deliveryZone: data.deliveryZone || null,
+      deliveryFeeCents,
+      eventDate: data.eventDate ? new Date(data.eventDate + "T12:00:00") : null,
+      eventTime: data.eventTime || null,
+      guests: data.guests || null,
+      notes: data.notes || null,
+      referenceNote: data.referenceNote || null,
+      paymentMethod: data.paymentMethod || null,
+      paymentStatus: wantsOnlinePayment ? "PENDING" : "NONE",
+      subtotalCents,
+      totalCents,
+      priceLabel,
+      items: data.items.map((i) => ({
+        productId: i.productId || null,
+        productName: i.productName,
+        quantity: i.quantity,
+        unitPriceCents: i.unitPriceCents,
+        lineTotalCents: i.unitPriceCents * i.quantity,
+        customizations: i.customizations ?? null,
+      })),
     });
 
-    const message = buildWhatsAppMessage(store, order);
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { whatsappMessage: message },
+    const orderPlain = withIds(order.toObject());
+
+    await AnalyticsEvent.create({
+      storeId,
+      type: "ORDER_COMPLETED",
+      meta: { orderId: orderPlain.id },
     });
+
+    const message = buildWhatsAppMessage(
+      { name: store.name },
+      {
+        ...orderPlain,
+        items: orderPlain.items ?? [],
+      },
+    );
+    await Order.updateOne(
+      { _id: order._id },
+      { $set: { whatsappMessage: message } },
+    );
 
     return NextResponse.json({
-      orderId: order.id,
+      orderId: orderPlain.id,
       whatsappUrl: whatsappLink(store.whatsapp, message),
       message,
       priceLabel,
       totalCents,
+      requiresOnlinePayment: wantsOnlinePayment,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Dados inválidos", details: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: "Dados inválidos", details: error.issues },
+        { status: 400 },
+      );
     }
     console.error(error);
     return NextResponse.json({ error: "Erro ao criar pedido" }, { status: 500 });

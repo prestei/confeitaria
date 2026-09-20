@@ -6,44 +6,42 @@ Plataforma de cardápio online para confeiteiras: pedidos organizados via WhatsA
 
 - **Next.js 16** (App Router) + TypeScript
 - **Node** (API Routes)
-- **PostgreSQL** + Prisma
+- **MongoDB** + Mongoose (multi-tenant por `storeId`)
 - **NextAuth** (login da confeiteira)
 
 ## Como rodar
 
-### 1. Postgres
-
-**Opção A — Docker**
+### 1. MongoDB
 
 ```bash
 docker compose up -d
 ```
 
-**Opção B — Postgres local (Windows)**
+Isso sobe o Mongo na porta `27017` (dados em `.data/mongo`).
 
-Crie o banco/usuário (ajuste o usuário admin se necessário):
+Se o Docker pedir permissão (`permission denied` no socket), entre no grupo `docker` ou use o fallback:
 
 ```bash
-psql -U postgres -f scripts/init-db.sql
+sudo usermod -aG docker $USER   # depois faça logout/login
+# ou sem Docker:
+npm run db:mongo-local
 ```
-
-No `.env`, use:
-
-```env
-DATABASE_URL="postgresql://confeitaria:confeitaria@localhost:5432/confeitaria?schema=public"
-```
-
-Se preferir outro usuário/senha, atualize o `DATABASE_URL` conforme o seu Postgres.
 
 ### 2. Variáveis de ambiente
 
-Copie `.env.example` para `.env` (já existe um `.env` de desenvolvimento) e confirme `AUTH_SECRET`.
+Copie `.env.example` para `.env` e confirme `AUTH_SECRET` e `MONGODB_URI`:
 
-### 3. Banco + seed
+```env
+MONGODB_URI="mongodb://127.0.0.1:27017/confeitaria"
+```
+
+### 3. Seed
 
 ```bash
-npm run db:setup
+npm run db:seed
 ```
+
+Ou tudo junto: `npm run db:setup`
 
 ### 4. App
 
@@ -53,12 +51,16 @@ npm run dev
 
 Abra [http://localhost:3000](http://localhost:3000).
 
+## Multi-tenant
+
+Cada confeitaria é um **tenant** (`Store`). Dados de cardápio, pedidos, clientes etc. carregam `storeId` e as queries do painel/API sempre filtram por ele. A vitrine pública resolve o tenant pelo `slug` (`/{slug}`).
+
 ## Demo
 
 | O quê | Valor |
 |------|--------|
-| Cardápio | [/doce-arte](http://localhost:3000/doce-arte) |
-| Login | `demo@docearte.com` |
+| Cardápio | [/doce-encanto](http://localhost:3000/doce-encanto) |
+| Login | `demo@doceencanto.com` |
 | Senha | `demo1234` |
 | Painel | [/painel](http://localhost:3000/painel) |
 
@@ -84,10 +86,3 @@ Abra [http://localhost:3000](http://localhost:3000).
 
 1. **Loja rápida:** produto → adicionais → carrinho → WhatsApp  
 2. **Encomenda:** personalizar → data/referência → orçamento no WhatsApp  
-
-## Próximas fases (roadmap)
-
-- Agenda completa (dias bloqueados, limite/dia)
-- Upload de imagem de referência
-- Relatórios e clientes
-- Integração WhatsApp Business API

@@ -2,20 +2,49 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CalendarDays, Minus, Plus } from "lucide-react";
 import { useCart } from "@/components/cart/cart-context";
 import { formatBRL, isQuoteFlow, PRODUCT_TYPE_LABELS } from "@/lib/utils";
 import { priceLabel } from "@/components/store/product-card";
-import type {
-  Addon,
-  OptionGroup,
-  PriceMode,
-  Product,
-  ProductOption,
-  ProductType,
-} from "@prisma/client";
+import type { PriceMode, ProductType } from "@/lib/enums";
 
-type ProductDetail = Product & {
-  optionGroups: (OptionGroup & { options: ProductOption[] })[];
+type ProductOption = {
+  id: string;
+  name: string;
+  priceDeltaCents: number;
+  sortOrder: number;
+};
+
+type OptionGroup = {
+  id: string;
+  name: string;
+  required: boolean;
+  minSelect: number;
+  maxSelect: number;
+  sortOrder: number;
+  options: ProductOption[];
+};
+
+type Addon = {
+  id: string;
+  name: string;
+  priceCents: number;
+  maxQty: number;
+};
+
+type ProductDetail = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  productType: ProductType;
+  priceMode: PriceMode;
+  priceCents: number | null;
+  kitContents: string | null;
+  minAdvanceDays: number | null;
+  featured?: boolean;
+  optionGroups: OptionGroup[];
   addons: Addon[];
 };
 
@@ -23,10 +52,16 @@ export function ProductConfigurator({
   storeSlug,
   product,
   minAdvanceDays,
+  compact = false,
+  onSuccess,
 }: {
   storeSlug: string;
   product: ProductDetail;
   minAdvanceDays: number;
+  /** Layout for modal (split + sticky CTA) */
+  compact?: boolean;
+  /** Called after add — if omitted, navigates to cart */
+  onSuccess?: () => void;
 }) {
   const { addItem } = useCart();
   const router = useRouter();
@@ -70,6 +105,10 @@ export function ProductConfigurator({
       ? 0
       : (product.priceCents ?? 0) + optionDelta + addonsTotal;
 
+  const lineTotal = unitPrice * qty;
+  const hasEstimateBump =
+    product.priceMode !== "QUOTE" && unitPrice > (product.priceCents ?? 0);
+
   function buildCustomizations() {
     const custom: Record<string, string | number | string[]> = {};
     for (const g of product.optionGroups) {
@@ -100,244 +139,421 @@ export function ProductConfigurator({
       unitPriceCents: unitPrice,
       priceMode: product.priceMode as "FIXED" | "FROM" | "QUOTE",
       customizations: buildCustomizations(),
+      imageUrl: product.imageUrl,
     });
+    if (onSuccess) {
+      onSuccess();
+      return;
+    }
     router.push(`/${storeSlug}/carrinho`);
   }
 
   const advance = product.minAdvanceDays ?? minAdvanceDays;
 
-  return (
-    <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="overflow-hidden rounded-[1.8rem] bg-fog">
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="aspect-[4/3] w-full object-cover"
-          />
-        ) : (
-          <div className="flex aspect-[4/3] items-center justify-center text-6xl">🍰</div>
-        )}
-      </div>
+  const ctaLabel =
+    quote || product.priceMode === "QUOTE"
+      ? "Solicitar orçamento"
+      : product.priceMode === "FROM"
+        ? "Adicionar estimativa"
+        : "Adicionar ao pedido";
 
-      <div>
-        <p className="text-sm font-semibold text-berry">
-          {PRODUCT_TYPE_LABELS[product.productType as ProductType]}
+  const imageBlock = (
+    <div
+      className={
+        compact
+          ? "relative overflow-hidden bg-sand md:h-full md:min-h-[22rem] md:rounded-none"
+          : "overflow-hidden rounded-[1.8rem] bg-fog"
+      }
+    >
+      {product.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className={
+            compact
+              ? "aspect-[16/11] w-full object-cover md:absolute md:inset-0 md:aspect-auto md:h-full"
+              : "aspect-[4/3] w-full object-cover"
+          }
+        />
+      ) : (
+        <div
+          className={
+            compact
+              ? "flex aspect-[16/11] items-center justify-center bg-sand text-4xl md:absolute md:inset-0 md:aspect-auto md:h-full"
+              : "flex aspect-[4/3] items-center justify-center text-6xl"
+          }
+        >
+          🍰
+        </div>
+      )}
+      {compact && product.featured && (
+        <span className="absolute left-3 top-3 rounded-full bg-surface/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-rosewood shadow-sm">
+          Destaque
+        </span>
+      )}
+    </div>
+  );
+
+  const headerBlock = (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rosewood">
+        {PRODUCT_TYPE_LABELS[product.productType as ProductType]}
+      </p>
+      <h1
+        className={
+          compact
+            ? "mt-1.5 font-display text-[1.65rem] leading-[1.15] text-cocoa sm:text-[1.85rem]"
+            : "mt-2 font-display text-4xl text-cocoa sm:text-5xl"
+        }
+      >
+        {product.name}
+      </h1>
+      {product.description && (
+        <p
+          className={
+            compact
+              ? "mt-2 text-sm leading-relaxed text-cocoa-soft"
+              : "mt-2 text-sm leading-relaxed text-cocoa-soft/80 sm:text-base"
+          }
+        >
+          {product.description}
         </p>
-        <h1 className="mt-2 font-display text-4xl text-cocoa sm:text-5xl">
-          {product.name}
-        </h1>
-        {product.description && (
-          <p className="mt-3 leading-relaxed text-cocoa-soft/80">
-            {product.description}
-          </p>
-        )}
-        <p className="mt-4 text-2xl font-semibold text-berry-deep">
+      )}
+      <div className={compact ? "mt-4 flex flex-wrap items-end gap-x-3 gap-y-1" : "mt-3"}>
+        <p
+          className={
+            compact
+              ? "font-display text-2xl font-semibold tracking-tight text-cocoa sm:text-[1.75rem]"
+              : "text-xl font-semibold text-berry sm:text-2xl"
+          }
+        >
           {priceLabel(product.priceMode as PriceMode, product.priceCents)}
         </p>
-        {product.priceMode !== "QUOTE" && unitPrice > (product.priceCents ?? 0) && (
-          <p className="mt-1 text-sm text-cocoa-soft/70">
-            Com opções selecionadas: {formatBRL(unitPrice)}
+        {hasEstimateBump && (
+          <p className="pb-0.5 text-sm text-cocoa-soft">
+            Com opções: {formatBRL(unitPrice)}
             {product.priceMode === "FROM" ? " (estimativa)" : ""}
           </p>
         )}
+      </div>
+    </div>
+  );
 
-        {product.kitContents && (
-          <div className="panel mt-5 p-4">
-            <p className="font-semibold text-cocoa">O que está incluso</p>
-            <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-cocoa-soft/80">
-              {product.kitContents}
-            </pre>
+  const formBlock = (
+    <div className={compact ? "space-y-5" : "mt-6 space-y-5"}>
+      {product.kitContents && (
+        <div
+          className={
+            compact
+              ? "rounded-xl border border-rosewood/15 bg-blush/40 px-4 py-3.5"
+              : "panel mt-5 p-4"
+          }
+        >
+          <p className="text-sm font-semibold text-cocoa">O que está incluso</p>
+          <pre className="mt-1.5 whitespace-pre-wrap font-sans text-sm leading-relaxed text-cocoa-soft">
+            {product.kitContents}
+          </pre>
+        </div>
+      )}
+
+      {product.optionGroups.map((g) => (
+        <div key={g.id}>
+          <p className="label">{g.name}</p>
+          <div className="flex flex-wrap gap-2">
+            {g.options.map((o) => {
+              const active = selected[g.id] === o.id;
+              return (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => setSelected((s) => ({ ...s, [g.id]: o.id }))}
+                  className={`rounded-lg border px-3.5 py-2 text-sm font-medium transition ${
+                    active
+                      ? "border-berry bg-berry text-white shadow-sm"
+                      : "border-cocoa/10 bg-surface text-cocoa hover:border-rosewood/40 hover:bg-sand/60"
+                  }`}
+                >
+                  {o.name}
+                  {o.priceDeltaCents > 0
+                    ? ` (+${formatBRL(o.priceDeltaCents)})`
+                    : ""}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
+      ))}
 
-        <div className="mt-6 space-y-5">
-          {product.optionGroups.map((g) => (
-            <div key={g.id}>
-              <p className="label">{g.name}</p>
-              <div className="flex flex-wrap gap-2">
-                {g.options.map((o) => {
-                  const active = selected[g.id] === o.id;
-                  return (
-                    <button
-                      key={o.id}
-                      type="button"
-                      onClick={() =>
-                        setSelected((s) => ({ ...s, [g.id]: o.id }))
-                      }
-                      className={`rounded-full border px-3 py-2 text-sm transition ${
-                        active
-                          ? "border-berry bg-berry text-white"
-                          : "border-cocoa/15 bg-white/70 text-cocoa hover:border-berry"
-                      }`}
-                    >
-                      {o.name}
-                      {o.priceDeltaCents > 0
-                        ? ` (+${formatBRL(o.priceDeltaCents)})`
-                        : ""}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-
-          {product.addons.length > 0 && (
-            <div>
-              <p className="label">Adicionais</p>
-              <div className="space-y-2">
-                {product.addons.map((a) => (
-                  <div
-                    key={a.id}
-                    className="flex items-center justify-between rounded-xl border border-cocoa/10 bg-white/60 px-3 py-2"
+      {product.addons.length > 0 && (
+        <div>
+          <p className="label">Adicionais</p>
+          <div className="space-y-2">
+            {product.addons.map((a) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-cocoa/8 bg-sand/40 px-3.5 py-2.5"
+              >
+                <span className="min-w-0 text-sm text-cocoa">
+                  {a.name}
+                  <span className="ml-1.5 text-cocoa-soft">
+                    · {formatBRL(a.priceCents)}
+                  </span>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    aria-label={`Diminuir ${a.name}`}
+                    disabled={(addonQty[a.id] || 0) <= 0}
+                    onClick={() =>
+                      setAddonQty((s) => ({
+                        ...s,
+                        [a.id]: Math.max(0, (s[a.id] || 0) - 1),
+                      }))
+                    }
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-cocoa/10 bg-surface text-cocoa transition hover:border-rosewood/30 disabled:opacity-40"
                   >
-                    <span className="text-sm">
-                      {a.name} · {formatBRL(a.priceCents)}
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={a.maxQty}
-                      className="input !w-20 !py-1.5"
-                      value={addonQty[a.id] || 0}
-                      onChange={(e) =>
-                        setAddonQty((s) => ({
-                          ...s,
-                          [a.id]: Number(e.target.value),
-                        }))
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {(product.productType === "CAKE" ||
-            product.productType === "CUSTOM" ||
-            product.productType === "PARTY_KIT") && (
-            <>
-              {product.productType === "CAKE" && (
-                <div>
-                  <label className="label">Tema / decoração</label>
-                  <input
-                    className="input"
-                    value={theme}
-                    onChange={(e) => setTheme(e.target.value)}
-                    placeholder="Ex: floral, personagem, casamento"
-                  />
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="w-6 text-center text-sm font-semibold tabular-nums text-cocoa">
+                    {addonQty[a.id] || 0}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Aumentar ${a.name}`}
+                    disabled={(addonQty[a.id] || 0) >= a.maxQty}
+                    onClick={() =>
+                      setAddonQty((s) => ({
+                        ...s,
+                        [a.id]: Math.min(a.maxQty, (s[a.id] || 0) + 1),
+                      }))
+                    }
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-cocoa/10 bg-surface text-cocoa transition hover:border-rosewood/30 disabled:opacity-40"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-              )}
-              <div>
-                <label className="label">Data do evento / retirada</label>
-                <input
-                  type="date"
-                  className="input"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                />
-                <p className="mt-1 text-xs text-cocoa-soft/65">
-                  Prazo mínimo: {advance} dias de antecedência
-                </p>
               </div>
-              {product.productType === "PARTY_KIT" && (
-                <div>
-                  <label className="label">Quantidade de convidados</label>
-                  <input
-                    type="number"
-                    min={1}
-                    className="input"
-                    value={guests}
-                    onChange={(e) => setGuests(e.target.value)}
-                  />
-                </div>
-              )}
-              <div>
-                <label className="label">Referência / observações</label>
-                <textarea
-                  className="input min-h-24"
-                  value={referenceNote || notes}
-                  onChange={(e) => {
-                    setReferenceNote(e.target.value);
-                    setNotes(e.target.value);
-                  }}
-                  placeholder="Descreva a referência ou anexe detalhes que ajudem no orçamento"
-                />
-              </div>
-            </>
-          )}
+            ))}
+          </div>
+        </div>
+      )}
 
-          {product.productType === "CORPORATE" && (
-            <>
-              <div>
-                <label className="label">Empresa</label>
-                <input
-                  className="input"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">Quantidade aproximada</label>
-                <input
-                  type="number"
-                  min={1}
-                  className="input"
-                  value={qty}
-                  onChange={(e) => setQty(Number(e.target.value) || 1)}
-                />
-              </div>
-              <div>
-                <label className="label">Prazo desejado</label>
-                <input
-                  type="date"
-                  className="input"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                />
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={needsInvoice}
-                  onChange={(e) => setNeedsInvoice(e.target.checked)}
-                />
-                Preciso de nota fiscal
-              </label>
-              <div>
-                <label className="label">Personalização / logo</label>
-                <textarea
-                  className="input min-h-24"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Descreva branding, cores, embalagem..."
-                />
-              </div>
-            </>
+      {(product.productType === "CAKE" ||
+        product.productType === "CUSTOM" ||
+        product.productType === "PARTY_KIT") && (
+        <div
+          className={
+            compact
+              ? "space-y-4 rounded-xl border border-cocoa/8 bg-sand/30 p-4"
+              : "space-y-5"
+          }
+        >
+          {compact && (
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-cocoa-soft">
+              Personalização
+            </p>
           )}
-
-          {!quote && product.productType === "READY" && (
+          {product.productType === "CAKE" && (
             <div>
-              <label className="label">Quantidade</label>
+              <label className="label">Tema / decoração</label>
               <input
-                type="number"
-                min={1}
-                className="input !w-28"
-                value={qty}
-                onChange={(e) => setQty(Number(e.target.value) || 1)}
+                className="input"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                placeholder="Ex: floral, personagem, casamento"
               />
             </div>
           )}
+          <div>
+            <label className="label">Data do evento / retirada</label>
+            <div className="relative">
+              <CalendarDays
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-rosewood/70"
+                aria-hidden
+              />
+              <input
+                type="date"
+                className="input !pl-10"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-cocoa-soft">
+              Prazo mínimo: {advance}{" "}
+              {advance === 1 ? "dia" : "dias"} de antecedência
+            </p>
+          </div>
+          {product.productType === "PARTY_KIT" && (
+            <div>
+              <label className="label">Quantidade de convidados</label>
+              <input
+                type="number"
+                min={1}
+                className="input"
+                value={guests}
+                onChange={(e) => setGuests(e.target.value)}
+              />
+            </div>
+          )}
+          <div>
+            <label className="label">Referência / observações</label>
+            <textarea
+              className="input min-h-[5.5rem] resize-y"
+              value={referenceNote || notes}
+              onChange={(e) => {
+                setReferenceNote(e.target.value);
+                setNotes(e.target.value);
+              }}
+              placeholder="Descreva a referência ou detalhes que ajudem no orçamento"
+            />
+          </div>
         </div>
+      )}
 
-        <button type="button" onClick={handleAdd} className="btn-berry mt-8 w-full">
-          {quote || product.priceMode === "QUOTE"
-            ? "Solicitar orçamento"
-            : product.priceMode === "FROM"
-              ? "Adicionar estimativa ao pedido"
-              : "Adicionar ao pedido"}
-        </button>
+      {product.productType === "CORPORATE" && (
+        <div
+          className={
+            compact
+              ? "space-y-4 rounded-xl border border-cocoa/8 bg-sand/30 p-4"
+              : "space-y-5"
+          }
+        >
+          <div>
+            <label className="label">Empresa</label>
+            <input
+              className="input"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label">Quantidade aproximada</label>
+            <input
+              type="number"
+              min={1}
+              className="input"
+              value={qty}
+              onChange={(e) => setQty(Number(e.target.value) || 1)}
+            />
+          </div>
+          <div>
+            <label className="label">Prazo desejado</label>
+            <input
+              type="date"
+              className="input"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+            />
+          </div>
+          <label className="flex items-center gap-2.5 text-sm text-cocoa">
+            <input
+              type="checkbox"
+              checked={needsInvoice}
+              onChange={(e) => setNeedsInvoice(e.target.checked)}
+              className="h-4 w-4 rounded border-cocoa/20 text-berry accent-[var(--berry)]"
+            />
+            Preciso de nota fiscal
+          </label>
+          <div>
+            <label className="label">Personalização / logo</label>
+            <textarea
+              className="input min-h-[5.5rem] resize-y"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Descreva branding, cores, embalagem..."
+            />
+          </div>
+        </div>
+      )}
+
+      {!quote && product.productType === "READY" && (
+        <div>
+          <p className="label">Quantidade</p>
+          <div className="inline-flex items-center gap-1 rounded-xl border border-cocoa/10 bg-sand/40 p-1">
+            <button
+              type="button"
+              aria-label="Diminuir quantidade"
+              disabled={qty <= 1}
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-cocoa transition hover:bg-surface disabled:opacity-40"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <span className="w-10 text-center text-sm font-semibold tabular-nums text-cocoa">
+              {qty}
+            </span>
+            <button
+              type="button"
+              aria-label="Aumentar quantidade"
+              onClick={() => setQty((q) => q + 1)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-cocoa transition hover:bg-surface"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const ctaButton = (
+    <button
+      type="button"
+      onClick={handleAdd}
+      className={
+        compact
+          ? "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rosewood px-5 py-3.5 text-[0.95rem] font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep"
+          : "inline-flex mt-8 w-full items-center justify-center gap-2 rounded-lg bg-rosewood px-5 py-3.5 text-base font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep"
+      }
+    >
+      {ctaLabel}
+      {!quote && product.priceMode !== "QUOTE" && lineTotal > 0 && (
+        <span className="ml-1.5 opacity-90">· {formatBRL(lineTotal)}</span>
+      )}
+    </button>
+  );
+
+  if (compact) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+          <div className="grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-stretch">
+            {imageBlock}
+            <div className="flex flex-col gap-5 px-5 py-5 sm:px-6 sm:py-6">
+              {headerBlock}
+              {formBlock}
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 border-t border-cocoa/8 bg-surface/95 px-5 py-4 backdrop-blur-sm sm:px-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="hidden min-w-0 sm:block">
+              <p className="truncate text-sm font-medium text-cocoa">
+                {product.name}
+              </p>
+              <p className="text-xs text-cocoa-soft">
+                {quote || product.priceMode === "QUOTE"
+                  ? "Valor a confirmar no atendimento"
+                  : product.priceMode === "FROM"
+                    ? `Estimativa · ${formatBRL(lineTotal || unitPrice)}`
+                    : formatBRL(lineTotal || unitPrice)}
+              </p>
+            </div>
+            <div className="w-full sm:max-w-xs sm:shrink-0">{ctaButton}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      {imageBlock}
+      <div>
+        {headerBlock}
+        {formBlock}
+        {ctaButton}
       </div>
     </div>
   );

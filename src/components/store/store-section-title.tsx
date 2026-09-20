@@ -27,13 +27,13 @@ export function StoreSectionTitle({
       if (cancelled || !ref.current) return;
       gsap.registerPlugin(ScrollTrigger);
       ctx = gsap.context(() => {
-        gsap.from(ref.current!.children, {
+        gsap.from(ref.current!, {
           opacity: 0,
-          x: -28,
+          y: 18,
           duration: 0.7,
-          stagger: 0.08,
-          ease: "power3.out",
-          scrollTrigger: { trigger: ref.current, start: "top 88%" },
+          ease: "power2.out",
+          immediateRender: false,
+          scrollTrigger: { trigger: ref.current, start: "top 90%", once: true },
         });
       }, ref);
     })();
@@ -45,15 +45,16 @@ export function StoreSectionTitle({
   }, [reduced]);
 
   return (
-    <div ref={ref} className={cn("mb-1 md:mb-6", className)}>
+    <div ref={ref} className={cn("mb-6 md:mb-8", className)}>
       {eyebrow && (
-        <p className="mb-1 hidden text-sm font-bold uppercase tracking-[0.18em] text-berry md:block">
+        <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-rosewood">
           {eyebrow}
         </p>
       )}
-      <h2 className="font-sans text-base font-bold uppercase tracking-wide text-white md:font-display md:text-3xl md:normal-case md:tracking-normal md:font-normal md:text-cocoa lg:text-4xl">
+      <h2 className="font-display text-2xl text-cocoa md:text-3xl lg:text-[2.15rem]">
         {children}
       </h2>
+      <div className="mt-3 h-px w-12 bg-rosewood/35" aria-hidden />
     </div>
   );
 }

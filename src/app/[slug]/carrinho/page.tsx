@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { connectDB } from "@/lib/db";
+import { leanDoc } from "@/lib/serialize";
+import { Store } from "@/models/Store";
+import { storeHasMercadoPago } from "@/lib/mercadopago";
 import { CheckoutForm } from "@/components/store/checkout-form";
 
 export default async function CartPage({
@@ -8,15 +11,36 @@ export default async function CartPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const store = await prisma.store.findUnique({
-    where: { slug },
-    include: { deliveryZones: true },
-  });
-  if (!store || !store.isPublished) notFound();
+  await connectDB();
+
+  const store = leanDoc(
+    await Store.findOne({ slug, isPublished: true }).lean(),
+  );
+  if (!store) notFound();
 
   return (
-    <main className="px-5 py-10">
-      <CheckoutForm store={store} />
+    <main className="bg-ivory">
+      <CheckoutForm
+        store={{
+          slug: store.slug,
+          name: store.name,
+          pickupEnabled: store.pickupEnabled,
+          deliveryEnabled: store.deliveryEnabled,
+          paymentMethods: store.paymentMethods,
+          minAdvanceDays: store.minAdvanceDays,
+          deliveryZones: (store.deliveryZones || []).map(
+            (z: { name: string; feeCents: number }) => ({
+              name: z.name,
+              feeCents: z.feeCents,
+            }),
+          ),
+          mpOnlineEnabled: storeHasMercadoPago({
+            mpEnabled: Boolean(store.mpEnabled),
+            mpPublicKey: store.mpPublicKey ?? null,
+            mpAccessToken: store.mpAccessToken ?? null,
+          }),
+        }}
+      />
     </main>
   );
 }

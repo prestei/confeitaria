@@ -16,7 +16,7 @@ import { useCart } from "@/components/cart/cart-context";
 import { priceLabel } from "@/components/store/product-card";
 import { formatBRL } from "@/lib/utils";
 import { cn } from "@/lib/cn";
-import type { PriceMode, ProductType } from "@prisma/client";
+import type { PriceMode, ProductType } from "@/lib/enums";
 
 type Category = { id: string; slug: string; name: string; emoji: string | null };
 

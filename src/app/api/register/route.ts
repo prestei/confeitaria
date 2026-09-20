@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { connectDB } from "@/lib/db";
+import { User } from "@/models/User";
+import { Store } from "@/models/Store";
 import { slugify } from "@/lib/utils";
 
 const schema = z.object({
@@ -19,39 +21,38 @@ export async function POST(req: Request) {
     const data = schema.parse(body);
     const email = data.email.toLowerCase();
 
-    const exists = await prisma.user.findUnique({ where: { email } });
+    await connectDB();
+
+    const exists = await User.findOne({ email }).lean();
     if (exists) {
       return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 });
     }
 
     let slug = slugify(data.slug || data.storeName);
-    const slugTaken = await prisma.store.findUnique({ where: { slug } });
+    const slugTaken = await Store.findOne({ slug }).lean();
     if (slugTaken) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
 
     const passwordHash = await bcrypt.hash(data.password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        name: data.name,
-        email,
-        passwordHash,
-        store: {
-          create: {
-            name: data.storeName,
-            slug,
-            whatsapp: data.whatsapp,
-            tagline: "Seu cardápio online para pedidos organizados",
-            description:
-              "Escolha produtos, personalize e envie o pedido estruturado pelo WhatsApp.",
-          },
-        },
-      },
-      include: { store: true },
+    const user = await User.create({
+      name: data.name,
+      email,
+      passwordHash,
+    });
+
+    const store = await Store.create({
+      userId: String(user._id),
+      name: data.storeName,
+      slug,
+      whatsapp: data.whatsapp,
+      tagline: "Seu cardápio online para pedidos organizados",
+      description:
+        "Escolha produtos, personalize e envie o pedido estruturado pelo WhatsApp.",
     });
 
     return NextResponse.json({
-      id: user.id,
-      storeSlug: user.store?.slug,
+      id: String(user._id),
+      storeSlug: store.slug,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

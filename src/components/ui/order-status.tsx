@@ -1,6 +1,6 @@
 import { Badge } from "./badge";
 import { ORDER_STATUS_LABELS } from "@/lib/utils";
-import type { OrderStatus as OrderStatusType } from "@prisma/client";
+import type { OrderStatus as OrderStatusType } from "@/lib/enums";
 
 const toneMap: Record<
   OrderStatusType,

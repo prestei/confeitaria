@@ -1,10 +1,40 @@
-import type { Order, OrderItem, Store } from "@prisma/client";
 import { formatBRL } from "./utils";
 
-type OrderWithItems = Order & { items: OrderItem[] };
+type StoreLike = {
+  name: string;
+};
 
-export function buildWhatsAppMessage(store: Store, order: OrderWithItems) {
-  const kindLabel = order.kind === "QUOTE" ? "Solicitação de orçamento" : "Novo pedido";
+type OrderItemLike = {
+  productName: string;
+  quantity: number;
+  lineTotalCents: number;
+  customizations?: unknown;
+};
+
+type OrderLike = {
+  kind: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string | null;
+  companyName?: string | null;
+  needsInvoice?: boolean;
+  guests?: number | null;
+  eventDate?: Date | string | null;
+  eventTime?: string | null;
+  fulfillment: string;
+  deliveryZone?: string | null;
+  deliveryFeeCents?: number;
+  paymentMethod?: string | null;
+  notes?: string | null;
+  referenceNote?: string | null;
+  totalCents: number;
+  priceLabel?: string;
+  items: OrderItemLike[];
+};
+
+export function buildWhatsAppMessage(store: StoreLike, order: OrderLike) {
+  const kindLabel =
+    order.kind === "QUOTE" ? "Solicitação de orçamento" : "Novo pedido";
   const lines: string[] = [
     `🍰 ${kindLabel} — ${store.name}`,
     "",
@@ -49,8 +79,8 @@ export function buildWhatsAppMessage(store: Store, order: OrderWithItems) {
   }
 
   lines.push("");
-  if (order.deliveryFeeCents > 0) {
-    lines.push(`Taxa de entrega: ${formatBRL(order.deliveryFeeCents)}`);
+  if ((order.deliveryFeeCents ?? 0) > 0) {
+    lines.push(`Taxa de entrega: ${formatBRL(order.deliveryFeeCents!)}`);
   }
 
   const priceMap: Record<string, string> = {
@@ -58,7 +88,7 @@ export function buildWhatsAppMessage(store: Store, order: OrderWithItems) {
     ESTIMATE: "Total estimado",
     TO_CONFIRM: "Valor a confirmar",
   };
-  const label = priceMap[order.priceLabel] ?? "Total";
+  const label = priceMap[order.priceLabel ?? "TOTAL"] ?? "Total";
 
   if (order.kind === "QUOTE" || order.priceLabel === "TO_CONFIRM") {
     lines.push(`${label}: a combinar / orçamento`);
@@ -78,4 +108,10 @@ export function buildWhatsAppMessage(store: Store, order: OrderWithItems) {
   lines.push("Enviado pelo cardápio online ✨");
 
   return lines.join("\n");
+}
+
+export function whatsappUrl(phone: string, message: string) {
+  const digits = phone.replace(/\D/g, "");
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
 }

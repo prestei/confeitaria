@@ -21,6 +21,7 @@ export type CartItem = {
   unitPriceCents: number;
   customizations?: CartCustomization;
   priceMode: "FIXED" | "FROM" | "QUOTE";
+  imageUrl?: string | null;
 };
 
 type CartContextValue = {

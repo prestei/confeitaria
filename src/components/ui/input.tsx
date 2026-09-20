@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
     <input
       ref={ref}
       className={cn(
-        "w-full rounded-2xl border border-cocoa/12 bg-white px-4 py-2.5 text-cocoa",
+        "w-full rounded-lg border border-cocoa/12 bg-white px-4 py-2.5 text-cocoa",
         "placeholder:text-cocoa/35",
         "transition focus:border-berry focus:outline-none focus:ring-[3px] focus:ring-berry/20",
         "disabled:cursor-not-allowed disabled:opacity-60",
@@ -41,7 +41,7 @@ export const Textarea = forwardRef<
   <textarea
     ref={ref}
     className={cn(
-      "w-full min-h-[100px] rounded-2xl border border-cocoa/12 bg-white px-4 py-2.5 text-cocoa",
+      "w-full min-h-[100px] rounded-lg border border-cocoa/12 bg-white px-4 py-2.5 text-cocoa",
       "placeholder:text-cocoa/35 resize-y",
       "transition focus:border-berry focus:outline-none focus:ring-[3px] focus:ring-berry/20",
       "disabled:cursor-not-allowed disabled:opacity-60",
@@ -59,7 +59,7 @@ export const Select = forwardRef<
   <select
     ref={ref}
     className={cn(
-      "w-full appearance-none rounded-2xl border border-cocoa/12 bg-white px-4 py-2.5 text-cocoa",
+      "w-full appearance-none rounded-lg border border-cocoa/12 bg-white px-4 py-2.5 text-cocoa",
       "transition focus:border-berry focus:outline-none focus:ring-[3px] focus:ring-berry/20",
       "disabled:cursor-not-allowed disabled:opacity-60",
       className,
