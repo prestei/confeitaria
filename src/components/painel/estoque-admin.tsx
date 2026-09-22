@@ -5,20 +5,29 @@ import { Plus, Warehouse } from "lucide-react";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
-  Dialog,
-  DialogBody,
-  DialogCancel,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogPrimary,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetBody,
+  SheetCancel,
+  SheetContent,
+  SheetFooter,
+  SheetForm,
+  SheetHeader,
+  SheetPrimary,
+} from "@/components/ui/sheet";
 import {
   PageAction,
   PageHeader,
   PageShell,
   StatusDot,
 } from "@/components/painel/page-header";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/painel/data-table";
 import { useToast } from "@/components/ui/toast";
 
 type Product = {
@@ -123,14 +132,14 @@ export function EstoqueAdmin({
         }
       />
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent size="md">
-          <DialogHeader
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent size="md">
+          <SheetHeader
             title="Nova movimentação"
             description="Registre entrada, saída ou ajuste manual."
           />
-          <form onSubmit={onMove}>
-            <DialogBody className="space-y-4">
+          <SheetForm onSubmit={onMove}>
+            <SheetBody className="space-y-4">
               <div>
                 <label className="label">Produto</label>
                 <select
@@ -178,16 +187,16 @@ export function EstoqueAdmin({
                   placeholder="Opcional"
                 />
               </div>
-            </DialogBody>
-            <DialogFooter>
-              <DialogCancel />
-              <DialogPrimary disabled={saving}>
+            </SheetBody>
+            <SheetFooter>
+              <SheetCancel />
+              <SheetPrimary disabled={saving}>
                 {saving ? "Registrando…" : "Registrar"}
-              </DialogPrimary>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              </SheetPrimary>
+            </SheetFooter>
+          </SheetForm>
+        </SheetContent>
+      </Sheet>
 
       {loading ? (
         <div className="h-40 animate-pulse rounded-2xl bg-white" />
@@ -200,57 +209,59 @@ export function EstoqueAdmin({
         />
       ) : (
         <>
-          <div className="overflow-hidden rounded-lg border border-[#E8E2DE] bg-white">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-[#E8E2DE] bg-[#F0F2F5] text-xs uppercase tracking-wide text-[#8C8682]">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Produto</th>
-                  <th className="px-4 py-3 font-semibold">Qtd. atual</th>
-                  <th className="px-4 py-3 font-semibold">Mínimo</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E8E2DE]">
-                {products.map((p) => {
-                  const s = statusOf(p);
-                  return (
-                    <tr key={p.id}>
-                      <td className="px-4 py-3 font-medium text-[#2D2926]">{p.name}</td>
-                      <td className="px-4 py-3 tabular-nums">
-                        {p.stockQty} {p.unit}
-                      </td>
-                      <td className="px-4 py-3 tabular-nums text-[#8C8682]">
-                        {p.stockMin}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusDot tone={s.tone} label={s.label} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DataTable>
+            <DataTableHeader>
+              <tr>
+                <DataTableHead>Produto</DataTableHead>
+                <DataTableHead>Qtd. atual</DataTableHead>
+                <DataTableHead>Mínimo</DataTableHead>
+                <DataTableHead>Status</DataTableHead>
+              </tr>
+            </DataTableHeader>
+            <DataTableBody>
+              {products.map((p) => {
+                const s = statusOf(p);
+                return (
+                  <DataTableRow key={p.id}>
+                    <DataTableCell className="font-semibold text-[#2D2926]">
+                      {p.name}
+                    </DataTableCell>
+                    <DataTableCell className="tabular-nums text-[#2D2926]">
+                      {p.stockQty} {p.unit}
+                    </DataTableCell>
+                    <DataTableCell className="tabular-nums text-[#8C8682]">
+                      {p.stockMin}
+                    </DataTableCell>
+                    <DataTableCell>
+                      <StatusDot tone={s.tone} label={s.label} />
+                    </DataTableCell>
+                  </DataTableRow>
+                );
+              })}
+            </DataTableBody>
+          </DataTable>
 
-          <div className="rounded-lg border border-[#E8E2DE] bg-white">
-            <div className="border-b border-[#E8E2DE] px-5 py-3">
+          <div className="overflow-hidden rounded-2xl border border-[#E8E2DE] bg-white shadow-[0_1px_2px_rgba(45,41,38,0.04)]">
+            <div className="border-b border-[#E8E2DE] bg-[#FBF7F2] px-4 py-3.5">
               <h2 className="text-sm font-semibold text-[#2D2926]">
                 Histórico de movimentações
               </h2>
             </div>
             {movements.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-[#8C8682]">
+              <p className="px-4 py-6 text-sm text-[#8C8682]">
                 Nenhuma movimentação ainda.
               </p>
             ) : (
-              <ul className="divide-y divide-[#E8E2DE]">
+              <ul className="divide-y divide-[#F0EBE7]">
                 {movements.map((m) => (
                   <li
                     key={m.id}
-                    className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-sm"
+                    className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 text-sm"
                   >
                     <div>
-                      <p className="font-medium text-[#2D2926]">{m.product.name}</p>
+                      <p className="font-semibold text-[#2D2926]">
+                        {m.product.name}
+                      </p>
                       <p className="text-xs text-[#8C8682]">
                         {format(new Date(m.createdAt), "dd/MM/yyyy HH:mm")}
                         {m.note ? ` · ${m.note}` : ""}

@@ -1,4 +1,7 @@
 export { Button } from "./button";
+export { buttonClassName } from "./button-styles";
+export type { ButtonProps } from "./button";
+export type { ButtonVariant, ButtonSize } from "./button-styles";
 export { Input, Textarea, Select, Label, FieldError } from "./input";
 export { Badge } from "./badge";
 export { Card, CardHeader, CardTitle, CardDescription, CardBody, CardFooter } from "./card";
@@ -17,7 +20,19 @@ export {
   DialogPrimary,
 } from "./dialog";
 export { Drawer } from "./drawer";
+export {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetBody,
+  SheetFooter,
+  SheetCancel,
+  SheetPrimary,
+  SheetForm,
+} from "./sheet";
 export { ToastProvider, useToast } from "./toast";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
 export { Switch, Checkbox } from "./switch";
 export { AnimatedNumber } from "./animated-number";
+export { FilterChip, FilterChipGroup } from "./filter-chip";
+

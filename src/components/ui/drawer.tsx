@@ -12,12 +12,14 @@ export function Drawer({
   title,
   children,
   side = "right",
+  className,
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
   side?: "right" | "bottom";
+  className?: string;
 }) {
   const reduced = useReducedMotion();
   const isBottom = side === "bottom";
@@ -42,8 +44,9 @@ export function Drawer({
             className={cn(
               "absolute flex flex-col bg-cream shadow-2xl shadow-cocoa/25",
               isBottom
-                ? "inset-x-0 bottom-0 max-h-[88vh] rounded-t-3xl"
+                ? "inset-x-0 bottom-0 max-h-[88vh] rounded-t"
                 : "inset-y-0 right-0 h-full w-full max-w-md border-l border-cocoa/8",
+              className,
             )}
             initial={
               reduced

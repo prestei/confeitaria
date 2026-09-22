@@ -4,7 +4,9 @@ import { FormEvent, useEffect, useState } from "react";
 import {
   Calendar,
   ChevronDown,
+  Pause,
   Percent,
+  Play,
   Plus,
   SlidersHorizontal,
   Sparkles,
@@ -12,20 +14,22 @@ import {
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
-  Dialog,
-  DialogBody,
-  DialogCancel,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogPrimary,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetBody,
+  SheetCancel,
+  SheetContent,
+  SheetFooter,
+  SheetForm,
+  SheetHeader,
+  SheetPrimary,
+} from "@/components/ui/sheet";
 import {
   PageAction,
   PageHeader,
   PageShell,
   StatusDot,
 } from "@/components/painel/page-header";
+import { RowActionsMenu } from "@/components/painel/row-actions-menu";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 
@@ -157,20 +161,20 @@ export function PromocoesAdmin({
         }
       />
 
-      <Dialog
+      <Sheet
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
           if (!v) resetForm();
         }}
       >
-        <DialogContent size="lg">
-          <DialogHeader
+        <SheetContent size="md">
+          <SheetHeader
             title="Nova promoção"
             description="Crie um cupom ou desconto para sua loja."
           />
-          <form onSubmit={create}>
-            <DialogBody className="grid gap-4 sm:grid-cols-2">
+          <SheetForm onSubmit={create}>
+            <SheetBody className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className={fieldLabel} htmlFor="promo-name">
                   Nome da promoção <span className="text-[#C85A5A]">*</span>
@@ -350,16 +354,16 @@ export function PromocoesAdmin({
                   </div>
                 )}
               </div>
-            </DialogBody>
-            <DialogFooter>
-              <DialogCancel />
-              <DialogPrimary disabled={saving}>
+            </SheetBody>
+            <SheetFooter>
+              <SheetCancel />
+              <SheetPrimary disabled={saving}>
                 {saving ? "Salvando…" : "Criar promoção"}
-              </DialogPrimary>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              </SheetPrimary>
+            </SheetFooter>
+          </SheetForm>
+        </SheetContent>
+      </Sheet>
 
       {loading ? (
         <div className="h-32 animate-pulse rounded-2xl bg-white" />
@@ -396,12 +400,16 @@ export function PromocoesAdmin({
                   />
                 </div>
               </div>
-              <PageAction
-                variant="secondary"
-                onClick={() => toggle(p.id, !p.active)}
-              >
-                {p.active ? "Pausar" : "Ativar"}
-              </PageAction>
+              <RowActionsMenu
+                label={`Ações de ${p.name}`}
+                items={[
+                  {
+                    label: p.active ? "Pausar" : "Ativar",
+                    icon: p.active ? Pause : Play,
+                    onClick: () => toggle(p.id, !p.active),
+                  },
+                ]}
+              />
             </li>
           ))}
         </ul>

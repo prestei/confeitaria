@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { formatBRL } from "@/lib/utils";
 import { cn } from "@/lib/cn";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+  TableAvatar,
+} from "@/components/painel/data-table";
 
 export type CustomerRow = {
   id: string;
@@ -20,12 +29,12 @@ export type CustomerRow = {
 
 type SortKey = "name" | "phone" | "email" | "orders" | "spent" | "lastOrder";
 
-const COLUMNS: { key: SortKey; label: string }[] = [
-  { key: "name", label: "Nome" },
+const COLUMNS: { key: SortKey; label: string; align?: "left" | "right" }[] = [
+  { key: "name", label: "Cliente" },
   { key: "phone", label: "WhatsApp" },
   { key: "email", label: "E-mail" },
-  { key: "orders", label: "Pedidos" },
-  { key: "spent", label: "Valor gasto" },
+  { key: "orders", label: "Pedidos", align: "right" },
+  { key: "spent", label: "Valor gasto", align: "right" },
   { key: "lastOrder", label: "Último pedido" },
 ];
 
@@ -39,7 +48,9 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
       return;
     }
     setSortKey(key);
-    setSortDir(key === "name" || key === "phone" || key === "email" ? "asc" : "desc");
+    setSortDir(
+      key === "name" || key === "phone" || key === "email" ? "asc" : "desc",
+    );
   }
 
   const sorted = useMemo(() => {
@@ -49,28 +60,33 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
       const av = a[sortKey];
       const bv = b[sortKey];
       if (sortKey === "lastOrder") {
-        return (new Date(String(av)).getTime() - new Date(String(bv)).getTime()) * dir;
+        return (
+          (new Date(String(av)).getTime() - new Date(String(bv)).getTime()) *
+          dir
+        );
       }
       if (typeof av === "number" && typeof bv === "number") {
         return (av - bv) * dir;
       }
-      return String(av ?? "").localeCompare(String(bv ?? ""), "pt-BR", {
-        sensitivity: "base",
-      }) * dir;
+      return (
+        String(av ?? "").localeCompare(String(bv ?? ""), "pt-BR", {
+          sensitivity: "base",
+        }) * dir
+      );
     });
     return list;
   }, [rows, sortKey, sortDir]);
 
   return (
     <>
-      <div className="hidden overflow-hidden rounded-lg border border-[#E8E2DE] bg-white md:block">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-[#E8E2DE] bg-[#F0F2F5] text-xs uppercase tracking-wide text-[#8C8682]">
+      <div className="hidden md:block">
+        <DataTable minWidth="760px">
+          <DataTableHeader>
             <tr>
               {COLUMNS.map((col) => {
                 const active = sortKey === col.key;
                 return (
-                  <th key={col.key} className="px-4 py-3 font-semibold">
+                  <DataTableHead key={col.key} align={col.align}>
                     <button
                       type="button"
                       onClick={() => toggleSort(col.key)}
@@ -82,43 +98,64 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
                       {col.label}
                       {active ? (
                         sortDir === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5" aria-hidden />
+                          <ChevronUp className="h-3.5 w-3.5" aria-hidden />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5" aria-hidden />
+                          <ChevronDown className="h-3.5 w-3.5" aria-hidden />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-40" aria-hidden />
+                        <ChevronsUpDown
+                          className="h-3.5 w-3.5 opacity-40"
+                          aria-hidden
+                        />
                       )}
                     </button>
-                  </th>
+                  </DataTableHead>
                 );
               })}
             </tr>
-          </thead>
-          <tbody className="divide-y divide-[#E8E2DE]">
+          </DataTableHeader>
+          <DataTableBody>
             {sorted.map((c) => (
-              <tr key={c.id} className="hover:bg-[#F0F2F5]/70">
-                <td className="px-4 py-3">
+              <DataTableRow key={c.id}>
+                <DataTableCell>
                   <Link
                     href={c.href}
-                    className="font-medium text-[#2D2926] hover:underline"
+                    className="flex min-w-0 items-center gap-3"
                   >
-                    {c.name}
+                    <TableAvatar name={c.name} />
+                    <span className="truncate font-semibold text-[#2D2926] hover:underline">
+                      {c.name}
+                    </span>
                   </Link>
-                </td>
-                <td className="px-4 py-3 text-[#65676B]">{c.phone}</td>
-                <td className="px-4 py-3 text-[#65676B]">{c.email || "—"}</td>
-                <td className="px-4 py-3 tabular-nums text-[#2D2926]">{c.orders}</td>
-                <td className="px-4 py-3 font-medium tabular-nums text-[#2D2926]">
+                </DataTableCell>
+                <DataTableCell>
+                  <span className="inline-flex items-center gap-1.5 text-[#65676B]">
+                    <MessageCircle
+                      className="h-3 w-3 shrink-0 text-[#25D366]"
+                      strokeWidth={2}
+                    />
+                    {c.phone}
+                  </span>
+                </DataTableCell>
+                <DataTableCell className="text-[#65676B]">
+                  {c.email || "—"}
+                </DataTableCell>
+                <DataTableCell align="right" className="tabular-nums text-[#2D2926]">
+                  {c.orders}
+                </DataTableCell>
+                <DataTableCell
+                  align="right"
+                  className="font-semibold tabular-nums text-[#2D2926]"
+                >
                   {formatBRL(c.spent)}
-                </td>
-                <td className="px-4 py-3 text-xs text-[#8C8682]">
+                </DataTableCell>
+                <DataTableCell className="text-xs text-[#8C8682]">
                   {format(new Date(c.lastOrder), "dd/MM/yyyy")}
-                </td>
-              </tr>
+                </DataTableCell>
+              </DataTableRow>
             ))}
-          </tbody>
-        </table>
+          </DataTableBody>
+        </DataTable>
       </div>
 
       <div className="space-y-3 md:hidden">
@@ -126,13 +163,16 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
           <Link
             key={c.id}
             href={c.href}
-            className="block rounded-lg border border-[#E8E2DE] bg-white p-4"
+            className="flex items-center gap-3 rounded-2xl border border-[#E8E2DE] bg-white p-4"
           >
-            <p className="font-medium text-[#2D2926]">{c.name}</p>
-            <p className="text-xs text-[#8C8682]">{c.phone}</p>
-            <p className="mt-2 text-sm text-[#2D2926]">
-              {c.orders} pedidos · {formatBRL(c.spent)}
-            </p>
+            <TableAvatar name={c.name} />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-[#2D2926]">{c.name}</p>
+              <p className="text-xs text-[#8C8682]">{c.phone}</p>
+              <p className="mt-1 text-sm text-[#2D2926]">
+                {c.orders} pedidos · {formatBRL(c.spent)}
+              </p>
+            </div>
           </Link>
         ))}
       </div>

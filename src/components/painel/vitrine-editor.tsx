@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
 
 export type VitrineStore = {
   slug: string;
@@ -110,26 +111,21 @@ export function VitrineEditor({
           </Link>
         </div>
 
-        <div className="inline-flex rounded-xl border border-cocoa/10 bg-white p-0.5">
+        <FilterChipGroup>
           {(
             [
               ["identity", "Identidade"],
               ["appearance", "Aparência"],
             ] as const
           ).map(([id, label]) => (
-            <button
+            <FilterChip
               key={id}
-              type="button"
+              label={label}
+              active={tab === id}
               onClick={() => setTab(id)}
-              className={cn(
-                "rounded-lg px-4 py-2 text-xs font-semibold transition",
-                tab === id ? "bg-fog text-cocoa" : "text-cocoa-soft/65",
-              )}
-            >
-              {label}
-            </button>
+            />
           ))}
-        </div>
+        </FilterChipGroup>
 
         {tab === "identity" ? (
           <div className="grid gap-4 rounded-2xl border border-cocoa/8 bg-white p-5 sm:grid-cols-2">

@@ -1,4 +1,5 @@
 import { connectDB } from "@/lib/db";
+import { normalizeDisplayDays } from "@/lib/category";
 import { leanList } from "@/lib/serialize";
 import { requireStoreSession } from "@/lib/tenant";
 import { Category } from "@/models/Category";
@@ -25,6 +26,9 @@ export default async function CategoriasPage() {
 
   const withCount = categories.map((c) => ({
     ...c,
+    discountPercent: c.discountPercent ?? 0,
+    surchargePercent: c.surchargePercent ?? 0,
+    displayDays: normalizeDisplayDays(c.displayDays),
     _count: { products: countMap[c.id] || 0 },
   }));
 

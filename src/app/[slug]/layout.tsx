@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/db";
+import { isCategoryVisibleToday } from "@/lib/category";
 import { leanDoc, leanList } from "@/lib/serialize";
 import { Store } from "@/models/Store";
 import { Category } from "@/models/Category";
@@ -23,11 +24,11 @@ export default async function StoreLayout({
   );
   if (!store) notFound();
 
-  const [categories, products] = await Promise.all([
+  const [allCategories, products] = await Promise.all([
     leanList(
       await Category.find({ storeId: store.id })
         .sort({ sortOrder: 1 })
-        .select({ slug: 1, name: 1, emoji: 1 })
+        .select({ slug: 1, name: 1, emoji: 1, active: 1, displayDays: 1 })
         .lean(),
     ),
     leanList(
@@ -37,6 +38,8 @@ export default async function StoreLayout({
         .lean(),
     ),
   ]);
+
+  const categories = allCategories.filter((c) => isCategoryVisibleToday(c));
 
   const zones = [...(store.deliveryZones || [])].sort(
     (a, b) => a.feeCents - b.feeCents,

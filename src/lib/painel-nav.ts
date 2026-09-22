@@ -1,14 +1,15 @@
 import {
   LayoutDashboard,
   Package,
-  Tag,
-  Ticket,
-  History,
+  ShoppingBag,
   Users,
   CalendarDays,
   Layers,
+  Wallet,
   Percent,
-  BarChart3,
+  Store,
+  Settings,
+  Tags,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,39 +22,29 @@ export type NavItem = {
 
 export type NavSection = {
   id: string;
-  label: string;
+  label: string | null;
   items: NavItem[];
 };
 
 export const NAV_SECTIONS: NavSection[] = [
   {
-    id: "principal",
-    label: "Principal",
-    items: [
-      { href: "/painel", label: "Visão geral", icon: LayoutDashboard },
-    ],
+    id: "inicio",
+    label: null,
+    items: [{ href: "/painel", label: "Início", icon: LayoutDashboard }],
   },
   {
-    id: "catalogo",
-    label: "Catálogo",
+    id: "confeitaria",
+    label: "Minha confeitaria",
     items: [
       { href: "/painel/produtos", label: "Produtos", icon: Package },
-      { href: "/painel/categorias", label: "Categorias", icon: Tag },
-    ],
-  },
-  {
-    id: "vendas",
-    label: "Vendas",
-    items: [
+      { href: "/painel/categorias", label: "Categorias", icon: Tags },
       {
         href: "/painel/pedidos",
-        label: "Central",
-        icon: Ticket,
+        label: "Encomendas",
+        icon: ShoppingBag,
         badgeKey: "orders",
       },
-      { href: "/painel/historico", label: "Histórico", icon: History },
       { href: "/painel/clientes", label: "Clientes", icon: Users },
-      { href: "/painel/promocoes", label: "Promoções", icon: Percent },
     ],
   },
   {
@@ -70,10 +61,23 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    id: "analises",
-    label: "Análises",
+    id: "vendas",
+    label: "Vendas",
     items: [
-      { href: "/painel/analytics", label: "Relatórios", icon: BarChart3 },
+      { href: "/painel/analytics", label: "Financeiro", icon: Wallet },
+      { href: "/painel/promocoes", label: "Promoções", icon: Percent },
+    ],
+  },
+  {
+    id: "config",
+    label: "Configurações",
+    items: [
+      { href: "/painel/vitrine", label: "Perfil da loja", icon: Store },
+      {
+        href: "/painel/configuracoes",
+        label: "Preferências",
+        icon: Settings,
+      },
     ],
   },
 ];
@@ -83,11 +87,13 @@ export const MAIN_NAV: NavItem[] = NAV_SECTIONS.flatMap((s) => s.items);
 
 export function isNavActive(pathname: string, href: string) {
   if (href === "/painel") return pathname === "/painel";
-  // Central de pedidos: /painel/pedidos e detalhes, sem marcar no histórico
   if (href === "/painel/pedidos") {
     if (pathname === "/painel/pedidos") return true;
     if (!pathname.startsWith("/painel/pedidos/")) return false;
     return !pathname.startsWith("/painel/pedidos/historico");
+  }
+  if (href === "/painel/configuracoes") {
+    return pathname.startsWith("/painel/configuracoes");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

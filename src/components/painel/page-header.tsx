@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
+import {
+  buttonClassName,
+  type ButtonVariant,
+} from "@/components/ui/button-styles";
 
 export function PageShell({
   children,
@@ -47,7 +51,7 @@ export function PageHeader({
   );
 }
 
-/** Ação primária padrão do cabeçalho (botão ou link). */
+/** Ação do cabeçalho — mesmo Button do design system. */
 export function PageAction({
   children,
   href,
@@ -60,17 +64,10 @@ export function PageAction({
   href?: string;
   onClick?: () => void;
   type?: "button" | "submit";
-  variant?: "primary" | "secondary";
+  variant?: Extract<ButtonVariant, "primary" | "secondary" | "accent" | "ghost">;
   className?: string;
 }) {
-  const styles = cn(
-    "inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-3.5 text-sm font-semibold transition",
-    variant === "primary" &&
-      "bg-[#2D2926] text-white hover:bg-[#3D3834]",
-    variant === "secondary" &&
-      "border border-[#CED0D4] bg-white text-[#2D2926] hover:bg-[#F0F2F5]",
-    className,
-  );
+  const styles = buttonClassName({ variant, className });
 
   if (href) {
     return (
@@ -212,7 +209,7 @@ export function IconAction({
   href?: string;
 }) {
   const className =
-    "inline-flex h-8 w-8 items-center justify-center rounded-md text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-[#2D2926]";
+    "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-[#2D2926]";
   if (href) {
     return (
       <Link href={href} className={className} aria-label={label} title={label}>
@@ -233,28 +230,5 @@ export function IconAction({
   );
 }
 
-/** Chip de filtro padronizado. */
-export function FilterChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-md px-3 py-1.5 text-xs font-semibold transition",
-        active
-          ? "bg-[#2D2926] text-white"
-          : "border border-[#CED0D4] bg-white text-[#65676B] hover:bg-[#F0F2F5]",
-      )}
-    >
-      {label}
-    </button>
-  );
-}
+/** @deprecated Importe de `@/components/ui/filter-chip`. Reexport para compat. */
+export { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";

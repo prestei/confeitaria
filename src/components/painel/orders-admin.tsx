@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import {
   DndContext,
@@ -49,6 +48,7 @@ import {
   PageHeader,
   PageShell,
 } from "@/components/painel/page-header";
+import { OrderDetailSheet } from "@/components/painel/order-detail-sheet";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 
@@ -56,8 +56,10 @@ type OrderStatus = keyof typeof ORDER_STATUS_LABELS;
 type PaymentStatus = keyof typeof PAYMENT_STATUS_LABELS;
 
 type OrderItem = {
+  id?: string;
   productName: string;
   quantity: number;
+  lineTotalCents?: number;
   customizations?: Record<string, string> | null;
 };
 
@@ -65,6 +67,7 @@ type Order = {
   id: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string | null;
   status: OrderStatus;
   kind: string;
   priceLabel: string;
@@ -78,6 +81,7 @@ type Order = {
   deliveryZone: string | null;
   notes: string | null;
   referenceNote: string | null;
+  whatsappMessage?: string | null;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
@@ -248,14 +252,14 @@ function OrderCardContent({
   onAdvance,
   onCancel,
   busy,
-  detailHref,
+  onOpenDetail,
 }: {
   order: Order;
   dragging?: boolean;
   onAdvance?: (status: OrderStatus) => void;
   onCancel?: () => void;
   busy?: boolean;
-  detailHref?: string;
+  onOpenDetail?: () => void;
 }) {
   const pay = paymentBadge(order);
   const channel = channelLabel(order);
@@ -283,12 +287,15 @@ function OrderCardContent({
         dragging && "shadow-lg ring-2 ring-[#2D2926]/10",
       )}
     >
-      {detailHref && (
-        <Link
-          href={detailHref}
+      {onOpenDetail && (
+        <button
+          type="button"
           className="absolute inset-0 z-0 rounded-xl"
           aria-label={`Abrir pedido de ${order.customerName}`}
-          draggable={false}
+          onClick={(e) => {
+            stopDrag(e);
+            onOpenDetail();
+          }}
         />
       )}
 
@@ -311,7 +318,7 @@ function OrderCardContent({
           {pay && (
             <span
               className={cn(
-                "inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                "inline-flex rounded px-2 py-0.5 text-[10px] font-semibold",
                 pay.className,
               )}
             >
@@ -375,7 +382,7 @@ function OrderCardContent({
         )}
 
         {order.status === "IN_PRODUCTION" && (
-          <div className="mt-2.5 inline-flex rounded-full bg-[#EDE8F8] px-2.5 py-1 text-[11px] font-medium text-[#5F5299]">
+          <div className="mt-2.5 inline-flex rounded bg-[#EDE8F8] px-2.5 py-1 text-[11px] font-medium text-[#5F5299]">
             Fase: Produção
           </div>
         )}
@@ -520,11 +527,13 @@ function KanbanCard({
   order,
   onAdvance,
   onCancel,
+  onOpenDetail,
   busy,
 }: {
   order: Order;
   onAdvance: (status: OrderStatus) => void;
   onCancel: () => void;
+  onOpenDetail: () => void;
   busy: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -547,7 +556,7 @@ function KanbanCard({
     >
       <OrderCardContent
         order={order}
-        detailHref={`/painel/pedidos/${order.id}`}
+        onOpenDetail={onOpenDetail}
         onAdvance={onAdvance}
         onCancel={order.status === "NEW" ? onCancel : undefined}
         busy={busy}
@@ -665,6 +674,7 @@ function KanbanColumn({
   busyId,
   onAdvance,
   onCancel,
+  onOpenDetail,
 }: {
   status: OrderStatus;
   orders: Order[];
@@ -672,6 +682,7 @@ function KanbanColumn({
   busyId: string | null;
   onAdvance: (orderId: string, status: OrderStatus) => void;
   onCancel: (orderId: string) => void;
+  onOpenDetail: (orderId: string) => void;
 }) {
   const { setNodeRef } = useDroppable({
     id: status,
@@ -698,7 +709,7 @@ function KanbanColumn({
         </span>
         <span
           className={cn(
-            "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
+            "flex h-5 min-w-5 items-center justify-center rounded px-1.5 text-[11px] font-bold",
             theme.badge,
           )}
         >
@@ -718,6 +729,7 @@ function KanbanColumn({
                 busy={busyId === order.id}
                 onAdvance={(next) => onAdvance(order.id, next)}
                 onCancel={() => onCancel(order.id)}
+                onOpenDetail={() => onOpenDetail(order.id)}
               />
             ))}
             {isOver && <DropHint />}
@@ -731,6 +743,8 @@ function KanbanColumn({
 function normalizeOrder(raw: Order): Order {
   return {
     ...raw,
+    customerEmail: raw.customerEmail ?? null,
+    whatsappMessage: raw.whatsappMessage ?? null,
     paymentStatus: raw.paymentStatus || "NONE",
     mpPaymentId: raw.mpPaymentId ?? null,
     items: (raw.items || []).map((item) => ({
@@ -755,6 +769,7 @@ export function OrdersAdmin({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overColumn, setOverColumn] = useState<OrderStatus | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -804,6 +819,12 @@ export function OrdersAdmin({
   const activeOrder = useMemo(
     () => (activeId ? orders.find((o) => o.id === activeId) ?? null : null),
     [activeId, orders],
+  );
+
+  const selectedOrder = useMemo(
+    () =>
+      selectedId ? orders.find((o) => o.id === selectedId) ?? null : null,
+    [selectedId, orders],
   );
 
   function resolveColumn(
@@ -934,6 +955,7 @@ export function OrdersAdmin({
                 busyId={busyId}
                 onAdvance={moveOrder}
                 onCancel={(id) => moveOrder(id, "CANCELLED")}
+                onOpenDetail={setSelectedId}
               />
             ))}
           </KanbanScroller>
@@ -947,6 +969,21 @@ export function OrdersAdmin({
           </DragOverlay>
         </DndContext>
       )}
+
+      <OrderDetailSheet
+        order={selectedOrder}
+        open={selectedId != null}
+        onClose={() => setSelectedId(null)}
+        onStatusChange={(orderId, status) => {
+          setOrders((prev) =>
+            prev.map((o) =>
+              o.id === orderId
+                ? { ...o, status, updatedAt: new Date().toISOString() }
+                : o,
+            ),
+          );
+        }}
+      />
     </PageShell>
   );
 }

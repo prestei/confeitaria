@@ -15,6 +15,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { motionPresets } from "@/lib/animations/presets";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { Button } from "@/components/ui/button";
 
 type DialogCtx = {
   open: boolean;
@@ -97,7 +98,7 @@ export function DialogContent({
             aria-modal="true"
             aria-labelledby={titleId}
             className={cn(
-              "relative z-10 w-full overflow-hidden rounded-xl bg-white shadow-2xl shadow-[#2D2926]/20",
+          "relative z-10 w-full overflow-hidden rounded bg-white shadow-2xl shadow-[#2D2926]/20",
               sizes[size],
               className,
             )}
@@ -182,41 +183,27 @@ export function DialogCancel({
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   const { setOpen } = useDialog();
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      className={className}
       onClick={() => setOpen(false)}
-      className={cn(
-        "rounded-md px-3 py-2 text-sm font-semibold text-[#8C8682] transition",
-        "hover:bg-[#F0F2F5] hover:text-[#2D2926]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D2926]/20",
-        className,
-      )}
       {...props}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
-/** Ação primária do footer (mesma linguagem do PageAction). */
+/** Ação primária do footer (mesmo Button do design system). */
 export function DialogPrimary({
   children,
   className,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      type="submit"
-      className={cn(
-        "inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-3.5 text-sm font-semibold",
-        "bg-[#2D2926] text-white transition hover:bg-[#3D3834]",
-        "disabled:pointer-events-none disabled:opacity-50",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D2926]/25",
-        className,
-      )}
-      {...props}
-    >
+    <Button type="submit" variant="primary" className={className} {...props}>
       {children}
-    </button>
+    </Button>
   );
 }

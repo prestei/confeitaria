@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { cn } from "@/lib/cn";
+import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
 
 const RANGES = [
   { id: "today", label: "Hoje" },
@@ -16,25 +15,19 @@ export function AnalyticsFilters({ current }: { current: string }) {
   const searchParams = useSearchParams();
 
   return (
-    <div className="inline-flex rounded-xl border border-cocoa/10 bg-white p-0.5">
+    <FilterChipGroup>
       {RANGES.map((r) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("range", r.id);
         return (
-          <Link
+          <FilterChip
             key={r.id}
+            label={r.label}
+            active={current === r.id}
             href={`${pathname}?${params.toString()}`}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-semibold transition",
-              current === r.id
-                ? "bg-cocoa text-white"
-                : "text-cocoa-soft/70 hover:text-cocoa",
-            )}
-          >
-            {r.label}
-          </Link>
+          />
         );
       })}
-    </div>
+    </FilterChipGroup>
   );
 }

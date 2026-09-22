@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/db";
+import {
+  applyCategoryPriceAdjust,
+  isCategoryVisibleToday,
+} from "@/lib/category";
 import { leanDoc, leanList } from "@/lib/serialize";
 import { Store } from "@/models/Store";
 import { Category } from "@/models/Category";
@@ -27,7 +31,7 @@ export default async function StorePage({
   );
   if (!store) notFound();
 
-  const [categories, products] = await Promise.all([
+  const [allCategories, products] = await Promise.all([
     leanList(
       await Category.find({ storeId: store.id }).sort({ sortOrder: 1 }).lean(),
     ),
@@ -38,7 +42,30 @@ export default async function StorePage({
     ),
   ]);
 
-  const featured = products.filter((p) => p.featured);
+  const categories = allCategories.filter((c) => isCategoryVisibleToday(c));
+  const categoryById = new Map(allCategories.map((c) => [c.id, c]));
+
+  function withCategoryPrice<T extends { categoryId?: string | null; priceCents: number | null; promoPriceCents?: number | null }>(
+    p: T,
+  ) {
+    const cat = p.categoryId ? categoryById.get(p.categoryId) : undefined;
+    if (!cat) return p;
+    const opts = {
+      discountPercent: cat.discountPercent ?? 0,
+      surchargePercent: cat.surchargePercent ?? 0,
+    };
+    if (!opts.discountPercent && !opts.surchargePercent) return p;
+    return {
+      ...p,
+      priceCents: applyCategoryPriceAdjust(p.priceCents, opts),
+      promoPriceCents:
+        p.promoPriceCents != null
+          ? applyCategoryPriceAdjust(p.promoPriceCents, opts)
+          : p.promoPriceCents,
+    };
+  }
+
+  const featured = products.filter((p) => p.featured).map(withCategoryPrice);
 
   return (
     <main className="relative">
@@ -57,7 +84,9 @@ export default async function StorePage({
 
         <div className="relative bg-[#fafcfe]">
           {categories.map((cat, idx) => {
-            const catProducts = products.filter((p) => p.categoryId === cat.id);
+            const catProducts = products
+              .filter((p) => p.categoryId === cat.id)
+              .map(withCategoryPrice);
             if (!catProducts.length) return null;
 
             return (

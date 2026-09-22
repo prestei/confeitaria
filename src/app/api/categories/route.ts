@@ -2,10 +2,31 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { withIds } from "@/lib/serialize";
+import { ALL_CATEGORY_DAYS, normalizeDisplayDays } from "@/lib/category";
 import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
 import { z } from "zod";
 import { slugify } from "@/lib/utils";
+
+const dayKeySchema = z.enum([
+  "seg",
+  "ter",
+  "qua",
+  "qui",
+  "sex",
+  "sab",
+  "dom",
+]);
+
+const categoryFieldsSchema = {
+  name: z.string().min(2).optional(),
+  emoji: z.string().nullable().optional(),
+  active: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+  discountPercent: z.number().min(0).max(100).optional(),
+  surchargePercent: z.number().min(0).max(500).optional(),
+  displayDays: z.array(dayKeySchema).optional(),
+};
 
 export async function GET() {
   const session = await auth();
@@ -31,6 +52,9 @@ export async function GET() {
   return NextResponse.json(
     withId.map((c) => ({
       ...c,
+      discountPercent: c.discountPercent ?? 0,
+      surchargePercent: c.surchargePercent ?? 0,
+      displayDays: normalizeDisplayDays(c.displayDays),
       _count: { products: countMap.get(c.id) ?? 0 },
     })),
   );
@@ -46,6 +70,10 @@ export async function POST(req: Request) {
     .object({
       name: z.string().min(2),
       emoji: z.string().optional(),
+      discountPercent: z.number().min(0).max(100).optional(),
+      surchargePercent: z.number().min(0).max(500).optional(),
+      displayDays: z.array(dayKeySchema).optional(),
+      active: z.boolean().optional(),
     })
     .parse(await req.json());
 
@@ -61,7 +89,12 @@ export async function POST(req: Request) {
     emoji: data.emoji ?? null,
     slug: slugify(data.name),
     sortOrder: (maxSort?.sortOrder || 0) + 1,
-    active: true,
+    active: data.active ?? true,
+    discountPercent: data.discountPercent ?? 0,
+    surchargePercent: data.surchargePercent ?? 0,
+    displayDays: data.displayDays?.length
+      ? normalizeDisplayDays(data.displayDays)
+      : [...ALL_CATEGORY_DAYS],
   });
 
   return NextResponse.json(withIds(category.toObject()));
@@ -76,11 +109,9 @@ export async function PATCH(req: Request) {
   const data = z
     .object({
       id: z.string().optional(),
-      name: z.string().min(2).optional(),
-      active: z.boolean().optional(),
-      sortOrder: z.number().int().optional(),
       direction: z.enum(["up", "down"]).optional(),
       orderedIds: z.array(z.string()).optional(),
+      ...categoryFieldsSchema,
     })
     .parse(await req.json());
 
@@ -145,8 +176,18 @@ export async function PATCH(req: Request) {
         ...(data.name !== undefined
           ? { name: data.name, slug: slugify(data.name) }
           : {}),
+        ...(data.emoji !== undefined ? { emoji: data.emoji } : {}),
         ...(data.active !== undefined ? { active: data.active } : {}),
         ...(data.sortOrder !== undefined ? { sortOrder: data.sortOrder } : {}),
+        ...(data.discountPercent !== undefined
+          ? { discountPercent: data.discountPercent }
+          : {}),
+        ...(data.surchargePercent !== undefined
+          ? { surchargePercent: data.surchargePercent }
+          : {}),
+        ...(data.displayDays !== undefined
+          ? { displayDays: normalizeDisplayDays(data.displayDays) }
+          : {}),
       },
     },
     { new: true },

@@ -18,24 +18,33 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Tags, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Plus, Power, Tags, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Switch } from "@/components/ui/switch";
 import {
-  Dialog,
-  DialogBody,
-  DialogCancel,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogPrimary,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetBody,
+  SheetCancel,
+  SheetContent,
+  SheetFooter,
+  SheetForm,
+  SheetHeader,
+  SheetPrimary,
+} from "@/components/ui/sheet";
 import {
   PageAction,
   PageHeader,
   PageShell,
 } from "@/components/painel/page-header";
+import { RowActionsMenu } from "@/components/painel/row-actions-menu";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
+import {
+  ALL_CATEGORY_DAYS,
+  CATEGORY_DAY_LABELS,
+  formatDisplayDaysShort,
+  type CategoryDayKey,
+} from "@/lib/category";
 
 type Category = {
   id: string;
@@ -43,8 +52,43 @@ type Category = {
   emoji?: string | null;
   active: boolean;
   sortOrder: number;
+  discountPercent?: number;
+  surchargePercent?: number;
+  displayDays?: CategoryDayKey[];
   _count?: { products: number };
 };
+
+type FormState = {
+  name: string;
+  active: boolean;
+  discountPercent: string;
+  surchargePercent: string;
+  displayDays: CategoryDayKey[];
+};
+
+const emptyForm = (): FormState => ({
+  name: "",
+  active: true,
+  discountPercent: "0",
+  surchargePercent: "0",
+  displayDays: [...ALL_CATEGORY_DAYS],
+});
+
+function formFromCategory(c: Category): FormState {
+  return {
+    name: c.name,
+    active: c.active,
+    discountPercent: String(c.discountPercent ?? 0),
+    surchargePercent: String(c.surchargePercent ?? 0),
+    displayDays:
+      c.displayDays?.length ? [...c.displayDays] : [...ALL_CATEGORY_DAYS],
+  };
+}
+
+function parsePercent(value: string) {
+  const n = Number(value.replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
 
 export function CategoriesAdmin({
   initialCategories = [],
@@ -52,8 +96,8 @@ export function CategoriesAdmin({
   initialCategories?: Category[];
 }) {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("");
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(initialCategories.length === 0);
@@ -67,6 +111,7 @@ export function CategoriesAdmin({
   );
 
   const ids = useMemo(() => categories.map((c) => c.id), [categories]);
+  const isEditing = editingId != null;
 
   async function load() {
     const res = await fetch("/api/categories");
@@ -80,24 +125,75 @@ export function CategoriesAdmin({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function create(e: FormEvent) {
+  function openCreate() {
+    setEditingId(null);
+    setForm(emptyForm());
+    setOpen(true);
+  }
+
+  function openEdit(c: Category) {
+    setEditingId(c.id);
+    setForm(formFromCategory(c));
+    setOpen(true);
+  }
+
+  function toggleDay(day: CategoryDayKey) {
+    setForm((prev) => {
+      const has = prev.displayDays.includes(day);
+      if (has && prev.displayDays.length === 1) return prev;
+      return {
+        ...prev,
+        displayDays: has
+          ? prev.displayDays.filter((d) => d !== day)
+          : [...prev.displayDays, day],
+      };
+    });
+  }
+
+  function setAllDays() {
+    setForm((prev) => ({ ...prev, displayDays: [...ALL_CATEGORY_DAYS] }));
+  }
+
+  async function save(e: FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!form.name.trim()) return;
     setSaving(true);
+
+    const payload = {
+      name: form.name.trim(),
+      active: form.active,
+      discountPercent: Math.min(100, Math.max(0, parsePercent(form.discountPercent))),
+      surchargePercent: Math.max(0, parsePercent(form.surchargePercent)),
+      displayDays: form.displayDays,
+      ...(isEditing ? {} : { emoji: null }),
+    };
+
     const res = await fetch("/api/categories", {
-      method: "POST",
+      method: isEditing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, emoji: emoji || undefined }),
+      body: JSON.stringify(
+        isEditing ? { id: editingId, ...payload } : payload,
+      ),
     });
     setSaving(false);
+
     if (!res.ok) {
-      toast({ title: "Não foi possível criar", tone: "error" });
+      toast({
+        title: isEditing
+          ? "Não foi possível salvar"
+          : "Não foi possível criar",
+        tone: "error",
+      });
       return;
     }
-    setName("");
-    setEmoji("");
+
     setOpen(false);
-    toast({ title: "Categoria criada", tone: "success" });
+    setEditingId(null);
+    setForm(emptyForm());
+    toast({
+      title: isEditing ? "Categoria atualizada" : "Categoria criada",
+      tone: "success",
+    });
     load();
   }
 
@@ -111,7 +207,6 @@ export function CategoriesAdmin({
     if (!res.ok) {
       toast({ title: "Não foi possível reordenar", tone: "error" });
       load();
-      return;
     }
   }
 
@@ -163,54 +258,159 @@ export function CategoriesAdmin({
     <PageShell>
       <PageHeader
         title="Categorias"
-        description="Arraste para ordenar. A ordem aparece na vitrine."
+        description="Ordene, defina desconto ou acréscimo e os dias de exibição na vitrine."
         actions={
-          <PageAction onClick={() => setOpen(true)}>
+          <PageAction onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Nova categoria
           </PageAction>
         }
       />
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent size="sm">
-          <DialogHeader
-            title="Nova categoria"
-            description="Aparece na navegação da vitrine."
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) {
+            setEditingId(null);
+            setForm(emptyForm());
+          }
+        }}
+      >
+        <SheetContent size="md">
+          <SheetHeader
+            title={isEditing ? "Editar categoria" : "Nova categoria"}
+            description="Controla como a categoria aparece e o preço dos produtos."
           />
-          <form onSubmit={create}>
-            <DialogBody className="space-y-4">
+          <SheetForm onSubmit={save}>
+            <SheetBody className="space-y-5">
               <div>
-                <label className="label">Nome</label>
+                <label className="label" htmlFor="category-name">
+                  Nome
+                </label>
                 <input
+                  id="category-name"
                   className="input"
                   placeholder="Ex.: Bolos personalizados"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, name: e.target.value }))
+                  }
                   required
                   autoFocus
                 />
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="label" htmlFor="category-discount">
+                    Desconto (%)
+                  </label>
+                  <input
+                    id="category-discount"
+                    className="input"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    inputMode="decimal"
+                    value={form.discountPercent}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        discountPercent: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="label" htmlFor="category-surcharge">
+                    Acréscimo (%)
+                  </label>
+                  <input
+                    id="category-surcharge"
+                    className="input"
+                    type="number"
+                    min={0}
+                    max={500}
+                    step={0.5}
+                    inputMode="decimal"
+                    value={form.surchargePercent}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        surchargePercent: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="label">Emoji (opcional)</label>
-                <input
-                  className="input"
-                  placeholder="🎂"
-                  value={emoji}
-                  onChange={(e) => setEmoji(e.target.value)}
-                  maxLength={4}
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <label className="label mb-0">Dias de exibição</label>
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-[#8C8682] transition hover:text-[#483129]"
+                    onClick={setAllDays}
+                  >
+                    Todos os dias
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {CATEGORY_DAY_LABELS.map(({ key, short }) => {
+                    const selected = form.displayDays.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleDay(key)}
+                        className={cn(
+                          "min-w-[2.75rem] rounded border px-2.5 py-1.5 text-xs font-semibold transition",
+                          selected
+                            ? "border-[#483129] bg-[#483129] text-white"
+                            : "border-[#CED0D4] bg-white text-[#5C5652] hover:border-[#B0AAA6] hover:bg-[#F7F8FA]",
+                        )}
+                        aria-pressed={selected}
+                      >
+                        {short}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded border border-[#E8E2DE] bg-[#FBF7F2] px-3.5 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#2D2926]">
+                    Categoria ativa na vitrine
+                  </p>
+                  <p className="mt-0.5 text-xs text-[#8C8682]">
+                    Quando desativada, some da loja.
+                  </p>
+                </div>
+                <Switch
+                  id="category-active"
+                  checked={form.active}
+                  onCheckedChange={(active) =>
+                    setForm((p) => ({ ...p, active }))
+                  }
                 />
               </div>
-            </DialogBody>
-            <DialogFooter>
-              <DialogCancel />
-              <DialogPrimary disabled={saving}>
-                {saving ? "Criando…" : "Criar categoria"}
-              </DialogPrimary>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </SheetBody>
+            <SheetFooter>
+              <SheetCancel />
+              <SheetPrimary disabled={saving}>
+                {saving
+                  ? "Salvando…"
+                  : isEditing
+                    ? "Salvar alterações"
+                    : "Criar categoria"}
+              </SheetPrimary>
+            </SheetFooter>
+          </SheetForm>
+        </SheetContent>
+      </Sheet>
 
       {loading ? (
         <div className="h-40 animate-pulse rounded-lg bg-white" />
@@ -221,7 +421,7 @@ export function CategoriesAdmin({
           description="Crie categorias para organizar os produtos na vitrine."
           action={{
             label: "Nova categoria",
-            onClick: () => setOpen(true),
+            onClick: openCreate,
           }}
         />
       ) : (
@@ -237,6 +437,7 @@ export function CategoriesAdmin({
                   key={c.id}
                   category={c}
                   index={index}
+                  onEdit={() => openEdit(c)}
                   onToggle={() => patch({ id: c.id, active: !c.active })}
                   onRemove={() => remove(c.id)}
                 />
@@ -252,11 +453,13 @@ export function CategoriesAdmin({
 function SortableCategoryRow({
   category,
   index,
+  onEdit,
   onToggle,
   onRemove,
 }: {
   category: Category;
   index: number;
+  onEdit: () => void;
   onToggle: () => void;
   onRemove: () => void;
 }) {
@@ -275,6 +478,8 @@ function SortableCategoryRow({
   };
 
   const count = category._count?.products ?? 0;
+  const discount = category.discountPercent ?? 0;
+  const surcharge = category.surchargePercent ?? 0;
 
   return (
     <li
@@ -296,9 +501,13 @@ function SortableCategoryRow({
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#F0F2F5] text-lg">
-          {category.emoji || "🏷️"}
+      <button
+        type="button"
+        className="flex min-w-0 items-center gap-3 text-left"
+        onClick={onEdit}
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#F3EEE8] text-[#483129]">
+          <Tags className="h-4 w-4" aria-hidden />
         </span>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -329,26 +538,46 @@ function SortableCategoryRow({
             <span>
               {count} {count === 1 ? "produto" : "produtos"}
             </span>
+            {discount > 0 && (
+              <span className="rounded-md bg-[#FFF4E5] px-1.5 py-0.5 font-medium text-[#C47A1A]">
+                −{discount}%
+              </span>
+            )}
+            {surcharge > 0 && (
+              <span className="rounded-md bg-[#EEF2FF] px-1.5 py-0.5 font-medium text-[#4A5DB0]">
+                +{surcharge}%
+              </span>
+            )}
+            <span className="hidden sm:inline">
+              {formatDisplayDaysShort(category.displayDays)}
+            </span>
           </div>
         </div>
-      </div>
+      </button>
 
-      <div className="flex shrink-0 items-center gap-1.5">
-        <button
-          type="button"
-          className="rounded-md border border-[#CED0D4] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#2D2926] hover:bg-[#F0F2F5]"
-          onClick={onToggle}
-        >
-          {category.active ? "Desativar" : "Ativar"}
-        </button>
-        <button
-          type="button"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#8C8682] hover:bg-[#FDECEC] hover:text-[#C85A5A]"
-          onClick={onRemove}
-          aria-label={`Excluir ${category.name}`}
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+      <div className="flex justify-end">
+        <RowActionsMenu
+          label={`Ações de ${category.name}`}
+          items={[
+            {
+              label: "Editar",
+              icon: Pencil,
+              onClick: onEdit,
+            },
+            {
+              label: category.active ? "Desativar" : "Ativar",
+              icon: Power,
+              onClick: onToggle,
+            },
+            {
+              label: "Excluir",
+              icon: Trash2,
+              tone: "danger",
+              separator: true,
+              onClick: onRemove,
+            },
+          ]}
+        />
       </div>
     </li>
   );

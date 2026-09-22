@@ -1,23 +1,12 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  CreditCard,
-  ClipboardList,
-  ShoppingBag,
-  CalendarDays,
-  Clock,
-  Plus,
-} from "lucide-react";
 import {
   format,
   subDays,
-  eachDayOfInterval,
   startOfDay,
   endOfDay,
   isSameDay,
-  addHours,
+  startOfMonth,
 } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { connectDB } from "@/lib/db";
 import { leanDoc, leanList } from "@/lib/serialize";
 import { formatBRL, isAbandonedOnlineCheckout } from "@/lib/utils";
@@ -25,14 +14,17 @@ import { requireStoreSession } from "@/lib/tenant";
 import { Store } from "@/models/Store";
 import { Order } from "@/models/Order";
 import { Product } from "@/models/Product";
-import { BlockedDate } from "@/models/BlockedDate";
-import { PageHeader, PageShell } from "@/components/painel/page-header";
-import { PeriodChart } from "@/components/painel/period-chart";
 import { SetupChecklist } from "@/components/painel/setup-checklist";
-import { cn } from "@/lib/cn";
+import {
+  HomeDashboard,
+  type DashStatus,
+  type ProductionRow,
+  type KanbanCard,
+} from "@/components/painel/home-dashboard";
 
 const ACTIVE_STATUSES = [
   "NEW",
+  "REVIEWING",
   "CONFIRMED",
   "IN_PRODUCTION",
   "READY",
@@ -43,85 +35,41 @@ function pctChange(current: number, previous: number): number | null {
   return ((current - previous) / previous) * 100;
 }
 
-function revenueSeries(
-  orders: {
-    createdAt: Date;
-    totalCents: number;
-    status: string;
-    priceLabel: string;
-  }[],
-  days: number,
-) {
-  const end = startOfDay(new Date());
-  const start = subDays(end, days - 1);
-  const interval = eachDayOfInterval({ start, end });
-  return interval.map((day) => {
-    const next = subDays(day, -1);
-    const cents = orders
-      .filter(
-        (o) =>
-          o.createdAt >= day &&
-          o.createdAt < next &&
-          o.status !== "CANCELLED" &&
-          o.priceLabel !== "TO_CONFIRM",
-      )
-      .reduce((s, o) => s + o.totalCents, 0);
-    return {
-      label: format(day, days <= 7 ? "EEE" : "dd MMM", { locale: ptBR }),
-      value: cents,
-    };
-  });
+function mapStatus(status: string, fulfillment?: string): DashStatus {
+  if (status === "IN_PRODUCTION") return "IN_PRODUCTION";
+  if (status === "READY") {
+    return fulfillment === "DELIVERY" ? "DELIVERY" : "READY";
+  }
+  if (status === "NEW" || status === "REVIEWING") return "WAITING";
+  return "TO_PREPARE";
 }
 
-function todayHourSeries(
-  orders: {
-    createdAt: Date;
-    totalCents: number;
-    status: string;
-    priceLabel: string;
-  }[],
-) {
-  const now = new Date();
-  const start = startOfDay(now);
-  const hours = Math.max(1, now.getHours() + 1);
-  return Array.from({ length: hours }, (_, h) => {
-    const from = addHours(start, h);
-    const to = addHours(start, h + 1);
-    const cents = orders
-      .filter(
-        (o) =>
-          o.createdAt >= from &&
-          o.createdAt < to &&
-          o.status !== "CANCELLED" &&
-          o.priceLabel !== "TO_CONFIRM",
-      )
-      .reduce((s, o) => s + o.totalCents, 0);
-    return {
-      label: `${String(h).padStart(2, "0")}h`,
-      value: cents,
-    };
-  });
+function orderTime(o: {
+  eventTime?: string | null;
+  eventDate?: Date | null;
+  createdAt: Date;
+}) {
+  if (o.eventTime) return o.eventTime.slice(0, 5);
+  if (o.eventDate) return format(o.eventDate, "HH:mm");
+  return format(o.createdAt, "HH:mm");
 }
 
-function sumRevenue(
-  orders: {
-    totalCents: number;
-    status: string;
-    priceLabel: string;
-    createdAt: Date;
-  }[],
-  from: Date,
-  to: Date,
-) {
-  return orders
-    .filter(
-      (o) =>
-        o.createdAt >= from &&
-        o.createdAt < to &&
-        o.status !== "CANCELLED" &&
-        o.priceLabel !== "TO_CONFIRM",
-    )
-    .reduce((s, o) => s + o.totalCents, 0);
+function firstItem(o: {
+  items: {
+    productName: string;
+    productId?: string | null;
+    referenceImage?: string | null;
+  }[];
+  kind?: string;
+}) {
+  const item = o.items[0];
+  return {
+    name:
+      item?.productName ||
+      (o.kind === "QUOTE" ? "Orçamento" : "Pedido"),
+    productId: item?.productId || null,
+    image: item?.referenceImage || null,
+  };
 }
 
 export default async function PainelPage() {
@@ -137,36 +85,125 @@ export default async function PainelPage() {
   const now = new Date();
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
+  const monthStart = startOfMonth(now);
   const since90 = subDays(todayStart, 90);
 
-  const [orders, productsCount, blockedDates, allRecentOrders] =
-    await Promise.all([
-      leanList(
-        await Order.find({ storeId, createdAt: { $gte: since90 } })
-          .sort({ createdAt: -1 })
-          .lean(),
-      ),
-      Product.countDocuments({ storeId, active: true }),
-      leanList(
-        await BlockedDate.find({
-          storeId,
-          date: { $gte: todayStart, $lte: subDays(todayStart, -14) },
-        })
-          .sort({ date: 1 })
-          .limit(3)
-          .lean(),
-      ),
-      leanList(
-        await Order.find({ storeId })
-          .sort({ eventDate: 1, eventTime: 1 })
-          .lean(),
-      ),
-    ]);
+  const [orders, products, allActiveOrders] = await Promise.all([
+    leanList(
+      await Order.find({ storeId, createdAt: { $gte: since90 } })
+        .sort({ createdAt: -1 })
+        .lean(),
+    ),
+    leanList(
+      await Product.find({ storeId }).sort({ name: 1 }).lean(),
+    ),
+    leanList(
+      await Order.find({
+        storeId,
+        status: { $in: [...ACTIVE_STATUSES] },
+      })
+        .sort({ eventDate: 1, eventTime: 1, createdAt: 1 })
+        .lean(),
+    ),
+  ]);
 
-  const hour = now.getHours();
-  const greeting =
-    hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const firstName = (session.name || store.name).split(" ")[0];
+  const productById = new Map(
+    products.map((p) => [p.id, p] as const),
+  );
+
+  function resolveImage(
+    productId: string | null,
+    fallback: string | null,
+  ): string | null {
+    if (fallback) return fallback;
+    if (!productId) return null;
+    return productById.get(productId)?.imageUrl || null;
+  }
+
+  const todayProduction = allActiveOrders.filter((o) => {
+    if (isAbandonedOnlineCheckout(o)) return false;
+    if (o.eventDate) return isSameDay(o.eventDate, now);
+    return o.createdAt >= todayStart && o.createdAt <= todayEnd;
+  });
+
+  const productionSource =
+    todayProduction.length > 0
+      ? todayProduction
+      : allActiveOrders.filter((o) => !isAbandonedOnlineCheckout(o));
+
+  const productionRows: ProductionRow[] = productionSource
+    .slice(0, 6)
+    .map((o) => {
+      const item = firstItem(o);
+      return {
+        id: o.id,
+        href: `/painel/pedidos/${o.id}`,
+        time: orderTime(o),
+        productName: item.name,
+        productImage: resolveImage(item.productId, item.image),
+        customerName: o.customerName,
+        status: mapStatus(o.status, o.fulfillment),
+      };
+    });
+
+  function toKanban(o: (typeof allActiveOrders)[number]): KanbanCard {
+    const item = firstItem(o);
+    return {
+      id: o.id,
+      href: `/painel/pedidos/${o.id}`,
+      productName: item.name,
+      productImage: resolveImage(item.productId, item.image),
+      customerName: o.customerName,
+      time: orderTime(o),
+    };
+  }
+
+  const kanbanPool = productionSource;
+
+  const kanban = {
+    todo: kanbanPool
+      .filter((o) =>
+        ["NEW", "REVIEWING", "CONFIRMED"].includes(o.status),
+      )
+      .slice(0, 3)
+      .map(toKanban),
+    doing: kanbanPool
+      .filter((o) => o.status === "IN_PRODUCTION")
+      .slice(0, 3)
+      .map(toKanban),
+    done: kanbanPool
+      .filter((o) => o.status === "READY")
+      .slice(0, 3)
+      .map(toKanban),
+  };
+
+  const deliveries = allActiveOrders
+    .filter((o) => {
+      if (isAbandonedOnlineCheckout(o)) return false;
+      if (!o.eventDate || !o.eventTime) return false;
+      if (o.eventDate < todayStart) return false;
+      return true;
+    })
+    .slice(0, 5)
+    .map((o) => ({
+      id: o.id,
+      href: `/painel/pedidos/${o.id}`,
+      time: orderTime(o),
+      customerName: o.customerName,
+      productName: firstItem(o).name,
+    }));
+
+  const lowStock = products
+    .filter((p) => p.trackStock && p.stockQty <= p.stockMin)
+    .sort((a, b) => a.stockQty - b.stockQty)
+    .slice(0, 5)
+    .map((p) => ({
+      id: p.id,
+      href: `/painel/produtos/${p.id}`,
+      name: p.name,
+      qtyLabel: `${p.stockQty} ${p.unit || "un"}.`,
+      critical: p.stockQty <= Math.max(1, Math.floor(p.stockMin / 2)),
+    }));
 
   const todayOrders = orders.filter(
     (o) =>
@@ -178,52 +215,6 @@ export default async function PainelPage() {
     .filter((o) => o.priceLabel !== "TO_CONFIRM")
     .reduce((s, o) => s + o.totalCents, 0);
 
-  const sameWeekdayLastWeek = subDays(todayStart, 7);
-  const lastSameDayOrders = orders.filter(
-    (o) =>
-      isSameDay(o.createdAt, sameWeekdayLastWeek) &&
-      o.status !== "CANCELLED" &&
-      o.priceLabel !== "TO_CONFIRM",
-  );
-  const lastSameDaySales = lastSameDayOrders.reduce(
-    (s, o) => s + o.totalCents,
-    0,
-  );
-  const salesChange = pctChange(todaySales, lastSameDaySales);
-  const weekdayName = format(now, "EEEE", { locale: ptBR });
-
-  const inProgress = allRecentOrders.filter((o) =>
-    (ACTIVE_STATUSES as readonly string[]).includes(o.status),
-  );
-  const waiting = inProgress.filter((o) => {
-    if (o.status !== "NEW") return false;
-    return !isAbandonedOnlineCheckout({
-      paymentMethod: o.paymentMethod,
-      paymentStatus: o.paymentStatus,
-      mpPaymentId: o.mpPaymentId,
-    });
-  }).length;
-  const nextHourDeliveries = inProgress.filter((o) => {
-    if (!o.eventDate || !isSameDay(o.eventDate, now) || !o.eventTime)
-      return false;
-    const [hh, mm] = o.eventTime.split(":").map(Number);
-    if (Number.isNaN(hh)) return false;
-    const eventMinutes = hh * 60 + (mm || 0);
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    return eventMinutes >= nowMinutes && eventMinutes <= nowMinutes + 60;
-  }).length;
-
-  const confirmedToday = todayOrders.filter((o) =>
-    ["CONFIRMED", "IN_PRODUCTION", "READY", "DELIVERED"].includes(o.status),
-  );
-  const ticketBase = todayOrders.filter((o) => o.priceLabel !== "TO_CONFIRM");
-  const ticketAvg =
-    ticketBase.length > 0
-      ? Math.round(
-          ticketBase.reduce((s, o) => s + o.totalCents, 0) / ticketBase.length,
-        )
-      : 0;
-
   const yesterdayStart = subDays(todayStart, 1);
   const yesterdayOrders = orders.filter(
     (o) =>
@@ -232,6 +223,19 @@ export default async function PainelPage() {
       o.status !== "CANCELLED" &&
       o.priceLabel !== "TO_CONFIRM",
   );
+  const yesterdaySales = yesterdayOrders.reduce(
+    (s, o) => s + o.totalCents,
+    0,
+  );
+
+  const ticketBase = todayOrders.filter((o) => o.priceLabel !== "TO_CONFIRM");
+  const ticketAvg =
+    ticketBase.length > 0
+      ? Math.round(
+          ticketBase.reduce((s, o) => s + o.totalCents, 0) /
+            ticketBase.length,
+        )
+      : 0;
   const yesterdayTicket =
     yesterdayOrders.length > 0
       ? Math.round(
@@ -239,72 +243,82 @@ export default async function PainelPage() {
             yesterdayOrders.length,
         )
       : 0;
-  const ticketChange = pctChange(ticketAvg, yesterdayTicket);
 
-  const series = {
-    today: todayHourSeries(orders as any),
-    "7": revenueSeries(orders as any, 7),
-    "30": revenueSeries(orders as any, 30),
-  };
-
-  const rev7 = sumRevenue(orders as any, subDays(todayStart, 6), todayEnd);
-  const rev7Prev = sumRevenue(orders as any,
-    subDays(todayStart, 13),
-    subDays(todayStart, 6),
+  const itemsSold = todayOrders.reduce(
+    (s, o) =>
+      s + o.items.reduce((n, it) => n + (it.quantity || 1), 0),
+    0,
   );
-  const rev30 = sumRevenue(orders as any, subDays(todayStart, 29), todayEnd);
-  const rev30Prev = sumRevenue(orders as any,
-    subDays(todayStart, 59),
-    subDays(todayStart, 29),
+  const yesterdayItems = yesterdayOrders.reduce(
+    (s, o) =>
+      s + o.items.reduce((n, it) => n + (it.quantity || 1), 0),
+    0,
   );
 
-  const totals = {
-    today: { cents: todaySales, changePct: salesChange },
-    "7": { cents: rev7, changePct: pctChange(rev7, rev7Prev) },
-    "30": { cents: rev30, changePct: pctChange(rev30, rev30Prev) },
-  };
+  const salesMetrics = [
+    {
+      label: "Vendas do dia",
+      value: formatBRL(todaySales),
+      changePct:
+        todaySales > 0 ? pctChange(todaySales, yesterdaySales) : null,
+    },
+    {
+      label: "Pedidos realizados",
+      value: String(todayOrders.length),
+      changePct:
+        todayOrders.length > 0
+          ? pctChange(todayOrders.length, yesterdayOrders.length)
+          : null,
+    },
+    {
+      label: "Ticket médio",
+      value: ticketAvg > 0 ? formatBRL(ticketAvg) : "—",
+      changePct: ticketAvg > 0 ? pctChange(ticketAvg, yesterdayTicket) : null,
+    },
+    {
+      label: "Itens vendidos",
+      value: String(itemsSold),
+      changePct:
+        itemsSold > 0 ? pctChange(itemsSold, yesterdayItems) : null,
+    },
+  ];
 
-  const upcomingOrders = allRecentOrders
-    .filter(
-      (o) =>
-        o.eventDate &&
-        o.eventDate >= todayStart &&
-        o.status !== "CANCELLED" &&
-        o.status !== "DELIVERED",
-    )
-    .slice(0, 6);
+  const monthOrders = orders.filter(
+    (o) =>
+      o.createdAt >= monthStart &&
+      o.status !== "CANCELLED" &&
+      o.priceLabel !== "TO_CONFIRM",
+  );
+  const soldMap = new Map<string, { name: string; qty: number; image: string | null; productId: string | null }>();
+  for (const o of monthOrders) {
+    for (const it of o.items) {
+      const key = it.productId || it.productName;
+      const prev = soldMap.get(key);
+      const img = resolveImage(it.productId, it.referenceImage || null);
+      if (prev) {
+        prev.qty += it.quantity || 1;
+      } else {
+        soldMap.set(key, {
+          name: it.productName,
+          qty: it.quantity || 1,
+          image: img,
+          productId: it.productId || null,
+        });
+      }
+    }
+  }
+  const topProducts = [...soldMap.values()]
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 5)
+    .map((p, i) => ({
+      id: p.productId || `top-${i}`,
+      href: p.productId ? `/painel/produtos/${p.productId}` : "/painel/produtos",
+      name: p.name,
+      imageUrl: p.image,
+      soldLabel: `${p.qty} vendido${p.qty === 1 ? "" : "s"}`,
+    }));
 
-  const appointments = [
-    ...upcomingOrders.map((o, i) => {
-      const tone = (["rose", "blue", "green"] as const)[i % 3];
-      const kind = o.fulfillment === "DELIVERY" ? "Entrega" : "Retirada";
-      const time =
-        o.eventTime ||
-        (o.eventDate ? format(o.eventDate, "HH:mm") : "—");
-      const product =
-        o.items[0]?.productName ||
-        (o.kind === "QUOTE" ? "Orçamento" : "Pedido");
-      return {
-        id: o.id,
-        href: `/painel/pedidos/${o.id}`,
-        time,
-        title: `${kind} · ${o.customerName}`,
-        detail: product,
-        tone,
-      };
-    }),
-    ...blockedDates
-      .slice(0, Math.max(0, 6 - upcomingOrders.length))
-      .map((b) => ({
-        id: b.id,
-        href: "/painel/agenda",
-        time: format(b.date, "dd/MM"),
-        title: "Data bloqueada",
-        detail: b.reason || "Agenda indisponível",
-        tone: "green" as const,
-      })),
-  ].slice(0, 6);
-
+  const productsCount = products.filter((p) => p.active).length;
   const setupSteps = [
     {
       id: "logo",
@@ -339,175 +353,20 @@ export default async function PainelPage() {
   ];
   const setupComplete = setupSteps.every((s) => s.done);
 
-  const toneBorder = {
-    rose: "border-l-[#C85A5A] bg-[#FDECEC]",
-    blue: "border-l-[#5B8FB8] bg-[#EBF4F8]",
-    green: "border-l-[#5A9E6F] bg-[#F0F4EF]",
-  } as const;
-
   return (
-    <PageShell>
-      <PageHeader
-        title={`${greeting}, ${firstName}.`}
-        description="A cozinha está em movimento. Aqui está o que merece sua atenção."
-      />
-
+    <div className="space-y-4">
       {!setupComplete && (
         <SetupChecklist steps={setupSteps} complete={setupComplete} />
       )}
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <article className="rounded-xl border border-[#E8E2DE] bg-white p-4 shadow-[0_1px_2px_rgba(45,41,38,0.04)]">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-xs font-medium text-[#8C8682]">Vendas de hoje</p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FDECEC] text-[#C85A5A]">
-              <CreditCard className="h-4 w-4" strokeWidth={1.75} />
-            </span>
-          </div>
-          <p className="mt-2 text-[1.5rem] font-bold tracking-tight text-[#2D2926] tabular-nums">
-            {formatBRL(todaySales)}
-          </p>
-          {salesChange != null && (
-            <p
-              className={cn(
-                "mt-1.5 text-xs font-semibold",
-                salesChange >= 0 ? "text-[#4A9E5F]" : "text-[#C85A5A]",
-              )}
-            >
-              {salesChange >= 0 ? "↗" : "↘"}{" "}
-              {Math.abs(salesChange).toFixed(1).replace(".", ",")}%
-              <span className="font-normal text-[#8C8682]">
-                {" "}
-                vs. {formatBRL(lastSameDaySales)} na última {weekdayName}
-              </span>
-            </p>
-          )}
-        </article>
-
-        <article className="rounded-xl border border-[#E8E2DE] bg-white p-4 shadow-[0_1px_2px_rgba(45,41,38,0.04)]">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-xs font-medium text-[#8C8682]">
-              Pedidos em andamento
-            </p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EBF4F8] text-[#5B8FB8]">
-              <ClipboardList className="h-4 w-4" strokeWidth={1.75} />
-            </span>
-          </div>
-          <p className="mt-2 text-[1.5rem] font-bold tracking-tight text-[#2D2926] tabular-nums">
-            {inProgress.length}
-          </p>
-          <p className="mt-1.5 text-xs text-[#8C8682]">
-            <span className="inline-flex items-center gap-1 font-semibold text-[#C85A5A]">
-              <Clock className="h-3.5 w-3.5" strokeWidth={2} />
-              {waiting} aguardando
-            </span>
-            {" · "}
-            {nextHourDeliveries === 0
-              ? "nenhuma entrega na próxima hora"
-              : nextHourDeliveries === 1
-                ? "1 entrega na próxima hora"
-                : `${nextHourDeliveries} entregas na próxima hora`}
-          </p>
-        </article>
-
-        <article className="rounded-xl border border-[#E8E2DE] bg-white p-4 shadow-[0_1px_2px_rgba(45,41,38,0.04)] sm:col-span-2 xl:col-span-1">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-xs font-medium text-[#8C8682]">Ticket médio</p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F0F4EF] text-[#5A9E6F]">
-              <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
-            </span>
-          </div>
-          <p className="mt-2 text-[1.5rem] font-bold tracking-tight text-[#2D2926] tabular-nums">
-            {ticketAvg > 0 ? formatBRL(ticketAvg) : "—"}
-          </p>
-          <p className="mt-1.5 text-xs text-[#8C8682]">
-            {ticketChange != null && ticketAvg > 0 && (
-              <span
-                className={cn(
-                  "font-semibold",
-                  ticketChange >= 0 ? "text-[#4A9E5F]" : "text-[#C85A5A]",
-                )}
-              >
-                {ticketChange >= 0 ? "↗" : "↘"}{" "}
-                {Math.abs(ticketChange).toFixed(1).replace(".", ",")}%{" "}
-              </span>
-            )}
-            {(() => {
-              const n = confirmedToday.length || todayOrders.length;
-              return n === 1
-                ? "1 pedido confirmado hoje"
-                : `${n} pedidos confirmados hoje`;
-            })()}
-          </p>
-        </article>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-5 lg:items-start">
-        <section className="rounded-xl border border-[#E8E2DE] bg-white p-4 shadow-[0_1px_2px_rgba(45,41,38,0.04)] lg:col-span-3">
-          <PeriodChart series={series} totals={totals} />
-        </section>
-
-        <section className="flex flex-col rounded-xl border border-[#E8E2DE] bg-white p-4 shadow-[0_1px_2px_rgba(45,41,38,0.04)] lg:col-span-2">
-          <div className="mb-2.5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#F5E8E8] text-[#C85A5A]">
-                <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.75} />
-              </span>
-              <h2 className="font-sans text-[15px] font-semibold text-[#2D2926]">
-                Próximos compromissos
-              </h2>
-            </div>
-            <Link
-              href="/painel/agenda"
-              className="text-xs font-semibold text-[#C85A5A] hover:underline"
-            >
-              Ver agenda
-            </Link>
-          </div>
-
-          {appointments.length === 0 ? (
-            <div className="py-3 text-center">
-              <p className="text-sm font-medium text-[#2D2926]">Agenda livre</p>
-              <p className="mt-0.5 text-xs text-[#8C8682]">
-                Encomendas com data aparecerão aqui.
-              </p>
-            </div>
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {appointments.map((a) => (
-                <li key={a.id}>
-                  <Link
-                    href={a.href}
-                    className={cn(
-                      "flex items-baseline justify-between gap-2 rounded-md border-l-[3px] px-2.5 py-1.5 transition hover:opacity-90",
-                      toneBorder[a.tone],
-                    )}
-                  >
-                    <p className="min-w-0 truncate text-[12px] font-semibold leading-snug text-[#2D2926]">
-                      <span className="tabular-nums">{a.time}</span>
-                      <span className="font-medium text-[#6B6560]">
-                        {" "}
-                        · {a.title}
-                      </span>
-                    </p>
-                    <p className="shrink-0 text-[11px] leading-snug text-[#8C8682]">
-                      {a.detail}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <Link
-            href="/painel/agenda"
-            className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-[#8C8682] transition hover:text-[#C85A5A]"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            adicionar compromisso
-          </Link>
-        </section>
-      </div>
-    </PageShell>
+      <HomeDashboard
+        productionCount={productionSource.length}
+        productionRows={productionRows}
+        kanban={kanban}
+        deliveries={deliveries}
+        lowStock={lowStock}
+        salesMetrics={salesMetrics}
+        topProducts={topProducts}
+      />
+    </div>
   );
 }

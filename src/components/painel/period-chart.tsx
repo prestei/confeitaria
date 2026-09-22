@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatBRL } from "@/lib/utils";
+import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
 
 export type ChartPoint = { label: string; value: number };
 
@@ -102,23 +103,16 @@ export function PeriodChart({
             </div>
           </div>
         </div>
-        <div className="inline-flex rounded-lg border border-[#E8E2DE] bg-[#F5F0ED] p-0.5">
+        <FilterChipGroup>
           {PERIODS.map((p) => (
-            <button
+            <FilterChip
               key={p.id}
-              type="button"
+              label={p.label}
+              active={period === p.id}
               onClick={() => setPeriod(p.id)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-semibold transition",
-                period === p.id
-                  ? "bg-[#2D2926] text-white shadow-sm"
-                  : "text-[#8C8682] hover:text-[#2D2926]",
-              )}
-            >
-              {p.label}
-            </button>
+            />
           ))}
-        </div>
+        </FilterChipGroup>
       </div>
 
       <div className="relative">

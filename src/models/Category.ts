@@ -1,5 +1,12 @@
 import mongoose, { type Model } from "mongoose";
 import { baseSchema } from "./_base";
+import {
+  ALL_CATEGORY_DAYS,
+  CATEGORY_DAY_KEYS,
+  type CategoryDayKey,
+} from "@/lib/category-days";
+
+export { ALL_CATEGORY_DAYS, CATEGORY_DAY_KEYS, type CategoryDayKey };
 
 const categorySchema = baseSchema(
   {
@@ -8,6 +15,15 @@ const categorySchema = baseSchema(
     slug: { type: String, required: true },
     sortOrder: { type: Number, default: 0 },
     active: { type: Boolean, default: true },
+    /** Desconto percentual aplicado aos produtos da categoria (0–100). */
+    discountPercent: { type: Number, default: 0 },
+    /** Acréscimo percentual aplicado aos produtos da categoria (≥ 0). */
+    surchargePercent: { type: Number, default: 0 },
+    /** Dias em que a categoria é exibida. Vazio = todos os dias. */
+    displayDays: {
+      type: [String],
+      default: () => [...ALL_CATEGORY_DAYS],
+    },
   },
   { tenant: true },
 );
@@ -23,6 +39,9 @@ export type CategoryDoc = {
   slug: string;
   sortOrder: number;
   active: boolean;
+  discountPercent: number;
+  surchargePercent: number;
+  displayDays: CategoryDayKey[];
 };
 
 export const Category: Model<CategoryDoc> =

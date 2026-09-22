@@ -12,10 +12,14 @@ export default async function ProductsPage() {
   const [products, categories] = await Promise.all([
     leanList(
       await Product.find({ storeId: session.storeId })
-        .sort({ featured: -1, sortOrder: 1, name: 1 })
+        .sort({ sortOrder: 1, name: 1 })
         .lean(),
     ),
-    leanList(await Category.find({ storeId: session.storeId }).lean()),
+    leanList(
+      await Category.find({ storeId: session.storeId })
+        .sort({ sortOrder: 1 })
+        .lean(),
+    ),
   ]);
 
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c]));

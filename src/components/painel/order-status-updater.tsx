@@ -1,22 +1,28 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/toast";
 
 export function OrderStatusUpdater({
   orderId,
   current,
   labels,
+  onUpdated,
 }: {
   orderId: string;
   current: string;
   labels: Record<string, string>;
+  onUpdated?: (status: string) => void;
 }) {
   const [status, setStatus] = useState(current);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    setStatus(current);
+  }, [current, orderId]);
 
   async function save(next: string) {
     setStatus(next);
@@ -33,7 +39,8 @@ export function OrderStatusUpdater({
       return;
     }
     toast({ title: "Status atualizado", tone: "success" });
-    router.refresh();
+    onUpdated?.(next);
+    if (!onUpdated) router.refresh();
   }
 
   return (

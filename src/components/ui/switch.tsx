@@ -31,19 +31,21 @@ export function Switch({
         disabled={disabled}
         onClick={() => onCheckedChange(!checked)}
         className={cn(
-          "relative h-6 w-11 rounded-full transition",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rosewood/40",
-          checked ? "bg-rosewood" : "bg-cocoa/20",
+          "relative h-6 w-11 shrink-0 rounded-full transition",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#483129]/25",
+          checked ? "bg-[#483129]" : "bg-[#CED0D4]",
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition",
+            "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition",
             checked && "translate-x-5",
           )}
         />
       </button>
-      {label && <span className="text-sm font-medium text-cocoa">{label}</span>}
+      {label && (
+        <span className="text-sm font-medium text-[#2D2926]">{label}</span>
+      )}
     </label>
   );
 }

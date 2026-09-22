@@ -1,6 +1,7 @@
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Button } from "./button";
+import { buttonClassName } from "./button-styles";
 
 export function EmptyState({
   icon: Icon,
@@ -36,11 +37,11 @@ export function EmptyState({
       {action && (
         <div className="mt-6">
           {action.href ? (
-            <a href={action.href} className="btn-primary !py-2.5 text-sm">
+            <a href={action.href} className={buttonClassName()}>
               {action.label}
             </a>
           ) : (
-            <Button type="button" onClick={action.onClick} size="sm">
+            <Button type="button" onClick={action.onClick}>
               {action.label}
             </Button>
           )}

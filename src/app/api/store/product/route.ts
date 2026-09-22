@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
+import { applyCategoryPriceAdjust } from "@/lib/category";
 import { leanDoc } from "@/lib/serialize";
 import { Store } from "@/models/Store";
+import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
 
 export async function GET(req: Request) {
@@ -30,9 +32,36 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
   }
 
+  let priceCents = product.priceCents;
+  let promoPriceCents = product.promoPriceCents;
+
+  if (product.categoryId) {
+    const cat = await Category.findOne({
+      _id: product.categoryId,
+      storeId: String(store._id),
+    })
+      .select({ discountPercent: 1, surchargePercent: 1 })
+      .lean();
+    if (cat) {
+      const opts = {
+        discountPercent: cat.discountPercent ?? 0,
+        surchargePercent: cat.surchargePercent ?? 0,
+      };
+      if (opts.discountPercent || opts.surchargePercent) {
+        priceCents = applyCategoryPriceAdjust(priceCents, opts);
+        promoPriceCents =
+          promoPriceCents != null
+            ? applyCategoryPriceAdjust(promoPriceCents, opts)
+            : promoPriceCents;
+      }
+    }
+  }
+
   // Ensure nested optionGroups/options are sorted like the Prisma include did
   const sorted = {
     ...product,
+    priceCents,
+    promoPriceCents,
     optionGroups: [...(product.optionGroups ?? [])]
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((g) => ({

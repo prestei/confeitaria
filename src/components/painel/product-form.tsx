@@ -214,7 +214,7 @@ export function ProductForm({
                     }
                   }}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition",
+                    "inline-flex items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold transition",
                     current && "bg-[#2D2926] text-white",
                     done && !current && "bg-[#E7F8ED] text-[#31A24C]",
                     !done && !current && "bg-white text-[#65676B] ring-1 ring-[#CED0D4]",

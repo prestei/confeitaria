@@ -66,7 +66,7 @@ export async function GET() {
   await connectDB();
   const storeId = session.user.storeId;
   const products = await Product.find({ storeId })
-    .sort({ featured: -1, sortOrder: 1, name: 1 })
+    .sort({ sortOrder: 1, name: 1 })
     .lean();
 
   const categoryIds = [
@@ -78,8 +78,15 @@ export async function GET() {
   ];
   const categories = categoryIds.length
     ? (withIds(
-        await Category.find({ _id: { $in: categoryIds }, storeId }).lean(),
-      ) as Array<{ id: string; name: string; [key: string]: unknown }>)
+        await Category.find({ _id: { $in: categoryIds }, storeId })
+          .sort({ sortOrder: 1 })
+          .lean(),
+      ) as Array<{
+        id: string;
+        name: string;
+        sortOrder?: number;
+        [key: string]: unknown;
+      }>)
     : [];
   const catMap = new Map(categories.map((c) => [c.id, c]));
 
@@ -92,6 +99,39 @@ export async function GET() {
       category: p.categoryId ? (catMap.get(p.categoryId) ?? null) : null,
     })),
   );
+}
+
+export async function PATCH(req: Request) {
+  const session = await auth();
+  if (!session?.user?.storeId) {
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  const data = z
+    .object({
+      orderedIds: z.array(z.string()).min(1),
+    })
+    .parse(await req.json());
+
+  await connectDB();
+  const storeId = session.user.storeId;
+
+  const owned = await Product.find({
+    storeId,
+    _id: { $in: data.orderedIds },
+  })
+    .select("_id")
+    .lean();
+  const ownedSet = new Set(owned.map((p) => String(p._id)));
+  const ids = data.orderedIds.filter((id) => ownedSet.has(id));
+
+  await Promise.all(
+    ids.map((id, index) =>
+      Product.updateOne({ _id: id, storeId }, { $set: { sortOrder: index } }),
+    ),
+  );
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function POST(req: Request) {
