@@ -1,4 +1,18 @@
+import dns from "node:dns";
 import mongoose from "mongoose";
+
+// Node on this machine resolves via 127.0.0.1, which refuses SRV lookups
+// required by mongodb+srv. Fall back to public resolvers in that case.
+const dnsServers = dns.getServers();
+const loopbackOnly =
+  dnsServers.length > 0 &&
+  dnsServers.every((server) => {
+    const host = server.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+    return host === "127.0.0.1" || host === "::1";
+  });
+if (loopbackOnly) {
+  dns.setServers(["1.1.1.1", "8.8.8.8"]);
+}
 
 type Cache = {
   conn: typeof mongoose | null;

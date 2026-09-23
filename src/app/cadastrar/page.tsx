@@ -49,7 +49,7 @@ export default function RegisterPage() {
   return (
     <div className="bg-atelier bg-grain flex min-h-screen items-center justify-center px-5 py-12">
       <div className="panel w-full max-w-lg p-8">
-        <Link href="/" className="font-display text-2xl text-cocoa">
+        <Link href="/entrar" className="font-display text-2xl text-cocoa">
           Doce<span className="text-rosewood">Pedido</span>
         </Link>
         <h1 className="mt-6 font-display text-3xl text-cocoa">Criar cardápio</h1>

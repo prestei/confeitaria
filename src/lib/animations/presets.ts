@@ -49,11 +49,3 @@ export const motionPresets = {
     },
   },
 } as const;
-
-/** GSAP defaults for scroll reveals (store / marketing) */
-export const gsapDefaults = {
-  duration: 0.75,
-  ease: "power2.out",
-  y: 28,
-  stagger: 0.08,
-} as const;

@@ -24,17 +24,13 @@ function LoginForm() {
         redirect: false,
       });
       if (res?.error) {
-        setError(
-          "E-mail ou senha inválidos — ou o banco ainda não está disponível.",
-        );
+        setError("E-mail ou senha inválidos.");
         return;
       }
       router.push("/painel");
       router.refresh();
     } catch {
-      setError(
-        "Falha de conexão. Verifique se o banco está ativo e se AUTH_SECRET está configurado no .env.",
-      );
+      setError("Falha de conexão. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -92,7 +88,7 @@ export default function LoginPage() {
   return (
     <div className="bg-atelier bg-grain flex min-h-screen items-center justify-center px-5 py-12">
       <div className="panel w-full max-w-md p-8">
-        <Link href="/" className="font-display text-2xl text-cocoa">
+        <Link href="/entrar" className="font-display text-2xl text-cocoa">
           Doce<span className="text-rosewood">Pedido</span>
         </Link>
         <h1 className="mt-6 font-display text-3xl text-cocoa">Entrar</h1>
