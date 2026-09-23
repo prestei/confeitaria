@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
+  Sparkles,
   Star,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -13,33 +15,64 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 type Cat = { slug: string; name: string; emoji: string | null };
 
+type MenuItem = {
+  slug: string;
+  name: string;
+  href: string;
+  kind: "featured" | "category" | "custom";
+};
+
 export function StoreCategoryPills({
   categories,
   showFeatured = false,
+  customOrderHref,
 }: {
   categories: Cat[];
   showFeatured?: boolean;
+  customOrderHref?: string | null;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const skipScrollRef = useRef(true);
   const reduced = useReducedMotion();
+
+  const items: MenuItem[] = [
+    ...(showFeatured
+      ? [
+          {
+            slug: "destaques",
+            name: "Mais pedidos",
+            href: "#destaques",
+            kind: "featured" as const,
+          },
+        ]
+      : []),
+    ...categories.map((c) => ({
+      slug: c.slug,
+      name: c.name,
+      href: `#cat-${c.slug}`,
+      kind: "category" as const,
+    })),
+    ...(customOrderHref
+      ? [
+          {
+            slug: "encomenda",
+            name: "Encomenda",
+            href: customOrderHref,
+            kind: "custom" as const,
+          },
+        ]
+      : []),
+  ];
+
   const [active, setActive] = useState<string>(
     showFeatured ? "destaques" : categories[0]?.slug ?? "",
   );
-
-  const items = [
-    ...(showFeatured
-      ? [{ slug: "destaques", name: "Mais pedidos", emoji: null as string | null }]
-      : []),
-    ...categories,
-  ];
-
   const itemKey = items.map((i) => i.slug).join("|");
 
   useEffect(() => {
-    const sectionIds = items.map((i) =>
-      i.slug === "destaques" ? "destaques" : `cat-${i.slug}`,
-    );
+    const sectionIds = items
+      .filter((i) => i.kind !== "custom")
+      .map((i) => (i.slug === "destaques" ? "destaques" : `cat-${i.slug}`));
     const sections = sectionIds
       .map((id) => document.getElementById(id))
       .filter(Boolean) as HTMLElement[];
@@ -100,6 +133,32 @@ export function StoreCategoryPills({
 
   if (!items.length) return null;
 
+  const pillClass = (isActive: boolean) =>
+    cn(
+      "relative inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold transition sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm",
+      isActive
+        ? "bg-rosewood text-white shadow-[0_8px_24px_color-mix(in_oklab,var(--rosewood)_45%,transparent)]"
+        : "bg-white/8 text-[var(--store-chrome-fg)]/80 hover:bg-white/14 hover:text-[var(--store-chrome-fg)]",
+    );
+
+  function pillLeading(item: MenuItem) {
+    if (item.kind === "featured") {
+      return <Star className="h-3.5 w-3.5 fill-current" aria-hidden />;
+    }
+    if (item.kind === "custom") {
+      return <Sparkles className="h-3.5 w-3.5" aria-hidden />;
+    }
+    return (
+      <span
+        className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-90"
+        aria-hidden
+      />
+    );
+  }
+
+  const chromeBtn =
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/8 text-[var(--store-chrome-fg)] transition hover:bg-white/14 sm:h-11 sm:w-11 sm:rounded-xl";
+
   return (
     <nav
       className="sticky top-0 z-30 border-y border-white/10 bg-[var(--store-chrome)]/95 shadow-[0_8px_28px_rgba(51,37,34,0.18)] backdrop-blur-md"
@@ -108,7 +167,7 @@ export function StoreCategoryPills({
       <div className="mx-auto flex max-w-[1400px] items-center gap-1.5 px-2.5 py-2.5 sm:gap-2 sm:px-4 sm:py-3.5 md:px-6">
         <a
           href="#cardapio"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/8 text-[var(--store-chrome-fg)] transition hover:bg-white/14 sm:h-11 sm:w-11 sm:rounded-xl"
+          className={chromeBtn}
           aria-label="Início do cardápio"
           onClick={() =>
             setActive(showFeatured ? "destaques" : categories[0]?.slug ?? "")
@@ -119,34 +178,37 @@ export function StoreCategoryPills({
 
         <div
           ref={scrollerRef}
-          className="scrollbar-thin flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain py-0.5 sm:gap-2"
+          className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-2 [&::-webkit-scrollbar]:hidden"
         >
-          {items.map((c) => {
-            const isActive = active === c.slug;
-            const href = c.slug === "destaques" ? "#destaques" : `#cat-${c.slug}`;
+          {items.map((item) => {
+            const isActive = active === item.slug;
+
+            if (item.kind === "custom") {
+              return (
+                <Link
+                  key={item.slug}
+                  data-cat={item.slug}
+                  href={item.href}
+                  className={pillClass(false)}
+                >
+                  {pillLeading(item)}
+                  {item.name}
+                </Link>
+              );
+            }
+
             return (
               <motion.a
-                key={c.slug}
-                data-cat={c.slug}
-                href={href}
-                onClick={() => setActive(c.slug)}
+                key={item.slug}
+                data-cat={item.slug}
+                href={item.href}
+                onClick={() => setActive(item.slug)}
                 whileHover={reduced ? undefined : { y: -2, scale: 1.02 }}
                 whileTap={reduced ? undefined : { scale: 0.97 }}
-                className={cn(
-                  "relative inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold transition sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm",
-                  isActive
-                    ? "bg-rosewood text-white shadow-[0_8px_24px_color-mix(in_oklab,var(--rosewood)_45%,transparent)]"
-                    : "bg-white/8 text-[var(--store-chrome-fg)]/80 hover:bg-white/14 hover:text-[var(--store-chrome-fg)]",
-                )}
+                className={pillClass(isActive)}
               >
-                {c.slug === "destaques" ? (
-                  <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
-                ) : (
-                  <span className="text-sm leading-none sm:text-base" aria-hidden>
-                    {c.emoji || "•"}
-                  </span>
-                )}
-                {c.name}
+                {pillLeading(item)}
+                {item.name}
                 {isActive && (
                   <motion.span
                     layoutId="cat-pill-glow"
@@ -163,7 +225,7 @@ export function StoreCategoryPills({
           <button
             type="button"
             onClick={() => scrollBy(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/8 text-[var(--store-chrome-fg)]/70 transition hover:bg-white/14 hover:text-[var(--store-chrome-fg)]"
+            className={cn(chromeBtn, "text-[var(--store-chrome-fg)]/70 hover:text-[var(--store-chrome-fg)]")}
             aria-label="Categorias anteriores"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -171,7 +233,7 @@ export function StoreCategoryPills({
           <button
             type="button"
             onClick={() => scrollBy(1)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/8 text-[var(--store-chrome-fg)]/70 transition hover:bg-white/14 hover:text-[var(--store-chrome-fg)]"
+            className={cn(chromeBtn, "text-[var(--store-chrome-fg)]/70 hover:text-[var(--store-chrome-fg)]")}
             aria-label="Próximas categorias"
           >
             <ChevronRight className="h-4 w-4" />

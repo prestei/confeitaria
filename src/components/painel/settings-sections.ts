@@ -28,7 +28,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     href: "/painel/configuracoes/aparencia",
     title: "Cores do cardápio",
     short: "Cores",
-    description: "Fundo, botões, textos e barra do cardápio — atualiza na hora.",
+    description: "Cores primária e secundária do cardápio — atualiza na hora.",
     icon: Palette,
   },
   {

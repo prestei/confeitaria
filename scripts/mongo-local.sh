@@ -59,5 +59,6 @@ fi
 mkdir -p "$DBPATH"
 
 echo "Mongo starting on :${PORT} (dbpath=${DBPATH})"
-# Quiet JSON spam in the Next terminal — logs go to $LOG
-exec "$MONGOD" --port "$PORT" --dbpath "$ABS_DBPATH" --storageEngine wiredTiger --bind_ip 127.0.0.1 --noauth >>"$LOG" 2>&1
+# Fork so the process survives when the launching terminal/agent shell exits.
+"$MONGOD" --port "$PORT" --dbpath "$ABS_DBPATH" --storageEngine wiredTiger \
+  --bind_ip 127.0.0.1 --noauth --fork --logpath "$LOG"

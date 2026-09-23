@@ -12,7 +12,7 @@ import { Promotion } from "@/models/Promotion";
 import { AnalyticsEvent } from "@/models/AnalyticsEvent";
 import { buildWhatsAppMessage } from "@/lib/whatsapp";
 import { storeHasMercadoPago } from "@/lib/mercadopago";
-import { ONLINE_PAYMENT_METHOD, whatsappLink } from "@/lib/utils";
+import { ONLINE_PAYMENT_METHOD, digitsOnly, whatsappLink } from "@/lib/utils";
 import { notifyNewCustomer, notifyNewOrder } from "@/lib/notify";
 import { getStoreOpenStatus } from "@/lib/hours";
 import { computeUnitPriceCents } from "@/lib/pricing";
@@ -298,22 +298,33 @@ export async function POST(req: Request) {
     if (hasQuote) priceLabel = "TO_CONFIRM";
     else if (hasFrom) priceLabel = "ESTIMATE";
 
+    const customerPhone = digitsOnly(data.customerPhone);
+    if (customerPhone.length < 8) {
+      return NextResponse.json({ error: "WhatsApp inválido" }, { status: 400 });
+    }
+
     let customer = await Customer.findOne({
       storeId,
-      phone: data.customerPhone,
+      phone: customerPhone,
     });
     let isNewCustomer = false;
+    const noteText = data.notes?.trim() || null;
+    const refText = data.referenceNote?.trim() || null;
     if (customer) {
       customer.name = data.customerName;
       if (data.customerEmail) customer.email = data.customerEmail;
+      if (noteText) customer.notes = noteText;
+      if (refText) customer.referenceNote = refText;
       await customer.save();
     } else {
       isNewCustomer = true;
       customer = await Customer.create({
         storeId,
         name: data.customerName,
-        phone: data.customerPhone,
+        phone: customerPhone,
         email: data.customerEmail || null,
+        notes: noteText,
+        referenceNote: refText,
       });
     }
 
@@ -348,7 +359,7 @@ export async function POST(req: Request) {
         customerId: String(customer._id),
         kind: hasQuote ? "QUOTE" : "CART",
         customerName: data.customerName,
-        customerPhone: data.customerPhone,
+        customerPhone,
         customerEmail: data.customerEmail || null,
         companyName: data.companyName || null,
         needsInvoice: data.needsInvoice ?? false,
@@ -425,7 +436,7 @@ export async function POST(req: Request) {
       void notifyNewCustomer({
         storeId,
         customerName: data.customerName,
-        customerPhone: data.customerPhone,
+        customerPhone,
       }).catch((err) => console.error("[notify:customer]", err));
     }
 

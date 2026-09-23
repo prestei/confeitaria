@@ -47,8 +47,10 @@ import {
   PageAction,
   PageHeader,
   PageShell,
+  StatTile,
 } from "@/components/painel/page-header";
 import { OrderDetailSheet } from "@/components/painel/order-detail-sheet";
+import { OrderItemVitrineSpecs } from "@/components/painel/order-item-vitrine-specs";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 
@@ -90,6 +92,15 @@ type Order = {
 const POLL_MS = 3000;
 
 const KANBAN_COLUMNS = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[];
+
+/** Colunas visíveis no quadro (entregues/cancelados ficam no histórico). */
+const KANBAN_BOARD: OrderStatus[] = [
+  "NEW",
+  "REVIEWING",
+  "CONFIRMED",
+  "IN_PRODUCTION",
+  "READY",
+];
 
 const COLUMN_THEME: Record<
   OrderStatus,
@@ -236,12 +247,15 @@ function statusHint(order: Order) {
   return { label: relativeAge(order.updatedAt), tone: "muted" as const };
 }
 
-function customizationLines(item: OrderItem) {
-  const c = item.customizations;
-  if (!c || typeof c !== "object") return [];
-  return Object.entries(c)
-    .filter(([, v]) => v != null && v !== "")
-    .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`);
+function customerInitial(name: string) {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase())
+      .join("") || "?"
+  );
 }
 
 function stopDrag(e: MouseEvent) {
@@ -282,10 +296,10 @@ function OrderCardContent({
   return (
     <div
       className={cn(
-        "relative rounded-xl border border-[#E8E2DE] bg-white p-3.5 shadow-[0_1px_3px_rgba(45,41,38,0.06)]",
-        order.status === "IN_PRODUCTION" && `border-l-[3px] ${theme.accent}`,
-        isNew && paidLooksReady && !awaitingOnlinePay && "border-[#F5D9A8]",
-        awaitingOnlinePay && "border-[#F5D9A8]/80",
+        "relative overflow-hidden rounded-2xl border border-[#E8E2DE] bg-white p-3.5 shadow-[0_4px_16px_rgba(45,41,38,0.06)] transition hover:shadow-[0_8px_24px_rgba(45,41,38,0.09)]",
+        `border-l-[4px] ${theme.accent}`,
+        isNew && paidLooksReady && !awaitingOnlinePay && "ring-1 ring-[#F5D9A8]/60",
+        awaitingOnlinePay && "ring-1 ring-[#F5D9A8]/50",
         dragging && "shadow-lg ring-2 ring-[#2D2926]/10",
       )}
     >
@@ -302,18 +316,25 @@ function OrderCardContent({
       )}
 
       <div className="relative z-[1] pointer-events-none">
-        <div className="flex items-start justify-between gap-2">
-          <p className="min-w-0 truncate text-[13px] font-bold text-[#2D2926]">
-            {order.customerName}{" "}
-            <span className="font-semibold text-[#8C8682]">
-              #{orderCode(order.id)}
-            </span>
-          </p>
-          <p className="shrink-0 text-[13px] font-bold tabular-nums text-[#2D2926]">
-            {order.priceLabel === "TO_CONFIRM"
-              ? "A confirmar"
-              : formatBRL(order.totalCents)}
-          </p>
+        <div className="flex items-start gap-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#F3EEE8] to-[#E8E2DE] text-xs font-bold text-[#483129] ring-1 ring-[#E8E2DE]">
+            {customerInitial(order.customerName)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <p className="min-w-0 truncate text-[13px] font-bold text-[#2D2926]">
+                {order.customerName}{" "}
+                <span className="font-semibold text-[#8C8682]">
+                  #{orderCode(order.id)}
+                </span>
+              </p>
+              <p className="shrink-0 text-[13px] font-bold tabular-nums text-[#483129]">
+                {order.priceLabel === "TO_CONFIRM"
+                  ? "A confirmar"
+                  : formatBRL(order.totalCents)}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -343,26 +364,22 @@ function OrderCardContent({
           </span>
         </div>
 
-        <div className="mt-2.5 space-y-1">
-          {order.items.slice(0, 3).map((item, idx) => {
-            const extras = customizationLines(item);
-            return (
-              <div key={`${item.productName}-${idx}`}>
-                <p className="text-[13px] font-semibold leading-snug text-[#C85A5A]">
-                  <span className="tabular-nums">{item.quantity}×</span>{" "}
-                  {item.productName}
-                </p>
-                {extras.map((line) => (
-                  <p
-                    key={line}
-                    className="text-[11px] italic leading-snug text-[#8C8682]"
-                  >
-                    • {line}
-                  </p>
-                ))}
-              </div>
-            );
-          })}
+        <div className="mt-3 space-y-2.5 rounded-xl bg-[#FAFAFA] p-2.5">
+          {order.items.slice(0, 3).map((item, idx) => (
+            <div
+              key={`${item.productName}-${idx}`}
+              className={cn(idx > 0 && "border-t border-[#E8E2DE] pt-2.5")}
+            >
+              <p className="text-[13px] font-bold leading-snug text-[#C85A5A]">
+                <span className="tabular-nums">{item.quantity}×</span>{" "}
+                {item.productName}
+              </p>
+              <OrderItemVitrineSpecs
+                customizations={item.customizations as Record<string, unknown>}
+                className="mt-1.5"
+              />
+            </div>
+          ))}
           {order.items.length > 3 && (
             <p className="text-[11px] text-[#B0AAA6]">
               +{order.items.length - 3} itens
@@ -697,21 +714,26 @@ function KanbanColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex h-fit w-[320px] shrink-0 flex-col rounded-2xl bg-[#F4F6F8] p-2.5",
-        isOver && "ring-2 ring-[#2D2926]/15",
+        "flex h-fit w-[320px] shrink-0 flex-col rounded-2xl border border-[#E8E2DE]/80 bg-[#F4F6F8] p-2 shadow-sm",
+        isOver && "ring-2 ring-[#483129]/20",
       )}
     >
-      <div className="mb-2.5 flex shrink-0 items-center gap-2 px-1.5 py-1">
-        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", theme.dot)} />
-        <h2 className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-[0.06em] text-[#5C656F]">
+      <div
+        className={cn(
+          "mb-2.5 flex shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white px-2.5 py-2 shadow-sm",
+          `border-l-[4px] ${theme.accent}`,
+        )}
+      >
+        <span className={cn("h-2 w-2 shrink-0 rounded-full", theme.dot)} />
+        <h2 className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-[0.06em] text-[#2D2926]">
           {ORDER_STATUS_LABELS[status]}
         </h2>
-        <span className="text-[12px] font-semibold tabular-nums text-[#5C656F]">
+        <span className="text-[11px] font-bold tabular-nums text-[#483129]">
           {formatBRL(totalCents)}
         </span>
         <span
           className={cn(
-            "flex h-5 min-w-5 items-center justify-center rounded px-1.5 text-[11px] font-bold",
+            "flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[10px] font-bold",
             theme.badge,
           )}
         >
@@ -818,6 +840,15 @@ export function OrdersAdmin({
     return map;
   }, [orders]);
 
+  const boardStats = useMemo(() => {
+    const active = orders.filter((o) => KANBAN_BOARD.includes(o.status));
+    const newCount = ordersByStatus.NEW.length;
+    const production =
+      ordersByStatus.IN_PRODUCTION.length + ordersByStatus.READY.length;
+    const pipelineCents = active.reduce((n, o) => n + (o.totalCents || 0), 0);
+    return { newCount, production, pipelineCents, active: active.length };
+  }, [orders, ordersByStatus]);
+
   const activeOrder = useMemo(
     () => (activeId ? orders.find((o) => o.id === activeId) ?? null : null),
     [activeId, orders],
@@ -913,7 +944,7 @@ export function OrdersAdmin({
     <PageShell className="flex min-h-0 flex-1 flex-col !space-y-3">
       <PageHeader
         title="Central de pedidos"
-        description="Kanban da operação — arraste os cards entre os status."
+        description="Montagem da vitrine no card — opções, adicionais e pagamento."
         actions={
           <PageAction href="/painel/historico" variant="secondary">
             <History className="h-4 w-4" />
@@ -921,6 +952,31 @@ export function OrdersAdmin({
           </PageAction>
         }
       />
+
+      {!loading && orders.length > 0 && (
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <StatTile
+            label="Novos"
+            value={boardStats.newCount}
+            hint="Aguardando aceite"
+          />
+          <StatTile
+            label="Em andamento"
+            value={boardStats.active}
+            hint="No quadro operacional"
+          />
+          <StatTile
+            label="Produção + prontos"
+            value={boardStats.production}
+            hint="Forno e retirada"
+          />
+          <StatTile
+            label="Valor no quadro"
+            value={formatBRL(boardStats.pipelineCents)}
+            hint="Pedidos ativos"
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
@@ -948,7 +1004,7 @@ export function OrdersAdmin({
           onDragCancel={onDragCancel}
         >
           <KanbanScroller>
-            {KANBAN_COLUMNS.map((status) => (
+            {KANBAN_BOARD.map((status) => (
               <KanbanColumn
                 key={status}
                 status={status}

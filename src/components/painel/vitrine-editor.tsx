@@ -2,7 +2,12 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import {
+  ExternalLink,
+  LayoutGrid,
+  Sparkles,
+  Star,
+} from "lucide-react";
 import { ImageField } from "@/components/painel/image-field";
 import { cn } from "@/lib/cn";
 import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
@@ -12,9 +17,9 @@ import {
   resolveStoreTheme,
   STORE_THEME_CHANNEL,
   STORE_THEME_FIELDS,
-  STORE_THEME_GROUPS,
   STORE_THEME_PRESETS,
   storeThemeToCssVars,
+  themeFromBrand,
   type StoreTheme,
 } from "@/lib/store-theme";
 
@@ -317,15 +322,13 @@ export function VitrineEditor({
                   <button
                     key={preset.id}
                     type="button"
-                    onClick={() => patchTheme(preset.theme)}
+                    onClick={() =>
+                      patchTheme(themeFromBrand(preset.primary, preset.secondary))
+                    }
                     className="inline-flex items-center gap-2.5 rounded-full border border-cocoa/10 bg-fog/30 px-3 py-1.5 text-xs font-semibold text-cocoa shadow-sm transition hover:-translate-y-0.5 hover:border-cocoa/20 hover:bg-white hover:shadow-md"
                   >
                     <span className="flex overflow-hidden rounded-full ring-1 ring-black/5">
-                      {[
-                        preset.theme.accent,
-                        preset.theme.background,
-                        preset.theme.chrome,
-                      ].map((c) => (
+                      {[preset.primary, preset.secondary].map((c) => (
                         <span
                           key={`${preset.id}-${c}`}
                           className="h-4 w-4"
@@ -339,32 +342,34 @@ export function VitrineEditor({
               </div>
             </div>
 
-            {STORE_THEME_GROUPS.map((group) => {
-              const fields = STORE_THEME_FIELDS.filter((f) => f.group === group.id);
-              return (
-                <div key={group.id}>
-                  <div className="mb-3">
-                    <p className="text-sm font-semibold tracking-tight text-cocoa">
-                      {group.title}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-cocoa-soft/55">
-                      {group.subtitle}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {fields.map((field) => (
-                      <ColorSwatch
-                        key={field.key}
-                        label={field.label}
-                        hint={field.hint}
-                        value={theme[field.key]}
-                        onChange={(value) => patchTheme({ [field.key]: value })}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            <div>
+              <div className="mb-3">
+                <p className="text-sm font-semibold tracking-tight text-cocoa">
+                  Cores da marca
+                </p>
+                <p className="mt-0.5 text-[11px] text-cocoa-soft/55">
+                  O restante do cardápio acompanha essas duas cores.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {STORE_THEME_FIELDS.map((field) => (
+                  <ColorSwatch
+                    key={field.key}
+                    label={field.label}
+                    hint={field.hint}
+                    value={theme[field.key]}
+                    onChange={(value) =>
+                      patchTheme(
+                        themeFromBrand(
+                          field.key === "accent" ? value : theme.accent,
+                          field.key === "secondary" ? value : theme.secondary,
+                        ),
+                      )
+                    }
+                  />
+                ))}
+              </div>
+            </div>
 
             <div className="grid gap-4 border-t border-cocoa/8 pt-6 sm:grid-cols-2">
             <Field label="Tipografia">
@@ -478,25 +483,9 @@ export function VitrineEditor({
                 </p>
               )}
 
-              <div
-                className="mt-3 flex gap-1 overflow-hidden rounded-lg px-2 py-1.5"
-                style={{
-                  backgroundColor: theme.chrome,
-                  color: "var(--store-chrome-fg)",
-                }}
-              >
-                {["Bolos", "Doces", "Kits"].map((label, i) => (
-                  <span
-                    key={label}
-                    className={cn(
-                      "rounded-md px-2 py-1 text-[10px] font-semibold",
-                      i === 0 ? "bg-rosewood text-white" : "opacity-75",
-                    )}
-                  >
-                    {label}
-                  </span>
-                ))}
-              </div>
+              <MobileStoreCategoryBarPreview
+                showFeatured={previewProducts.featured.length > 0}
+              />
 
               {previewProducts.featured.length > 0 && (
                 <div className="mt-4">
@@ -559,6 +548,69 @@ export function VitrineEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+/** Espelha o menu sticky da vitrine (`StoreCategoryPills`) na prévia mobile. */
+function MobileStoreCategoryBarPreview({
+  showFeatured,
+}: {
+  showFeatured: boolean;
+}) {
+  const pills: { label: string; kind: "featured" | "category" | "custom" }[] =
+    [
+      ...(showFeatured
+        ? [{ label: "Mais pedidos", kind: "featured" as const }]
+        : []),
+      { label: "Bolos", kind: "category" },
+      { label: "Doces", kind: "category" },
+      { label: "Cupcakes", kind: "category" },
+      { label: "Kits", kind: "category" },
+      { label: "Encomenda", kind: "custom" },
+    ];
+
+  const chromeBtn =
+    "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/8 text-[var(--store-chrome-fg)] sm:rounded-lg";
+
+  return (
+    <nav
+      className="mt-3 -mx-3 border-y border-white/10 bg-[var(--store-chrome)]/95 shadow-[0_4px_16px_rgba(51,37,34,0.12)]"
+      aria-hidden
+    >
+      <div className="flex items-center gap-1 px-1.5 py-1.5">
+        <span className={chromeBtn}>
+          <LayoutGrid className="h-3 w-3" aria-hidden />
+        </span>
+        <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {pills.map((pill, i) => {
+            const isActive = i === 0;
+            return (
+              <span
+                key={pill.label}
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold leading-none",
+                  isActive
+                    ? "bg-rosewood text-white shadow-[0_4px_12px_color-mix(in_oklab,var(--rosewood)_40%,transparent)]"
+                    : "bg-white/8 text-[var(--store-chrome-fg)]/80",
+                )}
+              >
+                {pill.kind === "featured" ? (
+                  <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
+                ) : pill.kind === "custom" ? (
+                  <Sparkles className="h-2.5 w-2.5" aria-hidden />
+                ) : (
+                  <span
+                    className="h-1 w-1 shrink-0 rounded-full bg-current opacity-90"
+                    aria-hidden
+                  />
+                )}
+                {pill.label}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    </nav>
   );
 }
 

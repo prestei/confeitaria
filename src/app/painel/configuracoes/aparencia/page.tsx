@@ -30,7 +30,7 @@ export default async function AparenciaPage() {
     <div className="space-y-4">
       <SettingsSectionHeader
         title="Cores do cardápio"
-        description="Escolha fundo, botões, textos e a barra de categorias. A prévia e o cardápio aberto atualizam na hora."
+        description="Escolha as cores primária e secundária da marca. A prévia e o cardápio aberto atualizam na hora."
       />
       <VitrineEditor
         appearanceOnly

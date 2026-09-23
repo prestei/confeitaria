@@ -17,6 +17,7 @@ import { useCart } from "@/components/cart/cart-context";
 import { digitsOnly, formatBRL } from "@/lib/utils";
 import { getStoreOpenStatus } from "@/lib/hours";
 import { trackStoreEvent } from "@/lib/analytics";
+import { resolveCategoryEmoji } from "@/lib/category";
 
 type StoreHeaderStore = {
   slug: string;
@@ -344,28 +345,44 @@ export function StoreHeader({
                 </button>
               </div>
               <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-cocoa-soft/50">
+                  Cardápio
+                </p>
                 <a
                   href="#cardapio"
                   onClick={() => setMenuOpen(false)}
-                  className="rounded-xl px-4 py-3 font-medium text-cocoa hover:bg-sand"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium text-cocoa hover:bg-sand"
                 >
-                  Cardápio
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sand text-lg">
+                    🍰
+                  </span>
+                  Todos os produtos
                 </a>
                 <Link
                   href={`/${store.slug}/encomenda`}
                   onClick={() => setMenuOpen(false)}
-                  className="rounded-xl px-4 py-3 font-medium text-cocoa hover:bg-sand"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium text-cocoa hover:bg-sand"
                 >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sand text-lg">
+                    ✨
+                  </span>
                   Encomenda personalizada
                 </Link>
+                {categories.length > 0 && (
+                  <p className="mt-3 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-cocoa-soft/50">
+                    Categorias
+                  </p>
+                )}
                 {categories.map((c) => (
                   <a
                     key={c.slug}
                     href={`#cat-${c.slug}`}
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-xl px-4 py-3 text-cocoa-soft hover:bg-sand hover:text-cocoa"
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-cocoa hover:bg-sand"
                   >
-                    {c.emoji ? `${c.emoji} ` : ""}
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sand text-lg">
+                      {resolveCategoryEmoji(c.name, c.emoji)}
+                    </span>
                     {c.name}
                   </a>
                 ))}

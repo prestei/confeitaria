@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       endsAt: z.string().nullable().optional(),
       usageLimit: z.number().int().nullable().optional(),
       productIds: z.array(z.string()).optional(),
+      active: z.boolean().optional(),
     })
     .parse(await req.json());
 
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
     endsAt: data.endsAt ? new Date(data.endsAt) : null,
     usageLimit: data.usageLimit ?? null,
     productIds: data.productIds || [],
-    active: true,
+    active: data.active ?? true,
   });
 
   return NextResponse.json(withIds(promotion.toObject()));

@@ -7,6 +7,10 @@ import { format } from "date-fns";
 import { formatBRL } from "@/lib/utils";
 import { cn } from "@/lib/cn";
 import {
+  CustomerSourceBadge,
+  CustomerWhatsappButton,
+} from "@/components/painel/customer-actions";
+import {
   DataTable,
   DataTableBody,
   DataTableCell,
@@ -25,6 +29,7 @@ export type CustomerRow = {
   spent: number;
   lastOrder: string;
   href: string;
+  source: "registered" | "vitrine";
 };
 
 type SortKey = "name" | "phone" | "email" | "orders" | "spent" | "lastOrder";
@@ -118,24 +123,30 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
             {sorted.map((c) => (
               <DataTableRow key={c.id}>
                 <DataTableCell>
-                  <Link
-                    href={c.href}
-                    className="flex min-w-0 items-center gap-3"
-                  >
-                    <TableAvatar name={c.name} />
-                    <span className="truncate font-semibold text-[#2D2926] hover:underline">
-                      {c.name}
-                    </span>
-                  </Link>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <Link
+                      href={c.href}
+                      className="flex min-w-0 items-center gap-3"
+                    >
+                      <TableAvatar name={c.name} />
+                      <span className="truncate font-semibold text-[#2D2926] hover:underline">
+                        {c.name}
+                      </span>
+                    </Link>
+                    <CustomerSourceBadge source={c.source} />
+                  </div>
                 </DataTableCell>
                 <DataTableCell>
-                  <span className="inline-flex items-center gap-1.5 text-[#65676B]">
-                    <MessageCircle
-                      className="h-3 w-3 shrink-0 text-[#25D366]"
-                      strokeWidth={2}
-                    />
-                    {c.phone}
-                  </span>
+                  <div className="flex flex-col gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[#65676B]">
+                      <MessageCircle
+                        className="h-3 w-3 shrink-0 text-[#25D366]"
+                        strokeWidth={2}
+                      />
+                      {c.phone}
+                    </span>
+                    <CustomerWhatsappButton name={c.name} phone={c.phone} />
+                  </div>
                 </DataTableCell>
                 <DataTableCell className="text-[#65676B]">
                   {c.email || "—"}
@@ -167,7 +178,10 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
           >
             <TableAvatar name={c.name} />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-[#2D2926]">{c.name}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold text-[#2D2926]">{c.name}</p>
+                <CustomerSourceBadge source={c.source} />
+              </div>
               <p className="text-xs text-[#8C8682]">{c.phone}</p>
               <p className="mt-1 text-sm text-[#2D2926]">
                 {c.orders} pedidos · {formatBRL(c.spent)}

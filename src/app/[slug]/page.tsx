@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import {
   applyCategoryPriceAdjust,
   isCategoryVisibleToday,
+  resolveCategoryEmoji,
 } from "@/lib/category";
 import { leanDoc, leanList } from "@/lib/serialize";
 import { Store } from "@/models/Store";
@@ -82,6 +83,7 @@ export default async function StorePage({
         <StoreCategoryPills
           categories={categories as any}
           showFeatured={featured.length > 0}
+          customOrderHref={`/${store.slug}/encomenda`}
         />
 
         <div className="relative bg-ivory">
@@ -97,7 +99,7 @@ export default async function StorePage({
                 id={`cat-${cat.slug}`}
                 index={idx}
                 name={cat.name}
-                emoji={cat.emoji}
+                emoji={resolveCategoryEmoji(cat.name, cat.emoji)}
               >
                 <StoreProductGrid className="flex flex-col md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6">
                   {catProducts.map((p) => (

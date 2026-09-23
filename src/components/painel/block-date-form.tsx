@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import { PageAction } from "@/components/painel/page-header";
 import {
   Dialog,
   DialogBody,
@@ -45,14 +46,10 @@ export function BlockDateForm() {
 
   return (
     <>
-      <button
-        type="button"
-        className="btn-secondary !py-2.5 text-sm"
-        onClick={() => setOpen(true)}
-      >
+      <PageAction variant="secondary" onClick={() => setOpen(true)}>
         <Plus className="h-4 w-4" />
         Bloquear data
-      </button>
+      </PageAction>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent size="sm">

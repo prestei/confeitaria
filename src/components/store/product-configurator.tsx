@@ -83,10 +83,18 @@ export function ProductConfigurator({
     scheduledClosed ||
     (maxQty != null && maxQty <= 0);
 
-  const [selected, setSelected] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {};
+  const [selected, setSelected] = useState<Record<string, string[]>>(() => {
+    const init: Record<string, string[]> = {};
     for (const g of product.optionGroups) {
-      if (g.options[0]) init[g.id] = g.options[0].id;
+      const min = g.minSelect ?? (g.required ? 1 : 0);
+      const max = Math.max(g.maxSelect || 1, min || 1);
+      if (min > 0 && g.options.length) {
+        init[g.id] = g.options
+          .slice(0, Math.min(min, max, g.options.length))
+          .map((o) => o.id);
+      } else {
+        init[g.id] = [];
+      }
     }
     return init;
   });
@@ -104,8 +112,10 @@ export function ProductConfigurator({
   const optionDelta = useMemo(() => {
     let delta = 0;
     for (const g of product.optionGroups) {
-      const opt = g.options.find((o) => o.id === selected[g.id]);
-      if (opt) delta += opt.priceDeltaCents;
+      const ids = new Set(selected[g.id] || []);
+      for (const opt of g.options) {
+        if (ids.has(opt.id)) delta += opt.priceDeltaCents;
+      }
     }
     return delta;
   }, [product.optionGroups, selected]);
@@ -136,8 +146,10 @@ export function ProductConfigurator({
   function buildCustomizations() {
     const custom: Record<string, string | number | string[]> = {};
     for (const g of product.optionGroups) {
-      const opt = g.options.find((o) => o.id === selected[g.id]);
-      if (opt) custom[g.name] = opt.name;
+      const ids = new Set(selected[g.id] || []);
+      const names = g.options.filter((o) => ids.has(o.id)).map((o) => o.name);
+      if (names.length === 1) custom[g.name] = names[0];
+      else if (names.length > 1) custom[g.name] = names;
     }
     const chosenAddons = product.addons
       .filter((a) => (addonQty[a.id] || 0) > 0)
@@ -154,8 +166,27 @@ export function ProductConfigurator({
     return custom;
   }
 
+  function toggleOption(group: OptionGroup, optionId: string) {
+    const min = group.minSelect ?? (group.required ? 1 : 0);
+    const max = Math.max(group.maxSelect || 1, min || 1);
+    setSelected((s) => {
+      const current = s[group.id] || [];
+      if (max <= 1) return { ...s, [group.id]: [optionId] };
+      if (current.includes(optionId)) {
+        return { ...s, [group.id]: current.filter((id) => id !== optionId) };
+      }
+      if (current.length >= max) return s;
+      return { ...s, [group.id]: [...current, optionId] };
+    });
+  }
+
+  const missingGroup = product.optionGroups.find((g) => {
+    const min = g.minSelect ?? (g.required ? 1 : 0);
+    return (selected[g.id]?.length || 0) < min;
+  });
+
   function handleAdd() {
-    if (soldOut) return;
+    if (soldOut || missingGroup) return;
     const missingNote = product.addons.find(
       (a) =>
         (addonQty[a.id] || 0) > 0 &&
@@ -318,33 +349,49 @@ export function ProductConfigurator({
         </div>
       )}
 
-      {product.optionGroups.map((g) => (
-        <div key={g.id}>
-          <p className="label">{g.name}</p>
-          <div className="flex flex-wrap gap-2">
-            {g.options.map((o) => {
-              const active = selected[g.id] === o.id;
-              return (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => setSelected((s) => ({ ...s, [g.id]: o.id }))}
-                  className={`rounded-lg border px-3.5 py-2 text-sm font-medium transition ${
-                    active
-                      ? "border-berry bg-berry text-white shadow-sm"
-                      : "border-cocoa/10 bg-surface text-cocoa hover:border-rosewood/40 hover:bg-sand/60"
-                  }`}
-                >
-                  {o.name}
-                  {o.priceDeltaCents > 0
-                    ? ` (+${formatBRL(o.priceDeltaCents)})`
-                    : ""}
-                </button>
-              );
-            })}
+      {product.optionGroups.map((g) => {
+        const min = g.minSelect ?? (g.required ? 1 : 0);
+        const max = Math.max(g.maxSelect || 1, min || 1);
+        const picked = selected[g.id]?.length || 0;
+        const incomplete = picked < min;
+        return (
+          <div key={g.id}>
+            <p className="label">
+              {g.name}
+              <span className="ml-1.5 font-normal normal-case tracking-normal text-cocoa-soft/70">
+                {min === max ? `Escolha ${min}` : `De ${min} a ${max}`}
+              </span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {g.options.map((o) => {
+                const active = (selected[g.id] || []).includes(o.id);
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => toggleOption(g, o.id)}
+                    className={`rounded-lg border px-3.5 py-2 text-sm font-medium transition ${
+                      active
+                        ? "border-berry bg-berry text-white shadow-sm"
+                        : "border-cocoa/10 bg-surface text-cocoa hover:border-rosewood/40 hover:bg-sand/60"
+                    }`}
+                  >
+                    {o.name}
+                    {o.priceDeltaCents > 0
+                      ? ` (+${formatBRL(o.priceDeltaCents)})`
+                      : ""}
+                  </button>
+                );
+              })}
+            </div>
+            {incomplete ? (
+              <p className="mt-1.5 text-xs text-rosewood-deep">
+                Selecione pelo menos {min} {min === 1 ? "opção" : "opções"}.
+              </p>
+            ) : null}
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {product.addons.length > 0 && (
         <StoreAddonsPicker
@@ -528,7 +575,7 @@ export function ProductConfigurator({
     <button
       type="button"
       onClick={handleAdd}
-      disabled={soldOut || missingAddonNote}
+      disabled={soldOut || missingAddonNote || Boolean(missingGroup)}
       className={
         compact
           ? "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rosewood px-5 py-3.5 text-[0.95rem] font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep disabled:cursor-not-allowed disabled:opacity-50"

@@ -14,7 +14,13 @@ export default async function PromocoesPage() {
       .lean(),
   );
 
+  const origin = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
   return (
-    <PromocoesAdmin initialItems={JSON.parse(JSON.stringify(promotions))} />
+    <PromocoesAdmin
+      initialItems={JSON.parse(JSON.stringify(promotions))}
+      storeSlug={session.storeSlug ?? undefined}
+      origin={origin}
+    />
   );
 }
