@@ -63,6 +63,11 @@ export default async function StoreLayout({
           secondaryColor: store.secondaryColor,
           themeColors: theme,
         }}
+        appearance={{
+          typography: store.typography,
+          cardStyle: store.cardStyle,
+          pageLayout: store.pageLayout,
+        }}
       >
         <StoreAnalyticsBeacon storeSlug={store.slug} />
         <StoreHeader

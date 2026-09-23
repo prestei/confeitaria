@@ -22,13 +22,18 @@ export default async function QrCodePage() {
   return (
     <PageShell>
       <PageHeader
-        title="QR Code do cardápio"
-        description="Gere e baixe o QR Code da sua loja para Instagram, cartões, embalagens e mesas."
+        title="QR Code da vitrine"
+        description="Personalize o cartão com o nome da loja e baixe o QR da sua página para Instagram, cartões, embalagens e mesas."
       />
       <QrCodePanel
         publicUrl={publicUrl}
         storeName={store.name}
         storeSlug={store.slug}
+        tagline={store.tagline}
+        city={store.city}
+        instagram={store.instagram}
+        logoUrl={store.logoUrl}
+        accentColor={store.accentColor}
       />
     </PageShell>
   );

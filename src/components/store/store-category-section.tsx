@@ -10,6 +10,7 @@ export function StoreCategorySection({
   index,
   name,
   emoji,
+  emphasize = false,
   children,
 }: {
   id: string;
@@ -17,6 +18,7 @@ export function StoreCategorySection({
   name: string;
   emoji: string | null;
   coverUrl?: string | null;
+  emphasize?: boolean;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -69,11 +71,26 @@ export function StoreCategorySection({
     >
       <div className="shell pb-6 pt-6 md:pb-14 md:pt-12">
         {/* Mobile */}
-        <div className="mb-3 flex items-center gap-2.5 md:hidden">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-baby-mid/60 text-lg">
+        <div
+          className={cn(
+            "mb-3 flex items-center gap-2.5 md:hidden",
+            emphasize && "mb-4 border-b border-sky/20 pb-3",
+          )}
+        >
+          <span
+            className={cn(
+              "flex items-center justify-center rounded-full bg-baby-mid/60 text-lg",
+              emphasize ? "h-11 w-11 text-xl" : "h-9 w-9",
+            )}
+          >
             {emoji || "•"}
           </span>
-          <h2 className="text-[1.35rem] font-bold leading-none tracking-tight text-cocoa">
+          <h2
+            className={cn(
+              "font-bold leading-none tracking-tight text-cocoa",
+              emphasize ? "font-display text-[1.65rem]" : "text-[1.35rem]",
+            )}
+          >
             {name}
           </h2>
         </div>

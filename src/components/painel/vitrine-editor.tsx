@@ -12,6 +12,12 @@ import { ImageField } from "@/components/painel/image-field";
 import { cn } from "@/lib/cn";
 import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
 import {
+  normalizeCardStyle,
+  normalizePageLayout,
+  productCardRadius,
+  storeTypographyClass,
+} from "@/lib/store-appearance";
+import {
   isHexColor,
   isLightHex,
   resolveStoreTheme,
@@ -429,7 +435,16 @@ export function VitrineEditor({
         </p>
         <div className="mx-auto w-[280px] overflow-hidden rounded-[1.75rem] border-[6px] border-cocoa shadow-lg">
           <div
-            className="store-theme max-h-[560px] overflow-y-auto bg-ivory scrollbar-thin"
+            className={cn(
+              "store-theme max-h-[560px] overflow-y-auto bg-ivory scrollbar-thin",
+              storeTypographyClass(
+                form.typography === "sans"
+                  ? "sans"
+                  : form.typography === "soft"
+                    ? "soft"
+                    : "elegant",
+              ),
+            )}
             style={storeThemeToCssVars(theme)}
           >
             <div
@@ -463,7 +478,7 @@ export function VitrineEditor({
                   <p
                     className={cn(
                       "text-sm font-semibold",
-                      form.typography === "sans" ? "font-sans" : "font-display",
+                      "font-display",
                     )}
                     style={{ color: theme.secondary }}
                   >
@@ -487,7 +502,8 @@ export function VitrineEditor({
                 showFeatured={previewProducts.featured.length > 0}
               />
 
-              {previewProducts.featured.length > 0 && (
+              {previewProducts.featured.length > 0 &&
+                normalizePageLayout(form.pageLayout) !== "catalog" && (
                 <div className="mt-4">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-cocoa-soft/45">
                     Em destaque
@@ -499,6 +515,7 @@ export function VitrineEditor({
                         product={p}
                         accent={theme.accent}
                         cardStyle={form.cardStyle}
+                        pageLayout={form.pageLayout}
                       />
                     ))}
                   </div>
@@ -509,9 +526,18 @@ export function VitrineEditor({
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-cocoa-soft/45">
                   Produtos
                 </p>
-                <div className="mt-2 space-y-2">
+                <div
+                  className={cn(
+                    "mt-2",
+                    normalizePageLayout(form.pageLayout) === "catalog"
+                      ? "grid grid-cols-2 gap-2"
+                      : normalizePageLayout(form.pageLayout) === "showcase"
+                        ? "space-y-3"
+                        : "space-y-2",
+                  )}
+                >
                   {previewProducts.list.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-cocoa/15 px-3 py-4 text-center text-[11px] text-cocoa-soft/55">
+                    <p className="col-span-2 rounded-xl border border-dashed border-cocoa/15 px-3 py-4 text-center text-[11px] text-cocoa-soft/55">
                       Cadastre produtos para ver a vitrine completa
                     </p>
                   ) : (
@@ -521,6 +547,7 @@ export function VitrineEditor({
                         product={p}
                         accent={theme.accent}
                         cardStyle={form.cardStyle}
+                        pageLayout={form.pageLayout}
                       />
                     ))
                   )}
@@ -697,7 +724,7 @@ function ColorSwatch({
       </button>
       <div className="px-3.5 pb-3 pt-2">
         <input
-          className="w-full rounded-lg border border-cocoa/8 bg-fog/50 px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wide text-cocoa outline-none transition focus:border-cocoa/25 focus:bg-white"
+          className="w-full rounded-lg border border-cocoa/8 bg-fog/50 px-3 py-2 font-mono text-xs uppercase text-cocoa outline-none transition focus:border-cocoa/25 focus:bg-white"
           value={text}
           onChange={(e) => {
             const next = e.target.value.startsWith("#")
@@ -745,17 +772,72 @@ function PreviewCard({
   product,
   accent,
   cardStyle,
+  pageLayout,
 }: {
   product: PreviewProduct;
   accent: string;
   cardStyle: string;
+  pageLayout: string;
 }) {
-  const radius =
-    cardStyle === "sharp"
-      ? "rounded-md"
-      : cardStyle === "minimal"
-        ? "rounded-lg"
-        : "rounded-xl";
+  const radius = productCardRadius(normalizeCardStyle(cardStyle));
+  const layout = normalizePageLayout(pageLayout);
+
+  if (layout === "catalog") {
+    return (
+      <div className={cn("overflow-hidden border border-cocoa/8 bg-surface", radius)}>
+        <div
+          className="aspect-square bg-fog"
+          style={{ backgroundColor: `${accent}22` }}
+        >
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.imageUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : null}
+        </div>
+        <div className="p-1.5">
+          <p className="line-clamp-2 text-[10px] font-semibold leading-tight text-cocoa">
+            {product.name}
+          </p>
+          <p className="text-[9px] font-medium" style={{ color: accent }}>
+            {product.priceLabel}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (layout === "showcase") {
+    return (
+      <div className={cn("overflow-hidden border border-cocoa/8 bg-surface", radius)}>
+        <div
+          className="aspect-[4/3] bg-fog"
+          style={{ backgroundColor: `${accent}22` }}
+        >
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.imageUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : null}
+        </div>
+        <div className="p-2">
+          <p className="font-display text-[11px] font-semibold text-cocoa">
+            {product.name}
+          </p>
+          <p className="text-[10px] font-medium" style={{ color: accent }}>
+            {product.priceLabel}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex gap-2 border border-cocoa/8 bg-surface p-2", radius)}>
       <div

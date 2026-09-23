@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/cn";
+import {
+  resolveStoreAppearance,
+  storeTypographyClass,
+  type StoreAppearance,
+} from "@/lib/store-appearance";
+import { StoreAppearanceProvider } from "@/components/store/store-appearance-context";
 import {
   resolveStoreTheme,
   storeThemeToCssVars,
@@ -12,6 +19,7 @@ import {
 export function StoreThemeRoot({
   slug,
   initial,
+  appearance: appearanceSeed,
   children,
 }: {
   slug: string;
@@ -20,8 +28,17 @@ export function StoreThemeRoot({
     secondaryColor?: string | null;
     themeColors?: Partial<StoreTheme> | null;
   };
+  appearance?: Partial<StoreAppearance> & {
+    typography?: string | null;
+    cardStyle?: string | null;
+    pageLayout?: string | null;
+  };
   children: React.ReactNode;
 }) {
+  const appearance = useMemo(
+    () => resolveStoreAppearance(appearanceSeed),
+    [appearanceSeed],
+  );
   const seed = useMemo(() => resolveStoreTheme(initial), [initial]);
   const [theme, setTheme] = useState<StoreTheme>(seed);
 
@@ -62,11 +79,16 @@ export function StoreThemeRoot({
   }, [slug]);
 
   return (
-    <div
-      className="store-theme min-h-screen bg-ivory"
-      style={storeThemeToCssVars(theme)}
-    >
-      {children}
-    </div>
+    <StoreAppearanceProvider value={appearance}>
+      <div
+        className={cn(
+          "store-theme min-h-screen bg-ivory",
+          storeTypographyClass(appearance.typography),
+        )}
+        style={storeThemeToCssVars(theme)}
+      >
+        {children}
+      </div>
+    </StoreAppearanceProvider>
   );
 }

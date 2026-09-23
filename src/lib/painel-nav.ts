@@ -11,6 +11,7 @@ import {
   Settings,
   Tags,
   Gift,
+  QrCode,
   type LucideIcon,
 } from "lucide-react";
 
@@ -75,6 +76,11 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Configurações",
     items: [
       { href: "/painel/vitrine", label: "Perfil da loja", icon: Store },
+      {
+        href: "/painel/qrcode",
+        label: "QR Code da vitrine",
+        icon: QrCode,
+      },
       {
         href: "/painel/configuracoes",
         label: "Preferências",
