@@ -28,7 +28,11 @@ function qtyByProduct(items: OrderItemDoc[]) {
   return map;
 }
 
-async function applyAvailability(productId: string, nextQty: number, trackStock: boolean) {
+async function applyAvailability(
+  productId: string,
+  nextQty: number,
+  trackStock: boolean,
+) {
   if (!trackStock) return;
   if (nextQty <= 0) {
     await Product.updateOne(
@@ -86,13 +90,28 @@ export async function maybeDeductStockForOrder(input: {
     if (!line || line.quantity <= 0) continue;
 
     const previousQty = product.stockQty;
-    const nextQty = Math.max(0, previousQty - line.quantity);
+    const updated = await Product.findOneAndUpdate(
+      {
+        _id: product._id,
+        trackStock: true,
+        stockQty: { $gte: line.quantity },
+      },
+      { $inc: { stockQty: -line.quantity } },
+      { new: true },
+    ).lean();
 
-    await Promise.all([
-      Product.updateOne(
+    // Soft-clamp if concurrent orders depleted stock below requested qty.
+    const nextQty = updated
+      ? updated.stockQty
+      : Math.max(0, previousQty - line.quantity);
+    if (!updated) {
+      await Product.updateOne(
         { _id: product._id },
         { $set: { stockQty: nextQty } },
-      ),
+      );
+    }
+
+    await Promise.all([
       StockMovement.create({
         storeId: input.storeId,
         productId: String(product._id),
@@ -149,13 +168,14 @@ export async function maybeRestoreStockForOrder(input: {
     if (!line || line.quantity <= 0) continue;
 
     const previousQty = product.stockQty;
-    const nextQty = previousQty + line.quantity;
+    const updated = await Product.findOneAndUpdate(
+      { _id: product._id, trackStock: true },
+      { $inc: { stockQty: line.quantity } },
+      { new: true },
+    ).lean();
+    const nextQty = updated?.stockQty ?? previousQty + line.quantity;
 
     await Promise.all([
-      Product.updateOne(
-        { _id: product._id },
-        { $set: { stockQty: nextQty } },
-      ),
       StockMovement.create({
         storeId: input.storeId,
         productId: String(product._id),

@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   const promotion = await Promotion.create({
     storeId: session.user.storeId,
     name: data.name,
-    code: data.code || null,
+    code: data.code ? data.code.trim().toUpperCase() : null,
     type: data.type,
     percentOff: data.percentOff ?? null,
     amountOffCents: data.amountOffCents ?? null,

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { PriceMode, ProductType } from "@/lib/enums";
 import { priceLabel } from "@/components/store/product-card";
+import { effectivePriceCents, hasPromoPrice } from "@/lib/pricing";
+import { trackStoreEvent } from "@/lib/analytics";
 
 type FeaturedProduct = {
   id: string;
@@ -13,6 +15,7 @@ type FeaturedProduct = {
   productType: ProductType;
   priceMode: PriceMode;
   priceCents: number | null;
+  promoPriceCents?: number | null;
   featured: boolean;
 };
 
@@ -36,6 +39,13 @@ export function StoreFeaturedBanners({
             <Link
               key={p.id}
               href={`/${storeSlug}/produto/${p.slug}`}
+              onClick={() =>
+                trackStoreEvent({
+                  storeSlug,
+                  type: "PRODUCT_CLICK",
+                  productId: p.id,
+                })
+              }
               className="relative aspect-[16/10] w-[min(88vw,22rem)] shrink-0 snap-center overflow-hidden rounded-xl bg-cocoa shadow-[0_10px_28px_rgba(51,37,34,0.14)]"
             >
               {p.imageUrl ? (
@@ -62,7 +72,11 @@ export function StoreFeaturedBanners({
                   </p>
                 )}
                 <p className="mt-2 text-sm font-bold text-terracotta">
-                  {priceLabel(p.priceMode, p.priceCents)}
+                  {priceLabel(
+                    p.priceMode,
+                    effectivePriceCents(p),
+                    hasPromoPrice(p) ? p.priceCents : null,
+                  )}
                 </p>
               </div>
             </Link>
@@ -75,6 +89,13 @@ export function StoreFeaturedBanners({
             <Link
               key={p.id}
               href={`/${storeSlug}/produto/${p.slug}`}
+              onClick={() =>
+                trackStoreEvent({
+                  storeSlug,
+                  type: "PRODUCT_CLICK",
+                  productId: p.id,
+                })
+              }
               className="group relative aspect-[16/11] overflow-hidden rounded-xl bg-cocoa shadow-[0_12px_36px_rgba(51,37,34,0.12)] ring-1 ring-cocoa/10 transition hover:ring-rosewood/40"
             >
               {p.imageUrl ? (
@@ -101,7 +122,11 @@ export function StoreFeaturedBanners({
                   </p>
                 )}
                 <p className="mt-3 text-base font-bold text-terracotta">
-                  {priceLabel(p.priceMode, p.priceCents)}
+                  {priceLabel(
+                    p.priceMode,
+                    effectivePriceCents(p),
+                    hasPromoPrice(p) ? p.priceCents : null,
+                  )}
                 </p>
               </div>
             </Link>

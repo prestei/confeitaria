@@ -239,7 +239,9 @@ function statusHint(order: Order) {
 function customizationLines(item: OrderItem) {
   const c = item.customizations;
   if (!c || typeof c !== "object") return [];
-  return Object.entries(c).map(([k, v]) => `${k}: ${v}`);
+  return Object.entries(c)
+    .filter(([, v]) => v != null && v !== "")
+    .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`);
 }
 
 function stopDrag(e: MouseEvent) {

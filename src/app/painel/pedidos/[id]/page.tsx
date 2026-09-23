@@ -73,7 +73,15 @@ export default async function OrderDetailPage({
                       <p className="mt-1 text-xs text-cocoa-soft/60">
                         {typeof item.customizations === "string"
                           ? item.customizations
-                          : JSON.stringify(item.customizations)}
+                          : Object.entries(
+                              item.customizations as Record<string, unknown>,
+                            )
+                              .filter(([, v]) => v != null && v !== "")
+                              .map(
+                                ([k, v]) =>
+                                  `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`,
+                              )
+                              .join(" · ")}
                       </p>
                     )}
                   </div>
@@ -84,12 +92,53 @@ export default async function OrderDetailPage({
               ))}
             </ul>
             <div className="flex justify-between border-t border-cocoa/6 px-5 py-4 text-sm">
-              <span className="text-cocoa-soft/70">Total</span>
-              <span className="font-semibold text-cocoa">
-                {order.priceLabel === "TO_CONFIRM"
-                  ? "A confirmar"
-                  : formatBRL(order.totalCents)}
-              </span>
+              {order.priceLabel === "TO_CONFIRM" ? (
+                <>
+                  <span className="text-cocoa-soft/70">Total</span>
+                  <span className="font-semibold text-cocoa">A confirmar</span>
+                </>
+              ) : (
+                <div className="w-full space-y-2">
+                  {(order.discountCents ?? 0) > 0 && (
+                    <>
+                      <div className="flex justify-between text-cocoa-soft">
+                        <span>Subtotal</span>
+                        <span className="font-medium text-cocoa">
+                          {formatBRL(
+                            (order.subtotalCents ??
+                              order.totalCents +
+                                (order.discountCents ?? 0) -
+                                (order.deliveryFeeCents ?? 0)),
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700">
+                        <span>
+                          Desconto
+                          {order.promoCode ? ` (${order.promoCode})` : ""}
+                        </span>
+                        <span className="font-medium">
+                          −{formatBRL(order.discountCents)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {(order.deliveryFeeCents ?? 0) > 0 && (
+                    <div className="flex justify-between text-cocoa-soft">
+                      <span>Entrega</span>
+                      <span className="font-medium text-cocoa">
+                        {formatBRL(order.deliveryFeeCents)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-cocoa-soft/70">Total</span>
+                    <span className="font-semibold text-cocoa">
+                      {formatBRL(order.totalCents)}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </SectionCard>
 

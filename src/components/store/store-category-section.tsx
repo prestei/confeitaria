@@ -64,7 +64,7 @@ export function StoreCategorySection({
       id={id}
       className={cn(
         "scroll-mt-28 border-b border-sky/15",
-        alt ? "bg-baby" : "bg-[#fafcfe]",
+        alt ? "bg-sand/70" : "bg-ivory",
       )}
     >
       <div className="shell pb-6 pt-6 md:pb-14 md:pt-12">

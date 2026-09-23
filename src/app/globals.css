@@ -464,6 +464,21 @@ h3,
   color: var(--rosewood);
 }
 
+.store-theme {
+  background: var(--ivory);
+  color: var(--cocoa);
+  --color-ivory: var(--ivory);
+  --color-sand: var(--sand);
+  --color-fog: var(--fog);
+  --color-stone: var(--stone);
+  --color-surface: var(--surface);
+  --color-cream: var(--cream);
+  --color-background: var(--ivory);
+  --color-baby: var(--ivory);
+  --color-baby-soft: var(--baby-soft);
+  --color-baby-mid: var(--baby-mid);
+}
+
 .lead {
   font-size: 1.0625rem;
   line-height: 1.65;

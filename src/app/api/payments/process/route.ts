@@ -123,11 +123,15 @@ export async function POST(req: Request) {
     );
 
     if (becameApproved) {
-      void maybeDeductStockForOrder({
-        orderId: orderIdStr,
-        storeId: order.storeId,
-        reason: "pay",
-      }).catch((err) => console.error("[stock:deduct]", err));
+      try {
+        await maybeDeductStockForOrder({
+          orderId: orderIdStr,
+          storeId: order.storeId,
+          reason: "pay",
+        });
+      } catch (err) {
+        console.error("[stock:deduct]", err);
+      }
     }
 
     return NextResponse.json({

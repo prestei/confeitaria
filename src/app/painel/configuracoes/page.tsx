@@ -40,7 +40,7 @@ export default async function ConfiguracoesPage() {
     <div className="space-y-4">
       <PageHeader
         title="Configurações"
-        description="Organize horários, dados da loja, pagamento e preferências da conta."
+        description="Organize horários, cores do cardápio, dados da loja, pagamento e preferências da conta."
       />
       <SettingsHub
         status={{

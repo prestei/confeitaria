@@ -29,6 +29,10 @@ import {
 } from "@/lib/utils";
 import { cn } from "@/lib/cn";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { getStoreOpenStatus } from "@/lib/hours";
+import { trackStoreEvent } from "@/lib/analytics";
+import { CartUpsells } from "@/components/store/cart-upsells";
+import { visibleCustomizations } from "@/lib/addons";
 
 const MercadoPagoBrick = dynamic(
   () =>
@@ -85,6 +89,7 @@ export function CheckoutForm({
     minAdvanceDays: number;
     deliveryZones: Zone[];
     mpOnlineEnabled: boolean;
+    businessHours?: string | null;
   };
 }) {
   const {
@@ -106,6 +111,12 @@ export function CheckoutForm({
     orderId: string;
     totalCents: number;
   } | null>(null);
+
+  const openStatus = useMemo(
+    () => getStoreOpenStatus(store.businessHours),
+    [store.businessHours],
+  );
+  const storeClosed = openStatus.scheduled && !openStatus.open;
 
   // Orçamento (QUOTE) não tem valor cobrável; FIXED e "a partir de" (FROM)
   // usam o valor listado no carrinho e podem pagar online.
@@ -134,6 +145,19 @@ export function CheckoutForm({
   );
   const [notes, setNotes] = useState("");
   const [referenceNote, setReferenceNote] = useState("");
+  const [promoInput, setPromoInput] = useState("");
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [discountCents, setDiscountCents] = useState(0);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState("");
+
+  useEffect(() => {
+    trackStoreEvent({
+      storeSlug: store.slug,
+      type: "ORDER_STARTED",
+      once: true,
+    });
+  }, [store.slug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -166,12 +190,46 @@ export function CheckoutForm({
     }
   }, [paymentOptions, paymentMethod]);
 
+  // Revalidate coupon when cart changes
+  useEffect(() => {
+    if (!promoCode) return;
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/promotions/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeSlug: store.slug,
+          code: promoCode,
+          items: items.map((i) => ({
+            productId: i.productId,
+            unitPriceCents: i.unitPriceCents,
+            quantity: i.quantity,
+            priceMode: i.priceMode,
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (cancelled) return;
+      if (!res.ok) {
+        setPromoCode(null);
+        setDiscountCents(0);
+        setPromoError(json.error || "Cupom inválido");
+        return;
+      }
+      setDiscountCents(json.discountCents ?? 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [items, promoCode, store.slug]);
+
   const fee = useMemo(() => {
     if (fulfillment !== "DELIVERY") return 0;
     return store.deliveryZones.find((z) => z.name === zone)?.feeCents ?? 0;
   }, [fulfillment, zone, store.deliveryZones]);
 
-  const total = subtotalCents + fee;
+  const total = Math.max(0, subtotalCents - discountCents) + fee;
   const priceHint = hasQuoteItems
     ? "Valor a confirmar"
     : items.some((i) => i.priceMode === "FROM")
@@ -179,7 +237,58 @@ export function CheckoutForm({
       : "Total";
   const isOnlinePayment = paymentMethod === ONLINE_PAYMENT_METHOD;
 
+  async function applyPromo() {
+    const code = promoInput.trim();
+    if (!code) {
+      setPromoError("Informe o código do cupom");
+      return;
+    }
+    if (hasQuoteItems) {
+      setPromoError("Cupom não se aplica a orçamentos");
+      return;
+    }
+    setPromoLoading(true);
+    setPromoError("");
+    const res = await fetch("/api/promotions/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storeSlug: store.slug,
+        code,
+        items: items.map((i) => ({
+          productId: i.productId,
+          unitPriceCents: i.unitPriceCents,
+          quantity: i.quantity,
+          priceMode: i.priceMode,
+        })),
+      }),
+    });
+    const json = await res.json();
+    setPromoLoading(false);
+    if (!res.ok) {
+      setPromoCode(null);
+      setDiscountCents(0);
+      setPromoError(json.error || "Cupom inválido");
+      return;
+    }
+    setPromoCode(json.promotion?.code || code.toUpperCase());
+    setDiscountCents(json.discountCents ?? 0);
+    setPromoInput(json.promotion?.code || code.toUpperCase());
+  }
+
+  function clearPromo() {
+    setPromoCode(null);
+    setDiscountCents(0);
+    setPromoInput("");
+    setPromoError("");
+  }
+
   function validateStep() {
+    if (storeClosed) {
+      return openStatus.todayLabel
+        ? `A loja está fechada agora (${openStatus.todayLabel})`
+        : "A loja está fechada no momento";
+    }
     if (step === 1 && !items.length) return "Adicione produtos à sacola";
     if (step === 2) {
       if (customerName.trim().length < 2) return "Informe seu nome";
@@ -256,13 +365,16 @@ export function CheckoutForm({
         notes: notes || undefined,
         referenceNote: referenceNote || undefined,
         paymentMethod: paymentMethod || undefined,
+        promoCode: promoCode || undefined,
         items: items.map((i) => ({
-          productId: i.productId,
+          productId: i.productId || undefined,
           productName: i.productName,
           quantity: i.quantity,
           unitPriceCents: i.unitPriceCents,
           customizations: i.customizations,
           priceMode: i.priceMode,
+          source: i.source,
+          addonId: i.addonId,
         })),
       }),
     });
@@ -287,6 +399,12 @@ export function CheckoutForm({
     }
 
     clear();
+    trackStoreEvent({
+      storeSlug: store.slug,
+      type: "WHATSAPP_CLICK",
+      source: "checkout",
+      meta: { orderId: json.orderId },
+    });
     window.open(json.whatsappUrl, "_blank");
     window.location.href = `/${store.slug}/pedido-enviado?id=${json.orderId}`;
   }
@@ -499,11 +617,14 @@ export function CheckoutForm({
                                     {item.productName}
                                   </p>
                                   {item.customizations &&
-                                    Object.keys(item.customizations).length >
-                                      0 && (
+                                    Object.keys(
+                                      visibleCustomizations(item.customizations),
+                                    ).length > 0 && (
                                       <ul className="mt-2 flex flex-wrap gap-1.5">
                                         {Object.entries(
-                                          item.customizations,
+                                          visibleCustomizations(
+                                            item.customizations,
+                                          ),
                                         ).map(([k, v]) => (
                                           <li
                                             key={k}
@@ -579,14 +700,66 @@ export function CheckoutForm({
                   </ul>
                 )}
 
+                {step === 1 && <CartUpsells storeSlug={store.slug} />}
+
                 {step === 1 && (
                   <div className="mt-5 space-y-2 border-t border-cocoa/10 pt-5 text-sm">
+                    {!hasQuoteItems && (
+                      <div className="mb-4 rounded-xl border border-cocoa/8 bg-sand/40 p-3">
+                        <label className="label">Cupom de desconto</label>
+                        <div className="mt-1.5 flex gap-2">
+                          <input
+                            className="input"
+                            value={promoInput}
+                            onChange={(e) =>
+                              setPromoInput(e.target.value.toUpperCase())
+                            }
+                            placeholder="Ex.: DOCE10"
+                            disabled={Boolean(promoCode)}
+                          />
+                          {promoCode ? (
+                            <button
+                              type="button"
+                              onClick={clearPromo}
+                              className="btn-secondary shrink-0"
+                            >
+                              Remover
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={applyPromo}
+                              disabled={promoLoading}
+                              className="btn-secondary shrink-0 disabled:opacity-60"
+                            >
+                              {promoLoading ? "…" : "Aplicar"}
+                            </button>
+                          )}
+                        </div>
+                        {promoError && (
+                          <p className="mt-1.5 text-xs text-danger">{promoError}</p>
+                        )}
+                        {promoCode && discountCents > 0 && (
+                          <p className="mt-1.5 text-xs font-medium text-emerald-700">
+                            Cupom {promoCode} aplicado
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <div className="flex justify-between text-cocoa-soft">
                       <span>Subtotal</span>
                       <span className="font-medium text-cocoa">
                         {hasQuoteItems ? "—" : formatBRL(subtotalCents)}
                       </span>
                     </div>
+                    {discountCents > 0 && !hasQuoteItems && (
+                      <div className="flex justify-between text-emerald-700">
+                        <span>Desconto{promoCode ? ` (${promoCode})` : ""}</span>
+                        <span className="font-medium">
+                          −{formatBRL(discountCents)}
+                        </span>
+                      </div>
+                    )}
                     {fee > 0 && (
                       <div className="flex justify-between text-cocoa-soft">
                         <span>Entrega</span>
@@ -908,6 +1081,12 @@ export function CheckoutForm({
                         {hasQuoteItems ? "A confirmar" : formatBRL(total)}
                       </span>
                     </div>
+                    {discountCents > 0 && !hasQuoteItems && (
+                      <p className="text-xs text-emerald-700">
+                        Inclui desconto de {formatBRL(discountCents)}
+                        {promoCode ? ` (${promoCode})` : ""}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -942,10 +1121,13 @@ export function CheckoutForm({
                                 {item.quantity}× {item.productName}
                               </p>
                               {item.customizations &&
-                                Object.keys(item.customizations).length >
-                                  0 && (
+                                Object.keys(
+                                  visibleCustomizations(item.customizations),
+                                ).length > 0 && (
                                   <p className="mt-0.5 truncate text-xs text-cocoa-soft/70">
-                                    {Object.entries(item.customizations)
+                                    {Object.entries(
+                                      visibleCustomizations(item.customizations),
+                                    )
                                       .map(
                                         ([k, v]) =>
                                           `${k}: ${Array.isArray(v) ? v.join(", ") : v}`,
@@ -964,6 +1146,40 @@ export function CheckoutForm({
                           </li>
                         ))}
                       </ul>
+                      <div className="mt-4 space-y-1.5 border-t border-cocoa/8 pt-3 text-sm">
+                        <div className="flex justify-between text-cocoa-soft">
+                          <span>Subtotal</span>
+                          <span className="font-medium text-cocoa">
+                            {hasQuoteItems ? "—" : formatBRL(subtotalCents)}
+                          </span>
+                        </div>
+                        {discountCents > 0 && !hasQuoteItems && (
+                          <div className="flex justify-between text-emerald-700">
+                            <span>
+                              Desconto{promoCode ? ` (${promoCode})` : ""}
+                            </span>
+                            <span className="font-medium">
+                              −{formatBRL(discountCents)}
+                            </span>
+                          </div>
+                        )}
+                        {fee > 0 && (
+                          <div className="flex justify-between text-cocoa-soft">
+                            <span>Entrega</span>
+                            <span className="font-medium text-cocoa">
+                              {formatBRL(fee)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-end justify-between gap-3 pt-1">
+                          <span className="font-semibold text-cocoa">
+                            {priceHint}
+                          </span>
+                          <span className="font-display text-2xl text-cocoa">
+                            {hasQuoteItems ? "A confirmar" : formatBRL(total)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1056,6 +1272,14 @@ export function CheckoutForm({
             </motion.section>
           </AnimatePresence>
 
+          {storeClosed && (
+            <p className="rounded-xl border border-rosewood/25 bg-sand px-4 py-3 text-sm text-rosewood">
+              A loja está fechada no momento
+              {openStatus.todayLabel ? ` (${openStatus.todayLabel})` : ""}.
+              Pedidos só são aceitos no horário de funcionamento.
+            </p>
+          )}
+
           {error && (
             <p className="rounded-xl border border-danger/20 bg-sand px-4 py-3 text-sm text-danger">
               {error}
@@ -1078,7 +1302,8 @@ export function CheckoutForm({
               <button
                 type="button"
                 onClick={next}
-                className="btn-primary min-w-[12rem] sm:min-w-[14rem]"
+                disabled={storeClosed}
+                className="btn-primary min-w-[12rem] disabled:opacity-60 sm:min-w-[14rem]"
               >
                 Continuar
                 <ArrowRight className="h-4 w-4" />
@@ -1087,7 +1312,7 @@ export function CheckoutForm({
               <button
                 type="button"
                 onClick={submit}
-                disabled={loading}
+                disabled={loading || storeClosed}
                 className="btn-primary min-w-[12rem] disabled:opacity-60 sm:min-w-[18rem]"
               >
                 {isOnlinePayment ? (

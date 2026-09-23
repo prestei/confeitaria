@@ -1,6 +1,7 @@
 import {
   Clock3,
   CreditCard,
+  Palette,
   Settings2,
   Store,
   type LucideIcon,
@@ -20,8 +21,15 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     href: "/painel/configuracoes/estabelecimento",
     title: "Estabelecimento",
     short: "Loja",
-    description: "Nome, WhatsApp, endereço, logo e dados da loja.",
+    description: "Nome, WhatsApp, endereço, logo, banner e dados da loja.",
     icon: Store,
+  },
+  {
+    href: "/painel/configuracoes/aparencia",
+    title: "Cores do cardápio",
+    short: "Cores",
+    description: "Fundo, botões, textos e barra do cardápio — atualiza na hora.",
+    icon: Palette,
   },
   {
     href: "/painel/configuracoes/horarios",

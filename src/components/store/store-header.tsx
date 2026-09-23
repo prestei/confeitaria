@@ -15,6 +15,8 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/components/cart/cart-context";
 import { digitsOnly, formatBRL } from "@/lib/utils";
+import { getStoreOpenStatus } from "@/lib/hours";
+import { trackStoreEvent } from "@/lib/analytics";
 
 type StoreHeaderStore = {
   slug: string;
@@ -28,6 +30,7 @@ type StoreHeaderStore = {
   deliveryEnabled: boolean;
   pickupEnabled: boolean;
   productionNote: string | null;
+  businessHours?: string | null;
 };
 
 type Category = { slug: string; name: string; emoji: string | null };
@@ -55,6 +58,19 @@ export function StoreHeader({
     store.coverUrl ||
     "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1600&q=80";
   const location = [store.address, store.city].filter(Boolean).join(" · ") || null;
+  const openStatus = useMemo(
+    () => getStoreOpenStatus(store.businessHours),
+    [store.businessHours],
+  );
+  const isOpen = store.isPublished && openStatus.open;
+
+  function trackWhatsApp() {
+    trackStoreEvent({
+      storeSlug: store.slug,
+      type: "WHATSAPP_CLICK",
+      source: "header",
+    });
+  }
 
   const hits = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -166,11 +182,12 @@ export function StoreHeader({
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-2.5 sm:gap-2">
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold text-white ${
-                        store.isPublished ? "bg-emerald-600" : "bg-cocoa-soft"
+                        isOpen ? "bg-emerald-600" : "bg-cocoa-soft"
                       }`}
+                      title={openStatus.todayLabel ?? openStatus.label}
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-white" aria-hidden />
-                      {store.isPublished ? "Aberto" : "Fechado"}
+                      {isOpen ? "Aberto" : "Fechado"}
                     </span>
                     {store.deliveryEnabled && (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-sand px-2.5 py-1 text-[11px] font-medium text-cocoa-soft">
@@ -283,6 +300,7 @@ export function StoreHeader({
                 href={wa}
                 target="_blank"
                 rel="noreferrer"
+                onClick={trackWhatsApp}
                 className="shrink-0 rounded-md bg-cocoa px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-cocoa-soft"
               >
                 Contato
@@ -355,6 +373,7 @@ export function StoreHeader({
                   href={wa}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={trackWhatsApp}
                   className="mt-4 btn-berry text-center"
                 >
                   WhatsApp

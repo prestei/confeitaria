@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { applyCategoryPriceAdjust } from "@/lib/category";
-import { leanDoc } from "@/lib/serialize";
+import { leanDoc, leanList } from "@/lib/serialize";
+import { mergeProductAddons } from "@/lib/addons";
 import { Store } from "@/models/Store";
 import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
+import { CatalogAddon } from "@/models/Addon";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -58,6 +60,15 @@ export async function GET(req: Request) {
   }
 
   // Ensure nested optionGroups/options are sorted like the Prisma include did
+  const catalog = leanList(
+    await CatalogAddon.find({
+      storeId: String(store._id),
+      active: true,
+    })
+      .sort({ sortOrder: 1, name: 1 })
+      .lean(),
+  );
+
   const sorted = {
     ...product,
     priceCents,
@@ -70,6 +81,11 @@ export async function GET(req: Request) {
           (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
         ),
       })),
+    addons: mergeProductAddons(
+      product.addons,
+      catalog,
+      product.categoryId,
+    ),
   };
 
   return NextResponse.json({

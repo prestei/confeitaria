@@ -22,6 +22,8 @@ export type CartItem = {
   customizations?: CartCustomization;
   priceMode: "FIXED" | "FROM" | "QUOTE";
   imageUrl?: string | null;
+  source?: "PRODUCT" | "UPSELL";
+  addonId?: string;
 };
 
 type CartContextValue = {

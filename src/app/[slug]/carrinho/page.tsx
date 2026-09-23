@@ -39,6 +39,7 @@ export default async function CartPage({
             mpPublicKey: store.mpPublicKey ?? null,
             mpAccessToken: store.mpAccessToken ?? null,
           }),
+          businessHours: store.businessHours,
         }}
       />
     </main>

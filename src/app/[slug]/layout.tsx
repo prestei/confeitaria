@@ -8,6 +8,10 @@ import { Product } from "@/models/Product";
 import { CartProvider } from "@/components/cart/cart-context";
 import { StoreHeader } from "@/components/store/store-header";
 import { StoreCartBar } from "@/components/store/store-cart-bar";
+import { StoreAnalyticsBeacon } from "@/components/store/store-analytics-beacon";
+import { StoreThemeRoot } from "@/components/store/store-theme-root";
+import { getStoreOpenStatus } from "@/lib/hours";
+import { resolveStoreTheme } from "@/lib/store-theme";
 
 export default async function StoreLayout({
   children,
@@ -45,26 +49,38 @@ export default async function StoreLayout({
     (a, b) => a.feeCents - b.feeCents,
   );
   const minDeliveryFeeCents = zones[0]?.feeCents ?? null;
+  const openStatus = getStoreOpenStatus(store.businessHours);
+  const storeClosed = openStatus.scheduled && !openStatus.open;
+
+  const theme = resolveStoreTheme(store);
 
   return (
     <CartProvider slug={slug}>
-      <div
-        className="min-h-screen bg-ivory"
-        style={
-          {
-            ["--berry" as string]: store.accentColor || "#d4527a",
-          } as React.CSSProperties
-        }
+      <StoreThemeRoot
+        slug={store.slug}
+        initial={{
+          accentColor: store.accentColor,
+          secondaryColor: store.secondaryColor,
+          themeColors: theme,
+        }}
       >
+        <StoreAnalyticsBeacon storeSlug={store.slug} />
         <StoreHeader
           store={store as any}
           categories={categories as any}
           products={products as any}
           minDeliveryFeeCents={minDeliveryFeeCents}
         />
+        {storeClosed && (
+          <div className="border-b border-rosewood/20 bg-sand px-4 py-2.5 text-center text-sm text-rosewood">
+            Loja fechada no momento
+            {openStatus.todayLabel ? ` (${openStatus.todayLabel})` : ""}.
+            Pedidos só são aceitos no horário de funcionamento.
+          </div>
+        )}
         {children}
         <StoreCartBar storeSlug={store.slug} />
-      </div>
+      </StoreThemeRoot>
     </CartProvider>
   );
 }

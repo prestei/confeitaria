@@ -10,6 +10,7 @@ import {
   Store,
   Settings,
   Tags,
+  Gift,
   type LucideIcon,
 } from "lucide-react";
 
@@ -38,6 +39,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/painel/produtos", label: "Produtos", icon: Package },
       { href: "/painel/categorias", label: "Categorias", icon: Tags },
+      { href: "/painel/adicionais", label: "Adicionais", icon: Gift },
       {
         href: "/painel/pedidos",
         label: "Encomendas",

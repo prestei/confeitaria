@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import { connectDB } from "../src/lib/db";
 import {
   AnalyticsEventType,
+  AddonSelectionType,
   Availability,
   FulfillmentType,
   IntegrationProvider,
@@ -19,6 +20,7 @@ import {
 } from "../src/lib/enums";
 import { AnalyticsEvent } from "../src/models/AnalyticsEvent";
 import { BlockedDate } from "../src/models/BlockedDate";
+import { CatalogAddon } from "../src/models/Addon";
 import { Category } from "../src/models/Category";
 import { Customer } from "../src/models/Customer";
 import { Integration } from "../src/models/Integration";
@@ -61,6 +63,7 @@ async function main() {
   await Order.deleteMany({});
   await Customer.deleteMany({});
   await Product.deleteMany({});
+  await CatalogAddon.deleteMany({});
   await Category.deleteMany({});
   await BlockedDate.deleteMany({});
   await Store.deleteMany({});
@@ -96,7 +99,8 @@ async function main() {
     typography: "elegant",
     cardStyle: "soft",
     pageLayout: "classic",
-    businessHours: "Seg–Sex 9h–18h · Sáb 9h–13h",
+    businessHours:
+      "Seg 09:00–18:00 · Ter 09:00–18:00 · Qua 09:00–18:00 · Qui 09:00–18:00 · Sex 09:00–18:00 · Sáb 09:00–13:00 · Dom fechado",
     address: "Rua Conselheiro Franco, 842 — Centro",
     city: "Feira de Santana — BA",
     minAdvanceDays: 3,
@@ -154,13 +158,86 @@ async function main() {
     cats.map((c) => [c.slug, String(c._id)]),
   );
 
+  const cakeCats = [
+    bySlug.bolos,
+    bySlug.cupcakes,
+    bySlug.kits,
+    bySlug["bolos-personalizados"],
+    bySlug.datas,
+  ].filter(Boolean);
+
+  await CatalogAddon.insertMany([
+    {
+      storeId,
+      name: "Velas decorativas",
+      description: "Velas para o bolo — informe o número e a cor."
+      priceCents: 800,
+      selectionType: AddonSelectionType.TEXT,
+      maxQty: 1,
+      noteLabel: "Número e cor",
+      noteRequired: true,
+      categoryIds: cakeCats,
+      suggestInCart: true,
+      sortOrder: 1,
+      active: true,
+    },
+    {
+      storeId,
+      name: "Topo de bolo impresso",
+      description: "Topo personalizado com nome ou tema."
+      priceCents: 1800,
+      selectionType: AddonSelectionType.TEXT,
+      maxQty: 1,
+      noteLabel: "Tema ou nome",
+      noteRequired: true,
+      categoryIds: cakeCats,
+      suggestInCart: true,
+      sortOrder: 2,
+      active: true,
+    },
+    {
+      storeId,
+      name: "Bexigas",
+      description: "Unidade avulsa para a mesa da festa.",
+      priceCents: 600,
+      selectionType: AddonSelectionType.QTY,
+      maxQty: 20,
+      categoryIds: cakeCats,
+      sortOrder: 3,
+      active: true,
+    },
+    {
+      storeId,
+      name: "Pétalas de rosa",
+      description: "Pacote para decorar a mesa ou a caixa.",
+      priceCents: 1200,
+      selectionType: AddonSelectionType.TOGGLE,
+      maxQty: 1,
+      categoryIds: cakeCats,
+      sortOrder: 4,
+      active: true,
+    },
+    {
+      storeId,
+      name: "Embalagem para presente",
+      description: "Caixa pronta para presentear."
+      priceCents: 1500,
+      selectionType: AddonSelectionType.TOGGLE,
+      maxQty: 1,
+      categoryIds: [],
+      suggestInCart: true,
+      sortOrder: 5,
+      active: true,
+    },
+  ]);
+
   const bolo = await Product.create({
     storeId,
     categoryId: bySlug["bolos-personalizados"],
     name: "Bolo personalizado",
     slug: "bolo-personalizado",
     description:
-      "Monte seu bolo: tamanho, massa, recheio, cobertura e tema. Ideal para aniversários e datas especiais.",
+      "Bolo sob encomenda: tamanho, massa, recheio, cobertura e tema. Ideal para aniversários e datas especiais.",
     imageUrl:
       "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=900&q=80",
     productType: ProductType.CAKE,
@@ -363,6 +440,7 @@ async function main() {
     unit?: string;
     minAdvanceDays?: number;
     kitContents?: string;
+    suggestInCart?: boolean;
     sortOrder: number;
   }> = [
     // Bolos prontos
@@ -410,7 +488,7 @@ async function main() {
     { categorySlug: "kits", name: "Kit Festa 10 pessoas", slug: "kit-festa-10", description: "Kit compacto para comemorações menores.", productType: ProductType.PARTY_KIT, priceMode: PriceMode.FROM, priceCents: 18000, availability: Availability.MADE_TO_ORDER, kitContents: "1 bolo 1 kg\n30 brigadeiros\n10 cupcakes\n10 mini brownies", minAdvanceDays: 4, sortOrder: 10 },
     { categorySlug: "kits", name: "Kit Festa 40 pessoas", slug: "kit-festa-40", description: "Para festas maiores — bolo, doces e sobremesas.", productType: ProductType.PARTY_KIT, priceMode: PriceMode.FROM, priceCents: 58000, availability: Availability.MADE_TO_ORDER, featured: true, kitContents: "1 bolo 3 kg\n100 brigadeiros\n40 cupcakes\n40 mini brownies\n20 bem-casados", minAdvanceDays: 7, sortOrder: 11 },
     { categorySlug: "kits", name: "Kit Café da tarde", slug: "kit-cafe-tarde", description: "Bolo caseiro, brownies e docinhos para 6 pessoas.", productType: ProductType.PARTY_KIT, priceMode: PriceMode.FIXED, priceCents: 9800, availability: Availability.AVAILABLE, kitContents: "1 bolo banana ou formigueiro\n6 brownies\n12 brigadeiros", sortOrder: 12 },
-    { categorySlug: "kits", name: "Kit Presente Doce", slug: "kit-presente", description: "Caixa presenteável com mix de doces gourmet.", productType: ProductType.READY, priceMode: PriceMode.FIXED, priceCents: 7900, promoPriceCents: 6900, availability: Availability.AVAILABLE, featured: true, trackStock: true, stockQty: 8, stockMin: 3, unit: "cx", sortOrder: 13 },
+    { categorySlug: "kits", name: "Kit Presente Doce", slug: "kit-presente", description: "Caixa presenteável com mix de doces gourmet.", productType: ProductType.READY, priceMode: PriceMode.FIXED, priceCents: 7900, promoPriceCents: 6900, availability: Availability.AVAILABLE, featured: true, trackStock: true, stockQty: 8, stockMin: 3, unit: "cx", suggestInCart: true, sortOrder: 13 },
     { categorySlug: "kits", name: "Kit Corporativo", slug: "kit-corporativo", description: "Mini doces embalados individualmente para eventos.", productType: ProductType.PARTY_KIT, priceMode: PriceMode.FROM, priceCents: 25000, availability: Availability.MADE_TO_ORDER, kitContents: "50 mini brigadeiros\n50 mini beijinhos\n30 cones trufados", minAdvanceDays: 5, sortOrder: 14 },
     { categorySlug: "kits", name: "Kit Chá de bebê", slug: "kit-cha-bebe", description: "Doces e bolo temáticos em tons pastel.", productType: ProductType.PARTY_KIT, priceMode: PriceMode.FROM, priceCents: 28000, availability: Availability.MADE_TO_ORDER, kitContents: "1 bolo 1,5 kg temático\n40 docinhos\n20 cupcakes decorados", minAdvanceDays: 5, sortOrder: 15 },
     { categorySlug: "kits", name: "Kit Casamento íntimo", slug: "kit-casamento", description: "Bem-casados, bolo e doces sofisticados.", productType: ProductType.PARTY_KIT, priceMode: PriceMode.FROM, priceCents: 45000, availability: Availability.MADE_TO_ORDER, kitContents: "1 bolo 2 kg\n80 bem-casados\n60 brigadeiros gourmet", minAdvanceDays: 10, sortOrder: 16 },
@@ -430,6 +508,8 @@ async function main() {
     { categorySlug: "datas", name: "Bolo de Natal", slug: "bolo-natal", description: "Frutas cristalizadas, especiarias e glacê branco.", productType: ProductType.CAKE, priceMode: PriceMode.FROM, priceCents: 15000, availability: Availability.MADE_TO_ORDER, minAdvanceDays: 5, sortOrder: 13 },
     { categorySlug: "datas", name: "Panetone trufado", slug: "panetone-trufado", description: "Panetone artesanal recheado e coberto de chocolate.", productType: ProductType.READY, priceMode: PriceMode.FIXED, priceCents: 7800, availability: Availability.AVAILABLE, trackStock: true, stockQty: 15, stockMin: 5, unit: "un", sortOrder: 14 },
     { categorySlug: "datas", name: "Bolo de Páscoa", slug: "bolo-pascoa", description: "Com ovos de chocolate e toppings coloridos.", productType: ProductType.CAKE, priceMode: PriceMode.FROM, priceCents: 13500, availability: Availability.MADE_TO_ORDER, minAdvanceDays: 5, sortOrder: 15 },
+    { categorySlug: "datas", name: "Ovo de colher 350g", slug: "ovo-colher-350", description: "Ovo artesanal de colher com recheio de ninho e Nutella.", productType: ProductType.READY, priceMode: PriceMode.FIXED, priceCents: 8900, availability: Availability.AVAILABLE, featured: true, trackStock: true, stockQty: 12, stockMin: 3, unit: "un", sortOrder: 18 },
+    { categorySlug: "datas", name: "Ovo de colher 500g", slug: "ovo-colher-500", description: "Versão maior, com duas camadas de recheio e toppings.", productType: ProductType.READY, priceMode: PriceMode.FIXED, priceCents: 11900, availability: Availability.AVAILABLE, trackStock: true, stockQty: 8, stockMin: 3, unit: "un", sortOrder: 19 },
     { categorySlug: "datas", name: "Kit formatura", slug: "kit-formatura", description: "Bolo e doces com tema acadêmico.", productType: ProductType.PARTY_KIT, priceMode: PriceMode.FROM, priceCents: 35000, availability: Availability.MADE_TO_ORDER, kitContents: "1 bolo 2 kg\n60 brigadeiros\n30 cupcakes", minAdvanceDays: 6, sortOrder: 16 },
     { categorySlug: "datas", name: "Doces de Halloween", slug: "doces-halloween", description: "Caixa temática com brigadeiros e cupcakes assustadores.", productType: ProductType.READY, priceMode: PriceMode.FIXED, priceCents: 6500, availability: Availability.AVAILABLE, trackStock: true, stockQty: 8, stockMin: 3, unit: "cx", sortOrder: 17 },
 
@@ -471,6 +551,7 @@ async function main() {
         unit: p.unit ?? "un",
         minAdvanceDays: p.minAdvanceDays,
         kitContents: p.kitContents,
+        suggestInCart: p.suggestInCart ?? false,
         sortOrder: p.sortOrder,
         active: true,
       };

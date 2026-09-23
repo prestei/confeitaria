@@ -24,12 +24,14 @@ export function ImageField({
   onChange,
   hint,
   className,
+  previewClassName,
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
   hint?: string;
   className?: string;
+  previewClassName?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -70,7 +72,12 @@ export function ImageField({
       </div>
 
       <div className="flex flex-wrap items-start gap-3">
-        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#E8E2DE] bg-[#F7F5F3]">
+        <div
+          className={cn(
+            "flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#E8E2DE] bg-[#F7F5F3]",
+            previewClassName ?? "h-24 w-24",
+          )}
+        >
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt="" className="h-full w-full object-cover" />

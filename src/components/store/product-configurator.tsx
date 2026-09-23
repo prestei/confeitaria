@@ -6,6 +6,9 @@ import { CalendarDays, Minus, Plus } from "lucide-react";
 import { useCart } from "@/components/cart/cart-context";
 import { formatBRL, isQuoteFlow, PRODUCT_TYPE_LABELS } from "@/lib/utils";
 import { priceLabel } from "@/components/store/product-card";
+import { effectivePriceCents, hasPromoPrice } from "@/lib/pricing";
+import { formatAddonLine, type ResolvedAddon } from "@/lib/addons";
+import { StoreAddonsPicker } from "@/components/store/store-addons-picker";
 import type { PriceMode, ProductType } from "@/lib/enums";
 
 type ProductOption = {
@@ -25,12 +28,7 @@ type OptionGroup = {
   options: ProductOption[];
 };
 
-type Addon = {
-  id: string;
-  name: string;
-  priceCents: number;
-  maxQty: number;
-};
+type Addon = ResolvedAddon;
 
 type ProductDetail = {
   id: string;
@@ -41,6 +39,7 @@ type ProductDetail = {
   productType: ProductType;
   priceMode: PriceMode;
   priceCents: number | null;
+  promoPriceCents?: number | null;
   kitContents: string | null;
   minAdvanceDays: number | null;
   featured?: boolean;
@@ -57,6 +56,7 @@ export function ProductConfigurator({
   product,
   minAdvanceDays,
   compact = false,
+  storeOpen = true,
   onSuccess,
 }: {
   storeSlug: string;
@@ -64,6 +64,8 @@ export function ProductConfigurator({
   minAdvanceDays: number;
   /** Layout for modal (split + sticky CTA) */
   compact?: boolean;
+  /** When false, SCHEDULED_DAYS products cannot be added. */
+  storeOpen?: boolean;
   /** Called after add — if omitted, navigates to cart */
   onSuccess?: () => void;
 }) {
@@ -74,8 +76,11 @@ export function ProductConfigurator({
     product.trackStock && typeof product.stockQty === "number"
       ? Math.max(0, product.stockQty)
       : null;
+  const scheduledClosed =
+    product.availability === "SCHEDULED_DAYS" && !storeOpen;
   const soldOut =
     product.availability === "SOLD_OUT" ||
+    scheduledClosed ||
     (maxQty != null && maxQty <= 0);
 
   const [selected, setSelected] = useState<Record<string, string>>(() => {
@@ -86,6 +91,7 @@ export function ProductConfigurator({
     return init;
   });
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
+  const [addonNotes, setAddonNotes] = useState<Record<string, string>>({});
   const [qty, setQty] = useState(1);
   const [theme, setTheme] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -111,14 +117,21 @@ export function ProductConfigurator({
     }, 0);
   }, [product.addons, addonQty]);
 
+  const missingAddonNote = product.addons.some(
+    (a) =>
+      (addonQty[a.id] || 0) > 0 &&
+      a.noteRequired &&
+      !(addonNotes[a.id] || "").trim(),
+  );
+
+  const basePrice = effectivePriceCents(product) ?? 0;
   const unitPrice =
-    product.priceMode === "QUOTE"
-      ? 0
-      : (product.priceCents ?? 0) + optionDelta + addonsTotal;
+    product.priceMode === "QUOTE" ? 0 : basePrice + optionDelta + addonsTotal;
 
   const lineTotal = unitPrice * qty;
   const hasEstimateBump =
-    product.priceMode !== "QUOTE" && unitPrice > (product.priceCents ?? 0);
+    product.priceMode !== "QUOTE" && unitPrice > basePrice;
+  const showPromo = hasPromoPrice(product);
 
   function buildCustomizations() {
     const custom: Record<string, string | number | string[]> = {};
@@ -128,7 +141,7 @@ export function ProductConfigurator({
     }
     const chosenAddons = product.addons
       .filter((a) => (addonQty[a.id] || 0) > 0)
-      .map((a) => `${addonQty[a.id]}x ${a.name}`);
+      .map((a) => formatAddonLine(a.name, addonQty[a.id] || 0, addonNotes[a.id]));
     if (chosenAddons.length) custom["Adicionais"] = chosenAddons;
     if (theme) custom["Tema"] = theme;
     if (eventDate) custom["Data desejada"] = eventDate;
@@ -143,6 +156,13 @@ export function ProductConfigurator({
 
   function handleAdd() {
     if (soldOut) return;
+    const missingNote = product.addons.find(
+      (a) =>
+        (addonQty[a.id] || 0) > 0 &&
+        a.noteRequired &&
+        !(addonNotes[a.id] || "").trim(),
+    );
+    if (missingNote) return;
     const safeQty =
       maxQty != null ? Math.min(Math.max(1, qty), maxQty) : Math.max(1, qty);
     addItem({
@@ -242,8 +262,17 @@ export function ProductConfigurator({
               : "text-xl font-semibold text-berry sm:text-2xl"
           }
         >
-          {priceLabel(product.priceMode as PriceMode, product.priceCents)}
+          {priceLabel(
+            product.priceMode as PriceMode,
+            basePrice || null,
+            showPromo ? product.priceCents : null,
+          )}
         </p>
+        {showPromo && !hasEstimateBump && (
+          <p className="pb-0.5 text-xs font-medium text-rosewood">
+            Preço promocional
+          </p>
+        )}
         {hasEstimateBump && (
           <p className="pb-0.5 text-sm text-cocoa-soft">
             Com opções: {formatBRL(unitPrice)}
@@ -251,7 +280,12 @@ export function ProductConfigurator({
           </p>
         )}
       </div>
-      {product.trackStock && (
+      {scheduledClosed && (
+        <p className="mt-2 text-sm font-medium text-rosewood">
+          Indisponível fora do horário de funcionamento
+        </p>
+      )}
+      {product.trackStock && !scheduledClosed && (
         <p
           className={`mt-2 text-sm font-medium ${
             soldOut ? "text-rosewood" : "text-cocoa-soft"
@@ -313,57 +347,13 @@ export function ProductConfigurator({
       ))}
 
       {product.addons.length > 0 && (
-        <div>
-          <p className="label">Adicionais</p>
-          <div className="space-y-2">
-            {product.addons.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-cocoa/8 bg-sand/40 px-3.5 py-2.5"
-              >
-                <span className="min-w-0 text-sm text-cocoa">
-                  {a.name}
-                  <span className="ml-1.5 text-cocoa-soft">
-                    · {formatBRL(a.priceCents)}
-                  </span>
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    aria-label={`Diminuir ${a.name}`}
-                    disabled={(addonQty[a.id] || 0) <= 0}
-                    onClick={() =>
-                      setAddonQty((s) => ({
-                        ...s,
-                        [a.id]: Math.max(0, (s[a.id] || 0) - 1),
-                      }))
-                    }
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-cocoa/10 bg-surface text-cocoa transition hover:border-rosewood/30 disabled:opacity-40"
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <span className="w-6 text-center text-sm font-semibold tabular-nums text-cocoa">
-                    {addonQty[a.id] || 0}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Aumentar ${a.name}`}
-                    disabled={(addonQty[a.id] || 0) >= a.maxQty}
-                    onClick={() =>
-                      setAddonQty((s) => ({
-                        ...s,
-                        [a.id]: Math.min(a.maxQty, (s[a.id] || 0) + 1),
-                      }))
-                    }
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-cocoa/10 bg-surface text-cocoa transition hover:border-rosewood/30 disabled:opacity-40"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <StoreAddonsPicker
+          addons={product.addons}
+          qty={addonQty}
+          notes={addonNotes}
+          onQty={(id, next) => setAddonQty((s) => ({ ...s, [id]: next }))}
+          onNote={(id, value) => setAddonNotes((s) => ({ ...s, [id]: value }))}
+        />
       )}
 
       {(product.productType === "CAKE" ||
@@ -538,14 +528,20 @@ export function ProductConfigurator({
     <button
       type="button"
       onClick={handleAdd}
-      disabled={soldOut}
+      disabled={soldOut || missingAddonNote}
       className={
         compact
           ? "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rosewood px-5 py-3.5 text-[0.95rem] font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep disabled:cursor-not-allowed disabled:opacity-50"
           : "inline-flex mt-8 w-full items-center justify-center gap-2 rounded-lg bg-rosewood px-5 py-3.5 text-base font-semibold text-white shadow-[0_10px_28px_rgba(185,111,125,0.28)] transition hover:bg-rosewood-deep disabled:cursor-not-allowed disabled:opacity-50"
       }
     >
-      {soldOut ? "Esgotado" : ctaLabel}
+      {soldOut
+        ? scheduledClosed
+          ? "Indisponível agora"
+          : "Esgotado"
+        : missingAddonNote
+          ? "Preencha o detalhe do adicional"
+          : ctaLabel}
       {!soldOut && !quote && product.priceMode !== "QUOTE" && lineTotal > 0 && (
         <span className="ml-1.5 opacity-90">· {formatBRL(lineTotal)}</span>
       )}

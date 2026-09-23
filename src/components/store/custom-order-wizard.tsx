@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
+import { getStoreOpenStatus } from "@/lib/hours";
+import { trackStoreEvent } from "@/lib/analytics";
 
 const STEPS = [
   { id: 1, title: "O que você deseja?" },
@@ -72,6 +74,7 @@ export function CustomOrderWizard({
     pickupEnabled: boolean;
     deliveryEnabled: boolean;
     minAdvanceDays: number;
+    businessHours?: string | null;
     deliveryZones: { name: string; feeCents: number }[];
   };
 }) {
@@ -83,6 +86,11 @@ export function CustomOrderWizard({
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const openStatus = useMemo(
+    () => getStoreOpenStatus(store.businessHours),
+    [store.businessHours],
+  );
+  const storeClosed = openStatus.scheduled && !openStatus.open;
 
   const typeLabel = useMemo(
     () => PRODUCT_TYPES.find((t) => t.value === form.productType)?.label ?? form.productType,
@@ -94,6 +102,11 @@ export function CustomOrderWizard({
   }
 
   function validateStep() {
+    if (storeClosed) {
+      return openStatus.todayLabel
+        ? `A loja está fechada agora (${openStatus.todayLabel})`
+        : "A loja está fechada no momento";
+    }
     if (step === 1 && !form.productType) return "Escolha o tipo de encomenda";
     if (step === 3) {
       if (!form.eventDate) return "Informe a data desejada";
@@ -174,6 +187,12 @@ export function CustomOrderWizard({
       return;
     }
 
+    trackStoreEvent({
+      storeSlug: store.slug,
+      type: "WHATSAPP_CLICK",
+      source: "encomenda",
+      meta: { orderId: json.orderId },
+    });
     window.open(json.whatsappUrl, "_blank");
     window.location.href = `/${store.slug}/pedido-enviado?id=${json.orderId}`;
   }
@@ -475,6 +494,14 @@ export function CustomOrderWizard({
           </motion.div>
         </AnimatePresence>
 
+        {storeClosed && (
+          <p className="mt-4 rounded-xl border border-rosewood/25 bg-sand px-3 py-2 text-sm text-rosewood">
+            A loja está fechada no momento
+            {openStatus.todayLabel ? ` (${openStatus.todayLabel})` : ""}.
+            Encomendas só são aceitas no horário de funcionamento.
+          </p>
+        )}
+
         {error && (
           <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
             {error}
@@ -491,11 +518,17 @@ export function CustomOrderWizard({
             Voltar
           </Button>
           {step < 5 ? (
-            <Button type="button" variant="berry" onClick={next}>
+            <Button type="button" variant="berry" onClick={next} disabled={storeClosed}>
               Continuar
             </Button>
           ) : (
-            <Button type="button" variant="berry" loading={loading} onClick={submit}>
+            <Button
+              type="button"
+              variant="berry"
+              loading={loading}
+              onClick={submit}
+              disabled={storeClosed}
+            >
               Enviar no WhatsApp
             </Button>
           )}

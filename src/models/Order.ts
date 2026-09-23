@@ -57,8 +57,11 @@ const orderSchema = baseSchema(
     notes: { type: String, default: null },
     referenceNote: { type: String, default: null },
     subtotalCents: { type: Number, default: 0 },
+    discountCents: { type: Number, default: 0 },
     totalCents: { type: Number, default: 0 },
     priceLabel: { type: String, default: "TOTAL" },
+    promoCode: { type: String, default: null },
+    promotionId: { type: String, default: null },
     paymentMethod: { type: String, default: null },
     paymentStatus: {
       type: String,
@@ -109,8 +112,11 @@ export type OrderDoc = {
   notes: string | null;
   referenceNote: string | null;
   subtotalCents: number;
+  discountCents: number;
   totalCents: number;
   priceLabel: string;
+  promoCode: string | null;
+  promotionId: string | null;
   paymentMethod: string | null;
   paymentStatus: PaymentStatusT;
   mpPaymentId: string | null;

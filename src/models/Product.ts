@@ -69,6 +69,7 @@ const productSchema = baseSchema(
       default: Availability.AVAILABLE,
     },
     featured: { type: Boolean, default: false },
+    suggestInCart: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
     trackStock: { type: Boolean, default: false },
     stockQty: { type: Number, default: 0 },
@@ -128,6 +129,7 @@ export type ProductDoc = {
   promoPriceCents: number | null;
   availability: AvailabilityT;
   featured: boolean;
+  suggestInCart: boolean;
   active: boolean;
   trackStock: boolean;
   stockQty: number;

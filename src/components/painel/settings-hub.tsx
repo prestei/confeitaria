@@ -26,6 +26,10 @@ const SECTION_HINT: Record<
     s.hasAddress
       ? { label: "Completo", tone: "ok" }
       : { label: "Endereço pendente", tone: "warn" },
+  "/painel/configuracoes/aparencia": () => ({
+    label: "Tempo real",
+    tone: "ok" as const,
+  }),
   "/painel/configuracoes/horarios": (s) =>
     s.hasHours
       ? { label: "Definido", tone: "ok" }
@@ -50,6 +54,7 @@ const SECTION_HINT: Record<
 
 const ICON_TONE: Record<string, string> = {
   "/painel/configuracoes/estabelecimento": "bg-[#EEF2FF] text-[#4338CA]",
+  "/painel/configuracoes/aparencia": "bg-[#FDF2F8] text-[#9D174D]",
   "/painel/configuracoes/horarios": "bg-[#ECFDF5] text-[#047857]",
   "/painel/configuracoes/pagamento": "bg-[#FFF7ED] text-[#C2410C]",
   "/painel/configuracoes/geral": "bg-[#F0F2F5] text-[#2D2926]",

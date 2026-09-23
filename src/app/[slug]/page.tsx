@@ -15,6 +15,7 @@ import { StoreCustomOrderBanner } from "@/components/store/store-custom-order-ba
 import { StoreFeaturedBanners } from "@/components/store/store-featured-banners";
 import { StoreCategoryPills } from "@/components/store/store-category-pills";
 import { StoreCategorySection } from "@/components/store/store-category-section";
+import { isStoreOpenNow } from "@/lib/hours";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ export default async function StorePage({
 
   const categories = allCategories.filter((c) => isCategoryVisibleToday(c));
   const categoryById = new Map(allCategories.map((c) => [c.id, c]));
+  const storeOpen = isStoreOpenNow(store.businessHours);
 
   function withCategoryPrice<T extends { categoryId?: string | null; priceCents: number | null; promoPriceCents?: number | null }>(
     p: T,
@@ -82,7 +84,7 @@ export default async function StorePage({
           showFeatured={featured.length > 0}
         />
 
-        <div className="relative bg-[#fafcfe]">
+        <div className="relative bg-ivory">
           {categories.map((cat, idx) => {
             const catProducts = products
               .filter((p) => p.categoryId === cat.id)
@@ -99,7 +101,12 @@ export default async function StorePage({
               >
                 <StoreProductGrid className="flex flex-col md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6">
                   {catProducts.map((p) => (
-                    <ProductCard key={p.id} storeSlug={store.slug} product={p as any} />
+                    <ProductCard
+                      key={p.id}
+                      storeSlug={store.slug}
+                      product={p as any}
+                      storeOpen={storeOpen}
+                    />
                   ))}
                 </StoreProductGrid>
               </StoreCategorySection>

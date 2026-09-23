@@ -112,11 +112,15 @@ async function applyPayment(
       priceLabel: updated.priceLabel,
     }).catch((err) => console.error("[notify:order]", err));
 
-    void maybeDeductStockForOrder({
-      orderId: String(updated._id),
-      storeId: updated.storeId,
-      reason: "pay",
-    }).catch((err) => console.error("[stock:deduct]", err));
+    try {
+      await maybeDeductStockForOrder({
+        orderId: String(updated._id),
+        storeId: updated.storeId,
+        reason: "pay",
+      });
+    } catch (err) {
+      console.error("[stock:deduct]", err);
+    }
   }
 
   return updated;

@@ -54,6 +54,7 @@ export default async function EditProductPage({
             : "",
         availability: product.availability,
         featured: product.featured,
+        suggestInCart: Boolean(product.suggestInCart),
         active: product.active,
         trackStock: product.trackStock,
         stockQty: String(product.stockQty),

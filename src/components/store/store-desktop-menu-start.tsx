@@ -16,6 +16,7 @@ import { useCart } from "@/components/cart/cart-context";
 import { priceLabel } from "@/components/store/product-card";
 import { formatBRL } from "@/lib/utils";
 import { cn } from "@/lib/cn";
+import { effectivePriceCents, hasPromoPrice } from "@/lib/pricing";
 import type { PriceMode, ProductType } from "@/lib/enums";
 
 type Category = { id: string; slug: string; name: string; emoji: string | null };
@@ -29,6 +30,7 @@ type Product = {
   productType: ProductType;
   priceMode: PriceMode;
   priceCents: number | null;
+  promoPriceCents?: number | null;
   featured: boolean;
   categoryId: string | null;
 };
@@ -249,7 +251,11 @@ export function StoreDesktopMenuStart({
                   </p>
                 )}
                 <p className="mt-3 text-base font-bold text-amber-300">
-                  {priceLabel(p.priceMode, p.priceCents)}
+                  {priceLabel(
+                    p.priceMode,
+                    effectivePriceCents(p),
+                    hasPromoPrice(p) ? p.priceCents : null,
+                  )}
                 </p>
               </div>
             </Link>

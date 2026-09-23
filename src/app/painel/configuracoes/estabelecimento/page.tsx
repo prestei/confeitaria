@@ -26,6 +26,7 @@ export default async function EstabelecimentoPage() {
           name: store.name,
           description: store.description || "",
           logoUrl: store.logoUrl || "",
+          coverUrl: store.coverUrl || "",
           whatsapp: store.whatsapp,
           address: store.address || "",
           city: store.city || "",

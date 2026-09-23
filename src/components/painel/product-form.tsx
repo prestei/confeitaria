@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { PageAction, PageHeader, PageShell } from "@/components/painel/page-header";
 import { GalleryField, ImageField } from "@/components/painel/image-field";
@@ -42,6 +43,7 @@ export function ProductForm({
     promoPrice: string;
     availability: string;
     featured: boolean;
+    suggestInCart: boolean;
     active: boolean;
     trackStock: boolean;
     stockQty: string;
@@ -74,6 +76,9 @@ export function ProductForm({
   const [stockQty, setStockQty] = useState(initial?.stockQty ?? "0");
   const [stockMin, setStockMin] = useState(initial?.stockMin ?? "5");
   const [featured, setFeatured] = useState(initial?.featured ?? false);
+  const [suggestInCart, setSuggestInCart] = useState(
+    initial?.suggestInCart ?? false,
+  );
   const [active, setActive] = useState(initial?.active ?? true);
   const [groups, setGroups] = useState<GroupRow[]>(
     initial?.optionGroups?.length ? initial.optionGroups : [],
@@ -124,6 +129,7 @@ export function ProductForm({
       promoPriceCents,
       availability,
       featured,
+      suggestInCart,
       active,
       trackStock,
       stockQty: Number(stockQty || 0),
@@ -367,7 +373,14 @@ export function ProductForm({
                 <option value="SOLD_OUT">Esgotado</option>
                 <option value="MADE_TO_ORDER">Sob encomenda</option>
                 <option value="LAST_UNITS">Últimas unidades</option>
+                <option value="SCHEDULED_DAYS">Dias de funcionamento</option>
               </select>
+              {availability === "SCHEDULED_DAYS" && (
+                <p className="mt-1.5 text-xs text-cocoa-soft/70">
+                  Só pode ser pedido enquanto a loja estiver aberta (horário
+                  configurado).
+                </p>
+              )}
             </div>
             <div>
               <label className="label">Unidade</label>
@@ -412,6 +425,14 @@ export function ProductForm({
                 onChange={(e) => setFeatured(e.target.checked)}
               />
               Produto em destaque
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-cocoa">
+              <input
+                type="checkbox"
+                checked={suggestInCart}
+                onChange={(e) => setSuggestInCart(e.target.checked)}
+              />
+              Sugerir na sacola (upsell)
             </label>
             <label className="flex items-center gap-2 text-sm font-medium text-cocoa">
               <input
@@ -578,9 +599,18 @@ export function ProductForm({
             <section className="rounded-2xl border border-cocoa/8 bg-white p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold text-cocoa">Adicionais</h2>
+                  <h2 className="text-sm font-semibold text-cocoa">
+                    Extras só deste produto
+                  </h2>
                   <p className="text-xs text-cocoa-soft/60">
-                    Ex.: Morangos, brigadeiros, decoração especial.
+                    Velas, bexigas e topos ficam em{" "}
+                    <Link
+                      href="/painel/adicionais"
+                      className="font-semibold text-berry-deep underline-offset-2 hover:underline"
+                    >
+                      Adicionais
+                    </Link>
+                    . Aqui: extras únicos, como morangos neste bolo.
                   </p>
                 </div>
                 <button

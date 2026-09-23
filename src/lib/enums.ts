@@ -96,3 +96,12 @@ export const IntegrationStatus = {
 } as const;
 export type IntegrationStatus =
   (typeof IntegrationStatus)[keyof typeof IntegrationStatus];
+
+/** How the customer picks a catalog extra on the storefront. */
+export const AddonSelectionType = {
+  TOGGLE: "TOGGLE",
+  QTY: "QTY",
+  TEXT: "TEXT",
+} as const;
+export type AddonSelectionType =
+  (typeof AddonSelectionType)[keyof typeof AddonSelectionType];

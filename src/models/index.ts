@@ -2,6 +2,7 @@ export { User } from "./User";
 export { Store } from "./Store";
 export { Category } from "./Category";
 export { Product } from "./Product";
+export { CatalogAddon } from "./Addon";
 export { BlockedDate } from "./BlockedDate";
 export { Customer } from "./Customer";
 export { Order } from "./Order";

@@ -102,13 +102,13 @@ export function StoreCategoryPills({
 
   return (
     <nav
-      className="sticky top-0 z-30 border-y border-rosewood/15 bg-[#2a1f1c]/95 shadow-[0_8px_28px_rgba(51,37,34,0.18)] backdrop-blur-md"
+      className="sticky top-0 z-30 border-y border-white/10 bg-[var(--store-chrome)]/95 shadow-[0_8px_28px_rgba(51,37,34,0.18)] backdrop-blur-md"
       aria-label="Categorias do cardápio"
     >
       <div className="mx-auto flex max-w-[1400px] items-center gap-1.5 px-2.5 py-2.5 sm:gap-2 sm:px-4 sm:py-3.5 md:px-6">
         <a
           href="#cardapio"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/8 text-terracotta transition hover:bg-white/14 hover:text-white sm:h-11 sm:w-11 sm:rounded-xl"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/8 text-[var(--store-chrome-fg)] transition hover:bg-white/14 sm:h-11 sm:w-11 sm:rounded-xl"
           aria-label="Início do cardápio"
           onClick={() =>
             setActive(showFeatured ? "destaques" : categories[0]?.slug ?? "")
@@ -135,8 +135,8 @@ export function StoreCategoryPills({
                 className={cn(
                   "relative inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold transition sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm",
                   isActive
-                    ? "bg-rosewood text-white shadow-[0_8px_24px_rgba(185,111,125,0.45)]"
-                    : "bg-white/8 text-white/80 hover:bg-white/14 hover:text-white",
+                    ? "bg-rosewood text-white shadow-[0_8px_24px_color-mix(in_oklab,var(--rosewood)_45%,transparent)]"
+                    : "bg-white/8 text-[var(--store-chrome-fg)]/80 hover:bg-white/14 hover:text-[var(--store-chrome-fg)]",
                 )}
               >
                 {c.slug === "destaques" ? (
@@ -163,7 +163,7 @@ export function StoreCategoryPills({
           <button
             type="button"
             onClick={() => scrollBy(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/8 text-white/70 transition hover:bg-white/14 hover:text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/8 text-[var(--store-chrome-fg)]/70 transition hover:bg-white/14 hover:text-[var(--store-chrome-fg)]"
             aria-label="Categorias anteriores"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -171,7 +171,7 @@ export function StoreCategoryPills({
           <button
             type="button"
             onClick={() => scrollBy(1)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/8 text-white/70 transition hover:bg-white/14 hover:text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/8 text-[var(--store-chrome-fg)]/70 transition hover:bg-white/14 hover:text-[var(--store-chrome-fg)]"
             aria-label="Próximas categorias"
           >
             <ChevronRight className="h-4 w-4" />
