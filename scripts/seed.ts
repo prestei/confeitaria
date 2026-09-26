@@ -170,7 +170,7 @@ async function main() {
     {
       storeId,
       name: "Velas decorativas",
-      description: "Velas para o bolo — informe o número e a cor."
+      description: "Velas para o bolo — informe o número e a cor.",
       priceCents: 800,
       selectionType: AddonSelectionType.TEXT,
       maxQty: 1,
@@ -184,7 +184,7 @@ async function main() {
     {
       storeId,
       name: "Topo de bolo impresso",
-      description: "Topo personalizado com nome ou tema."
+      description: "Topo personalizado com nome ou tema.",
       priceCents: 1800,
       selectionType: AddonSelectionType.TEXT,
       maxQty: 1,
@@ -220,7 +220,7 @@ async function main() {
     {
       storeId,
       name: "Embalagem para presente",
-      description: "Caixa pronta para presentear."
+      description: "Caixa pronta para presentear.",
       priceCents: 1500,
       selectionType: AddonSelectionType.TOGGLE,
       maxQty: 1,

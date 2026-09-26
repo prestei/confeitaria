@@ -343,10 +343,11 @@ h3,
 
 /* Inputs do painel alinhados à altura padrão (h-9 = FilterChip / Button). */
 .painel-shell .input:not(textarea) {
-  height: 2.25rem;
+  min-height: 2.5rem;
+  height: 2.5rem;
   padding: 0 0.875rem;
   font-size: 0.875rem;
-  line-height: 1.35;
+  line-height: 1.4;
   border-color: #ced0d4;
   background: white;
 }
@@ -368,17 +369,35 @@ h3,
   box-shadow: 0 0 0 3px color-mix(in oklab, #d6715a 18%, transparent);
 }
 
+input.input,
+textarea.input,
+select.input,
 .input {
   width: 100%;
   border-radius: var(--radius);
   border: 1px solid var(--hairline);
   background: var(--surface);
-  padding: 0.75rem 1rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  letter-spacing: normal;
+  font-feature-settings: normal;
   color: var(--cocoa);
   outline: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+input.input,
+select.input {
+  min-height: 2.75rem;
+}
+
+textarea.input {
+  min-height: 5.5rem;
+  height: auto;
+  resize: vertical;
 }
 
 .input:focus {
@@ -391,6 +410,7 @@ h3,
   margin-bottom: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 600;
+  line-height: 1.35;
   color: var(--cocoa-soft);
 }
 

@@ -24,7 +24,11 @@ function LoginForm() {
         redirect: false,
       });
       if (res?.error) {
-        setError("E-mail ou senha inválidos.");
+        setError(
+          res.error === "Configuration"
+            ? "Banco de dados indisponível. No terminal: npm run db:mongo-local e npm run db:seed."
+            : "E-mail ou senha inválidos.",
+        );
         return;
       }
       router.push("/painel");
