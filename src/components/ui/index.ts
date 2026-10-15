@@ -35,6 +35,8 @@ export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
 export { Switch, Checkbox } from "./switch";
 export { AnimatedNumber } from "./animated-number";
 export { FilterChip, FilterChipGroup } from "./filter-chip";
+export { ListFilterBar } from "./list-filter-bar";
+export type { ListFilterOption } from "./list-filter-bar";
 
 export { Alert } from "../alert";
 export type { AlertVariant } from "../alert";

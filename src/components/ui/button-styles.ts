@@ -10,12 +10,15 @@ export type ButtonVariant =
 export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-[#483129] text-white hover:bg-[#5E4335]",
+  primary:
+    "bg-[var(--painel-brand,#0f352e)] text-white hover:bg-[var(--painel-brand-hover,#164a40)]",
   secondary:
     "border border-[#CED0D4] bg-white text-cocoa hover:bg-[#F0F2F5]",
-  accent: "bg-[#483129] text-white hover:bg-[#5E4335]",
+  accent:
+    "bg-[var(--painel-brand,#0f352e)] text-white hover:bg-[var(--painel-brand-hover,#164a40)]",
   /** Alias de accent — mesma cor primária do menu lateral. */
-  berry: "bg-[#483129] text-white hover:bg-[#5E4335]",
+  berry:
+    "bg-[var(--painel-brand,#0f352e)] text-white hover:bg-[var(--painel-brand-hover,#164a40)]",
   ghost:
     "bg-transparent text-[#8C8682] hover:bg-[#F0F2F5] hover:text-cocoa",
   danger: "bg-[#C85A5A] text-white hover:bg-[#B34A4A]",
@@ -40,7 +43,7 @@ export function buttonClassName({
 } = {}) {
   return cn(
     "inline-flex cursor-pointer items-center justify-center font-semibold transition",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#483129]/25",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--painel-brand,#0f352e)]/25",
     "disabled:pointer-events-none disabled:opacity-50",
     variants[variant],
     sizes[size],

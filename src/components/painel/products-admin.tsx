@@ -43,7 +43,7 @@ import {
 } from "@/lib/utils";
 import { cn } from "@/lib/cn";
 import { EmptyState } from "@/components/ui/empty-state";
-import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
+import { ListFilterBar } from "@/components/ui/list-filter-bar";
 import { PageAction, PageHeader, PageShell } from "@/components/painel/page-header";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -338,31 +338,24 @@ export default function ProductsAdminPage({
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          className="input h-9 max-w-xs !py-0 text-sm"
-          placeholder="Buscar produto…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <FilterChipGroup>
-          {(
-            [
-              ["all", "Todos"],
-              ["active", "Ativos"],
-              ["featured", "Destaques"],
-              ["inactive", "Inativos"],
-            ] as const
-          ).map(([id, label]) => (
-            <FilterChip
-              key={id}
-              label={label}
-              active={filter === id}
-              onClick={() => setFilter(id)}
-            />
-          ))}
-        </FilterChipGroup>
-      </div>
+      <ListFilterBar
+        search={{
+          value: q,
+          onChange: setQ,
+          placeholder: "Buscar produto...",
+          "aria-label": "Buscar produto",
+        }}
+        filters={{
+          value: filter,
+          onChange: setFilter,
+          options: [
+            { value: "all", label: "Todos" },
+            { value: "active", label: "Ativos" },
+            { value: "featured", label: "Destaques" },
+            { value: "inactive", label: "Inativos" },
+          ],
+        }}
+      />
 
       {loading ? (
         <div className="space-y-2">
@@ -413,7 +406,7 @@ export default function ProductsAdminPage({
                   </button>
 
                   {open && (
-                    <div className="hidden border-t border-[#E8E2DE] bg-white px-2 py-2.5 text-xs uppercase tracking-wide text-[#8C8682] md:grid md:grid-cols-[2.5rem_minmax(0,1.8fr)_1fr_0.8fr_1.1fr_3rem] md:gap-2 md:px-4">
+                    <div className="hidden border-t border-[#E8E2DE] bg-white px-2 py-2.5 text-xs text-[#8C8682] md:grid md:grid-cols-[2.5rem_minmax(0,1.8fr)_1fr_0.8fr_1.1fr_3rem] md:gap-2 md:px-4">
                       <span />
                       <span className="font-semibold">Produto</span>
                       <span className="font-semibold">Preço</span>

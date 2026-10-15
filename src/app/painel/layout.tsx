@@ -76,9 +76,11 @@ export default async function PainelLayout({
             notificationCount={newOrders}
           />
         </PainelTopbarShell>
-        <main className="flex w-full min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-24 pt-5 sm:px-6 md:pb-8 lg:px-8 xl:px-10">
-          <SessionGuard />
-          {children}
+        <main className="flex w-full min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-24 sm:px-6 md:pb-8 lg:px-8 xl:px-10">
+          <div className="flex min-h-0 flex-1 flex-col pt-5">
+            <SessionGuard />
+            {children}
+          </div>
         </main>
       </div>
     </div>

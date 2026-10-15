@@ -10,6 +10,28 @@ export {
   type CategoryDayKey,
 } from "@/lib/category-days";
 
+/** Emojis disponíveis no menu horizontal da vitrine. */
+export const CATEGORY_MENU_EMOJIS = [
+  "🍰",
+  "🎂",
+  "🧁",
+  "🍪",
+  "🍩",
+  "🍫",
+  "🥧",
+  "🍮",
+  "🍓",
+  "☕",
+  "🎁",
+  "⭐",
+  "🥂",
+  "🥞",
+  "🎉",
+  "🎄",
+] as const;
+
+export const DEFAULT_CATEGORY_EMOJI = CATEGORY_MENU_EMOJIS[0];
+
 export const CATEGORY_DAY_LABELS: {
   key: CategoryDayKey;
   label: string;

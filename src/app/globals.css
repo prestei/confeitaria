@@ -53,6 +53,15 @@
   --shadow-lift: 0 12px 40px rgba(51, 37, 34, 0.08);
 
   --hairline: color-mix(in oklab, var(--cocoa) 10%, transparent);
+
+  /* Barra de busca + filtros (ListFilterBar) */
+  --filter-search-border: #e5e7eb;
+  --filter-search-icon: #9ca3af;
+  --filter-search-placeholder: #9ca3af;
+  --filter-chip-active-bg: #0f352e;
+  --filter-chip-inactive-bg: #eff3f6;
+  --filter-chip-inactive-text: #4a6375;
+  --filter-chip-inactive-hover: #e5ebef;
 }
 
 @theme {
@@ -309,6 +318,7 @@ h3,
   --painel-muted: #6b7280;
   --painel-sidebar-muted: #b8c4c1;
   --painel-accent: #1e6b5c;
+  --filter-chip-active-bg: var(--painel-brand);
 
   font-family: var(--font-sora), system-ui, sans-serif;
   background: var(--painel-canvas);

@@ -255,3 +255,5 @@ export function IconAction({
 
 /** @deprecated Importe de `@/components/ui/filter-chip`. Reexport para compat. */
 export { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
+export { ListFilterBar } from "@/components/ui/list-filter-bar";
+export type { ListFilterOption } from "@/components/ui/list-filter-bar";

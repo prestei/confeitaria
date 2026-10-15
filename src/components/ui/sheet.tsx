@@ -186,7 +186,9 @@ export function SheetHeader({
         {title}
       </PageTitle>
       {description ? (
-        <p className="mt-1 text-sm text-[#8C8682]">{description}</p>
+        <p className="mt-1.5 text-sm leading-snug text-[#8C8682]">
+          {description}
+        </p>
       ) : null}
     </div>
   );
@@ -202,7 +204,7 @@ export function SheetBody({
   return (
     <div
       className={cn(
-        "min-h-0 flex-1 overflow-y-auto px-5 py-5",
+        "min-h-0 flex-1 overflow-y-auto px-6 py-6",
         className,
       )}
     >
@@ -221,7 +223,7 @@ export function SheetFooter({
   return (
     <div
       className={cn(
-        "flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[#E8E2DE] bg-white px-5 py-4",
+        "flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[#E8E2DE] bg-white px-6 py-4",
         className,
       )}
     >

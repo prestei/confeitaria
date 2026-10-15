@@ -136,13 +136,19 @@ export function ProductPricingFields({
       {sheet ? summary : null}
 
       <div className="min-w-0 space-y-4">
-        <div>
-          <p className="text-sm font-semibold text-cocoa">Receita</p>
-          <p className="text-xs leading-relaxed text-cocoa-soft/60">
-            Insumos e quantidades usadas neste produto.
-          </p>
-        </div>
+        <section
+          className={cn(
+            sheet && "rounded-xl border border-[#E8E2DE] bg-white p-4",
+          )}
+        >
+          <div className={cn(sheet ? "mb-4" : "mb-0")}>
+            <h3 className="text-sm font-semibold text-cocoa">Receita</h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-[#8C8682]">
+              Insumos e quantidades usadas neste produto.
+            </p>
+          </div>
 
+          <div className={cn(sheet && "space-y-4")}>
         {stockItems.length === 0 ? (
           <p className="text-sm text-cocoa-soft/70">
             Nenhum insumo cadastrado.{" "}
@@ -156,7 +162,7 @@ export function ProductPricingFields({
             Nenhum insumo na receita ainda.
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="min-w-0 space-y-4">
             {lines.map((line, index) => {
               const item = itemById.get(line.stockItemId);
               const quantity = Number(line.quantity.replace(",", "."));
@@ -232,41 +238,47 @@ export function ProductPricingFields({
               return (
                 <li
                   key={index}
-                  className="min-w-0 space-y-2 rounded-xl border border-[#E8E2DE] bg-white p-3"
+                  className="min-w-0 overflow-hidden rounded-xl border border-[#E8E2DE] bg-white p-3"
                 >
-                  <Field
-                    as="select"
-                    label="Insumo"
-                    controlClassName={fieldRound}
-                    value={line.stockItemId}
-                    onChange={(e) =>
-                      onLines(
-                        lines.map((row, i) =>
-                          i === index
-                            ? { ...row, stockItemId: e.target.value }
-                            : row,
-                        ),
-                      )
-                    }
+                  <div
+                    className="grid min-w-0 grid-cols-[minmax(0,1fr)_4.5rem_minmax(4.25rem,auto)_2.25rem] items-center gap-2"
                   >
-                    <option value="">Selecionar</option>
-                    {stockItems.map((stock) => (
-                      <option key={stock.id} value={stock.id}>
-                        {stock.name}
-                        {stock.unit ? ` (${stock.unit})` : ""}
-                      </option>
-                    ))}
-                  </Field>
-                  <div className="flex min-w-0 flex-col items-stretch gap-2 sm:flex-row sm:items-end">
-                    <Field
-                      className="min-w-0 flex-1"
-                      label="Quantidade"
+                    <select
+                      className={cn(
+                        "input !w-full min-w-0 max-w-full",
+                        fieldRound,
+                      )}
+                      value={line.stockItemId}
+                      aria-label="Insumo"
+                      onChange={(e) =>
+                        onLines(
+                          lines.map((row, i) =>
+                            i === index
+                              ? { ...row, stockItemId: e.target.value }
+                              : row,
+                          ),
+                        )
+                      }
+                    >
+                      <option value="">Selecionar</option>
+                      {stockItems.map((stock) => (
+                        <option key={stock.id} value={stock.id}>
+                          {stock.name}
+                          {stock.unit ? ` (${stock.unit})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      className={cn(
+                        "input !w-full min-w-0 max-w-full",
+                        fieldRound,
+                      )}
                       type="number"
                       min={0}
                       step="any"
                       inputMode="decimal"
-                      controlClassName={fieldRound}
-                      placeholder="0"
+                      placeholder="Qtd"
+                      aria-label="Quantidade"
                       value={line.quantity}
                       onChange={(e) =>
                         onLines(
@@ -278,21 +290,21 @@ export function ProductPricingFields({
                         )
                       }
                     />
-                    <div className="flex items-center justify-between gap-2 sm:pb-0.5">
-                      <p className="text-sm font-medium text-cocoa">
-                        {formatBRL(lineCents)}
-                      </p>
-                      <button
-                        type="button"
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-cocoa-soft/55 transition hover:bg-[#F0F2F5] hover:text-cocoa"
-                        onClick={() =>
-                          onLines(lines.filter((_, i) => i !== index))
-                        }
-                        aria-label="Remover insumo"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <p
+                      className="min-w-0 truncate text-right text-sm font-medium tabular-nums text-cocoa"
+                    >
+                      {formatBRL(lineCents)}
+                    </p>
+                    <button
+                      type="button"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-cocoa-soft/55 transition hover:bg-[#F0F2F5] hover:text-cocoa"
+                      onClick={() =>
+                        onLines(lines.filter((_, i) => i !== index))
+                      }
+                      aria-label="Remover insumo"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </li>
               );
@@ -304,9 +316,9 @@ export function ProductPricingFields({
           <button
             type="button"
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 text-sm font-medium text-rosewood",
+              "inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[var(--painel-brand,#0f352e)]",
               sheet &&
-                "w-full rounded-xl border border-dashed border-rosewood/35 py-2.5 transition hover:bg-rosewood/5",
+                "w-full rounded-xl border border-dashed border-[var(--painel-brand,#0f352e)] py-2.5 transition hover:bg-[var(--painel-brand,#0f352e)]/5",
             )}
             onClick={() =>
               onLines([...lines, { stockItemId: "", quantity: "1" }])
@@ -323,15 +335,17 @@ export function ProductPricingFields({
             {formatBRL(ingredientCents)}
           </span>
         </p>
+          </div>
+        </section>
 
-        <div>
-          <p className="mb-3 text-sm font-semibold text-cocoa">Outros custos</p>
-          <div
-            className={cn(
-              "grid min-w-0 gap-3",
-              sheet ? "grid-cols-1 sm:grid-cols-2" : "sm:grid-cols-2",
-            )}
-          >
+        <section className="rounded-xl border border-[#E8E2DE] bg-white p-4">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-cocoa">Outros custos</h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-[#8C8682]">
+              Embalagem, mão de obra e valores fixos por unidade.
+            </p>
+          </div>
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <MoneyField
               label="Embalagem"
               value={packaging}
@@ -357,7 +371,7 @@ export function ProductPricingFields({
               controlClassName={fieldRound}
             />
           </div>
-        </div>
+        </section>
       </div>
 
       {!sheet ? summary : null}

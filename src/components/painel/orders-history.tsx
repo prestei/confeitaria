@@ -8,13 +8,12 @@ import {
   History,
   LayoutGrid,
   MessageCircle,
-  Search,
   Truck,
 } from "lucide-react";
 import { formatBRL, ORDER_STATUS_LABELS, whatsappLink } from "@/lib/utils";
 import { OrderStatusBadge } from "@/components/ui/order-status";
 import { EmptyState } from "@/components/ui/empty-state";
-import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
+import { ListFilterBar } from "@/components/ui/list-filter-bar";
 import {
   PageAction,
   PageHeader,
@@ -163,37 +162,25 @@ export function OrdersHistory({
         }
       />
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <FilterChipGroup className="flex-nowrap overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-1">
-          <FilterChip
-            label="Todos"
-            active={statusFilter === "all"}
-            onClick={() => setStatusFilter("all")}
-          />
-          {statuses.map((s) => (
-            <FilterChip
-              key={s}
-              label={ORDER_STATUS_LABELS[s]}
-              active={statusFilter === s}
-              onClick={() => setStatusFilter(s)}
-            />
-          ))}
-        </FilterChipGroup>
-
-        <label className="relative w-full shrink-0 lg:max-w-xs">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B0AAA6]"
-            strokeWidth={1.75}
-          />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por cliente, produto ou nº…"
-            className="h-9 w-full rounded border border-[#E8E2DE] bg-white py-2 pl-9 pr-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[#D4C9C2] focus:ring-2 focus:ring-[#D6715A]/15"
-          />
-        </label>
-      </div>
+      <ListFilterBar
+        search={{
+          value: query,
+          onChange: setQuery,
+          placeholder: "Buscar por cliente, produto ou nº...",
+          "aria-label": "Buscar pedidos",
+        }}
+        filters={{
+          value: statusFilter,
+          onChange: setStatusFilter,
+          options: [
+            { value: "all", label: "Todos" },
+            ...statuses.map((s) => ({
+              value: s,
+              label: ORDER_STATUS_LABELS[s],
+            })),
+          ],
+        }}
+      />
 
       {loading ? (
         <div className="space-y-3">

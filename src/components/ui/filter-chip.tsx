@@ -4,7 +4,7 @@ import Link from "next/link";
 import { type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-/** Chip de filtro universal do painel. */
+/** Chip de filtro — use dentro de `ListFilterBar` ou `FilterChipGroup`. */
 export function FilterChip({
   label,
   active,
@@ -19,10 +19,13 @@ export function FilterChip({
   className?: string;
 }) {
   const styles = cn(
-    "box-border inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded px-4 text-sm font-semibold leading-none transition",
+    "box-border inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-full px-4 text-sm font-semibold leading-none transition",
     active
-      ? "bg-[var(--painel-brand,#0f352e)] text-white shadow-sm"
-      : "bg-[#E4E6EB] text-[#65676B] hover:bg-[#D8DADF]",
+      ? "bg-[var(--filter-chip-active-bg,#0f352e)] text-white"
+      : [
+          "bg-[var(--filter-chip-inactive-bg,#eff3f6)] text-[var(--filter-chip-inactive-text,#4a6375)]",
+          "hover:bg-[var(--filter-chip-inactive-hover,#e5ebef)]",
+        ],
     className,
   );
 
@@ -46,7 +49,7 @@ export function FilterChip({
   );
 }
 
-/** Grupo horizontal padrão de FilterChips. */
+/** Grupo horizontal de chips (rolagem quando necessário). */
 export function FilterChipGroup({
   children,
   className,

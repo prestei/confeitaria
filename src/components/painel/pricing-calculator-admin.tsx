@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
-import { Calculator, Plus, Trash2 } from "lucide-react";
+import { FormEvent, useMemo, useState, type ReactNode } from "react";
+import { Calculator, Percent, Plus, Trash2, Wallet } from "lucide-react";
 import {
   Sheet,
   SheetBody,
@@ -13,11 +13,47 @@ import {
   SheetHeader,
   SheetPrimary,
 } from "@/components/ui/sheet";
-import { Field } from "@/components/ui/input";
 import { calculateSuggestedPrice } from "@/lib/pricing";
 import { formatBRL } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { SectionCard } from "@/components/painel/page-header";
+import { cn } from "@/lib/cn";
+
+const fieldLabel =
+  "mb-1.5 block text-[13px] font-semibold text-[#5C5652]";
+const fieldInput =
+  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[#2D2926]/40 focus:ring-2 focus:ring-[#2D2926]/10";
+
+function CalcFormSection({
+  icon: Icon,
+  title,
+  description,
+  children,
+}: {
+  icon?: typeof Percent;
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-[#E8E2DE] bg-white p-4">
+      <div className="mb-4 flex min-w-0 items-start gap-3">
+        {Icon ? (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3EEE8] text-[#483129]">
+            <Icon className="h-4 w-4" aria-hidden />
+          </span>
+        ) : null}
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-cocoa">{title}</h3>
+          <p className="mt-0.5 text-xs leading-relaxed text-[#8C8682]">
+            {description}
+          </p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export type SavedCalculation = {
   id: string;
@@ -239,81 +275,151 @@ export function PricingCalculatorAdmin({
         <SheetContent size="lg" side="right">
           <SheetHeader title={editingId ? "Editar cálculo" : "Novo cálculo"} />
           <SheetForm onSubmit={onSubmit}>
-            <SheetBody className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label="Nome do produto"
-                  className="sm:col-span-2"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex.: Bolo de chocolate"
-                  required
-                />
-                <Field
-                  label="Custo dos ingredientes (R$)"
-                  inputMode="decimal"
-                  value={ingredients}
-                  onChange={(e) => setIngredients(e.target.value)}
-                  placeholder="0,00"
-                />
-                <Field
-                  label="Embalagem (R$)"
-                  inputMode="decimal"
-                  value={packaging}
-                  onChange={(e) => setPackaging(e.target.value)}
-                  placeholder="0,00"
-                />
-                <Field
-                  label="Mão de obra (R$)"
-                  inputMode="decimal"
-                  value={labor}
-                  onChange={(e) => setLabor(e.target.value)}
-                  placeholder="0,00"
-                />
-                <Field
-                  label="Outras despesas (R$)"
-                  inputMode="decimal"
-                  value={other}
-                  onChange={(e) => setOther(e.target.value)}
-                  placeholder="0,00"
-                />
-                <Field
-                  label="Taxas sobre a venda (%)"
-                  inputMode="decimal"
-                  value={fees}
-                  onChange={(e) => setFees(e.target.value)}
-                />
-                <Field
-                  label="Margem de lucro desejada (%)"
-                  inputMode="decimal"
-                  value={margin}
-                  onChange={(e) => setMargin(e.target.value)}
-                  hint="Margem sobre o preço de venda, não sobre o custo."
-                />
-                <Field
-                  label="Quantidade produzida"
-                  type="number"
-                  min={1}
-                  value={batchQty}
-                  onChange={(e) => setBatchQty(e.target.value)}
-                />
-              </div>
+            <SheetBody className="space-y-5">
+              <CalcFormSection
+                title="Produto"
+                description="Nome para identificar este cálculo na lista."
+              >
+                <div>
+                  <label className={fieldLabel} htmlFor="calc-name">
+                    Nome do produto
+                  </label>
+                  <input
+                    id="calc-name"
+                    className={fieldInput}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ex.: Bolo de chocolate"
+                    required
+                  />
+                </div>
+              </CalcFormSection>
+
+              <CalcFormSection
+                icon={Wallet}
+                title="Custos do lote"
+                description="Valores totais da receita antes de dividir por unidade."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={fieldLabel} htmlFor="calc-ingredients">
+                      Custo dos ingredientes (R$)
+                    </label>
+                    <input
+                      id="calc-ingredients"
+                      className={fieldInput}
+                      inputMode="decimal"
+                      value={ingredients}
+                      onChange={(e) => setIngredients(e.target.value)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div>
+                    <label className={fieldLabel} htmlFor="calc-packaging">
+                      Embalagem (R$)
+                    </label>
+                    <input
+                      id="calc-packaging"
+                      className={fieldInput}
+                      inputMode="decimal"
+                      value={packaging}
+                      onChange={(e) => setPackaging(e.target.value)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div>
+                    <label className={fieldLabel} htmlFor="calc-labor">
+                      Mão de obra (R$)
+                    </label>
+                    <input
+                      id="calc-labor"
+                      className={fieldInput}
+                      inputMode="decimal"
+                      value={labor}
+                      onChange={(e) => setLabor(e.target.value)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div>
+                    <label className={fieldLabel} htmlFor="calc-other">
+                      Outras despesas (R$)
+                    </label>
+                    <input
+                      id="calc-other"
+                      className={fieldInput}
+                      inputMode="decimal"
+                      value={other}
+                      onChange={(e) => setOther(e.target.value)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+              </CalcFormSection>
+
+              <CalcFormSection
+                icon={Percent}
+                title="Preço e margem"
+                description="Taxas, margem sobre o preço de venda e quantidade do lote."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={fieldLabel} htmlFor="calc-fees">
+                      Taxas sobre a venda (%)
+                    </label>
+                    <input
+                      id="calc-fees"
+                      className={fieldInput}
+                      inputMode="decimal"
+                      value={fees}
+                      onChange={(e) => setFees(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className={fieldLabel} htmlFor="calc-margin">
+                      Margem de lucro desejada (%)
+                    </label>
+                    <input
+                      id="calc-margin"
+                      className={fieldInput}
+                      inputMode="decimal"
+                      value={margin}
+                      onChange={(e) => setMargin(e.target.value)}
+                    />
+                    <p className="mt-1.5 text-xs text-[#8C8682]">
+                      Margem sobre o preço de venda, não sobre o custo.
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={fieldLabel} htmlFor="calc-batch">
+                      Quantidade produzida
+                    </label>
+                    <input
+                      id="calc-batch"
+                      className={cn(fieldInput, "max-w-[12rem]")}
+                      type="number"
+                      min={1}
+                      value={batchQty}
+                      onChange={(e) => setBatchQty(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CalcFormSection>
 
               {preview.ok ? (
-                <div className="rounded-xl border border-[#E8E2DE] bg-[#FFFBF9] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8C8682]">
-                    Resultado
-                  </p>
-                  <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                <section className="rounded-xl border border-[#E8E2DE] bg-[#F7F4F1] p-4">
+                  <h3 className="text-sm font-semibold text-cocoa">Resultado</h3>
+                  <dl className="mt-4 grid gap-4 sm:grid-cols-2">
                     <div>
-                      <dt className="text-xs text-[#8C8682]">Custo total do lote</dt>
-                      <dd className="font-semibold text-cocoa">
+                      <dt className="text-xs text-[#8C8682]">
+                        Custo total do lote
+                      </dt>
+                      <dd className="mt-0.5 font-semibold tabular-nums text-cocoa">
                         {formatBRL(preview.totalBatchCents)}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-xs text-[#8C8682]">Custo unitário</dt>
-                      <dd className="font-semibold text-cocoa">
+                      <dd className="mt-0.5 font-semibold tabular-nums text-cocoa">
                         {formatBRL(preview.unitCostCents)}
                       </dd>
                     </div>
@@ -321,7 +427,7 @@ export function PricingCalculatorAdmin({
                       <dt className="text-xs text-[#8C8682]">
                         Preço de venda sugerido
                       </dt>
-                      <dd className="font-display text-xl text-cocoa">
+                      <dd className="mt-0.5 font-display text-xl tabular-nums text-cocoa">
                         {formatBRL(preview.suggestedUnitPriceCents)}
                       </dd>
                     </div>
@@ -329,7 +435,7 @@ export function PricingCalculatorAdmin({
                       <dt className="text-xs text-[#8C8682]">
                         Lucro estimado por unidade
                       </dt>
-                      <dd className="font-semibold text-cocoa">
+                      <dd className="mt-0.5 font-semibold tabular-nums text-cocoa">
                         {formatBRL(preview.estimatedProfitPerUnitCents)}
                       </dd>
                     </div>
@@ -337,13 +443,13 @@ export function PricingCalculatorAdmin({
                   {preview.suggestedUnitPriceCents > 0 ? (
                     <Link
                       href={`/painel/produtos/novo?preco=${(preview.suggestedUnitPriceCents / 100).toFixed(2)}&nome=${encodeURIComponent(name.trim())}`}
-                      className="mt-3 inline-block text-sm font-semibold text-rosewood hover:underline"
+                      className="mt-4 inline-block text-sm font-semibold text-[var(--painel-brand,#0f352e)] hover:underline"
                       onClick={() => setFormOpen(false)}
                     >
                       Usar preço no cadastro de produto
                     </Link>
                   ) : null}
-                </div>
+                </section>
               ) : (
                 <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   {preview.error}
