@@ -11,23 +11,7 @@ Plataforma de cardápio online para confeiteiras: pedidos organizados via WhatsA
 
 ## Como rodar
 
-### 1. MongoDB
-
-```bash
-docker compose up -d
-```
-
-Isso sobe o Mongo na porta `27017` (dados em `.data/mongo`).
-
-Se o Docker pedir permissão (`permission denied` no socket), entre no grupo `docker` ou use o fallback:
-
-```bash
-sudo usermod -aG docker $USER   # depois faça logout/login
-# ou sem Docker:
-npm run db:mongo-local
-```
-
-### 2. Variáveis de ambiente
+### 1. Variáveis de ambiente
 
 Copie `.env.example` para `.env` e confirme `AUTH_SECRET` e `MONGODB_URI`:
 
@@ -35,19 +19,17 @@ Copie `.env.example` para `.env` e confirme `AUTH_SECRET` e `MONGODB_URI`:
 MONGODB_URI="mongodb://127.0.0.1:27017/confeitaria"
 ```
 
-### 3. Seed
-
-```bash
-npm run db:seed
-```
-
-Ou tudo junto: `npm run db:setup`
-
-### 4. App
+### 2. App (Mongo + seed automáticos)
 
 ```bash
 npm run dev
 ```
+
+Antes do Next.js, o script `db:ensure` tenta subir o Mongo (Docker Compose ou
+`mongod` local na porta `27017`, dados em `.data/mongo`) e roda o seed demo se o
+banco estiver vazio.
+
+Comandos manuais, se precisar: `npm run db:up`, `npm run db:seed`, `npm run db:ensure`.
 
 Abra [http://localhost:3000](http://localhost:3000).
 

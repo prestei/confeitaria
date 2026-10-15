@@ -4,7 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PORT="${MONGO_PORT:-27017}"
-DBPATH="${MONGO_DBPATH:-.data/mongo-run}"
+# Same path as docker-compose (.data/mongo) so seed and app share one database.
+DBPATH="${MONGO_DBPATH:-.data/mongo}"
 ABS_DBPATH="$(pwd)/${DBPATH}"
 LOG="${MONGO_LOG:-/tmp/confeitaria-mongod.log}"
 

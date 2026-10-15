@@ -26,7 +26,7 @@ function LoginForm() {
       if (res?.error) {
         setError(
           res.error === "Configuration"
-            ? "Banco de dados indisponível. No terminal: npm run db:mongo-local e npm run db:seed."
+            ? "Banco de dados indisponível. Pare o servidor e rode de novo: npm run dev"
             : "E-mail ou senha inválidos.",
         );
         return;
@@ -117,8 +117,9 @@ export default function LoginPage() {
           <span className="font-medium text-cocoa">demo@doceencanto.com</span> /{" "}
           <span className="font-medium text-cocoa">demo1234</span>
           <br />
-          Se o login falhar, suba o Mongo:{" "}
-          <code className="text-cocoa">npm run db:mongo-local</code>
+          O comando{" "}
+          <code className="text-cocoa">npm run dev</code> sobe o Mongo e o seed
+          demo automaticamente.
         </p>
       </div>
     </div>
