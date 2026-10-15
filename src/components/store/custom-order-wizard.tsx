@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Select, Textarea } from "@/components/ui/input";
+import { Field } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 
 const STEPS = [
@@ -238,152 +238,127 @@ export function CustomOrderWizard({
 
             {step === 2 && (
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="size">Tamanho</Label>
-                  <Input
-                    id="size"
-                    value={form.size}
-                    onChange={(e) => patch({ size: e.target.value })}
-                    placeholder="Ex: 2 kg / 20 fatias"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="batter">Massa</Label>
-                  <Input
-                    id="batter"
-                    value={form.batter}
-                    onChange={(e) => patch({ batter: e.target.value })}
-                    placeholder="Ex: chocolate"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="filling">Recheio</Label>
-                  <Input
-                    id="filling"
-                    value={form.filling}
-                    onChange={(e) => patch({ filling: e.target.value })}
-                    placeholder="Ex: ninho"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="frosting">Cobertura</Label>
-                  <Input
-                    id="frosting"
-                    value={form.frosting}
-                    onChange={(e) => patch({ frosting: e.target.value })}
-                    placeholder="Ex: chantilly"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <Label htmlFor="theme">Tema</Label>
-                  <Input
-                    id="theme"
-                    value={form.theme}
-                    onChange={(e) => patch({ theme: e.target.value })}
-                    placeholder="Ex: jardim, infantil, floral"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="colors">Cores</Label>
-                  <Input
-                    id="colors"
-                    value={form.colors}
-                    onChange={(e) => patch({ colors: e.target.value })}
-                    placeholder="Ex: rosa e dourado"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="message">Mensagem no bolo</Label>
-                  <Input
-                    id="message"
-                    value={form.message}
-                    onChange={(e) => patch({ message: e.target.value })}
-                    placeholder="Opcional"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <Label htmlFor="referenceNote">Referência visual</Label>
-                  <Textarea
-                    id="referenceNote"
-                    value={form.referenceNote}
-                    onChange={(e) => patch({ referenceNote: e.target.value })}
-                    placeholder="Descreva uma referência ou link de imagem"
-                  />
-                </div>
+                <Field
+                  label="Tamanho"
+                  id="size"
+                  value={form.size}
+                  onChange={(e) => patch({ size: e.target.value })}
+                  placeholder="Ex: 2 kg / 20 fatias"
+                />
+                <Field
+                  label="Massa"
+                  id="batter"
+                  value={form.batter}
+                  onChange={(e) => patch({ batter: e.target.value })}
+                  placeholder="Ex: chocolate"
+                />
+                <Field
+                  label="Recheio"
+                  id="filling"
+                  value={form.filling}
+                  onChange={(e) => patch({ filling: e.target.value })}
+                  placeholder="Ex: ninho"
+                />
+                <Field
+                  label="Cobertura"
+                  id="frosting"
+                  value={form.frosting}
+                  onChange={(e) => patch({ frosting: e.target.value })}
+                  placeholder="Ex: chantilly"
+                />
+                <Field
+                  label="Tema"
+                  id="theme"
+                  className="sm:col-span-2"
+                  value={form.theme}
+                  onChange={(e) => patch({ theme: e.target.value })}
+                  placeholder="Ex: jardim, infantil, floral"
+                />
+                <Field
+                  label="Cores"
+                  id="colors"
+                  value={form.colors}
+                  onChange={(e) => patch({ colors: e.target.value })}
+                  placeholder="Ex: rosa e dourado"
+                />
+                <Field
+                  label="Mensagem no bolo"
+                  id="message"
+                  value={form.message}
+                  onChange={(e) => patch({ message: e.target.value })}
+                  placeholder="Opcional"
+                />
+                <Field
+                  as="textarea"
+                  label="Referência visual"
+                  id="referenceNote"
+                  className="sm:col-span-2"
+                  value={form.referenceNote}
+                  onChange={(e) => patch({ referenceNote: e.target.value })}
+                  placeholder="Descreva uma referência ou link de imagem"
+                />
               </div>
             )}
 
             {step === 3 && (
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="eventDate">Data do evento</Label>
-                  <Input
-                    id="eventDate"
-                    type="date"
-                    required
-                    value={form.eventDate}
-                    onChange={(e) => patch({ eventDate: e.target.value })}
-                  />
-                  <p className="mt-1.5 text-xs text-cocoa-soft/65">
-                    Prazo mínimo: {store.minAdvanceDays} dia
-                    {store.minAdvanceDays > 1 ? "s" : ""}
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="eventTime">Horário</Label>
-                  <Input
-                    id="eventTime"
-                    type="time"
-                    value={form.eventTime}
-                    onChange={(e) => patch({ eventTime: e.target.value })}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <Label htmlFor="guests">Quantidade de pessoas</Label>
-                  <Input
-                    id="guests"
-                    type="number"
-                    min={1}
-                    value={form.guests}
-                    onChange={(e) => patch({ guests: e.target.value })}
-                    placeholder="Ex: 30"
-                  />
-                </div>
+                <Field
+                  label="Data do evento"
+                  id="eventDate"
+                  type="date"
+                  required
+                  value={form.eventDate}
+                  onChange={(e) => patch({ eventDate: e.target.value })}
+                  hint={`Prazo mínimo: ${store.minAdvanceDays} dia${
+                    store.minAdvanceDays > 1 ? "s" : ""
+                  }`}
+                />
+                <Field
+                  label="Horário"
+                  id="eventTime"
+                  type="time"
+                  value={form.eventTime}
+                  onChange={(e) => patch({ eventTime: e.target.value })}
+                />
+                <Field
+                  label="Quantidade de pessoas"
+                  id="guests"
+                  className="sm:col-span-2"
+                  type="number"
+                  min={1}
+                  value={form.guests}
+                  onChange={(e) => patch({ guests: e.target.value })}
+                  placeholder="Ex: 30"
+                />
               </div>
             )}
 
             {step === 4 && (
               <div className="mt-6 grid gap-4">
-                <div>
-                  <Label htmlFor="customerName">Nome</Label>
-                  <Input
-                    id="customerName"
-                    value={form.customerName}
-                    onChange={(e) => patch({ customerName: e.target.value })}
-                    autoComplete="name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="customerPhone">WhatsApp</Label>
-                  <Input
-                    id="customerPhone"
-                    value={form.customerPhone}
-                    onChange={(e) => patch({ customerPhone: e.target.value })}
-                    placeholder="(11) 99999-9999"
-                    inputMode="tel"
-                    autoComplete="tel"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="customerEmail">E-mail (opcional)</Label>
-                  <Input
-                    id="customerEmail"
-                    type="email"
-                    value={form.customerEmail}
-                    onChange={(e) => patch({ customerEmail: e.target.value })}
-                    autoComplete="email"
-                  />
-                </div>
+                <Field
+                  label="Nome"
+                  id="customerName"
+                  value={form.customerName}
+                  onChange={(e) => patch({ customerName: e.target.value })}
+                  autoComplete="name"
+                />
+                <Field
+                  label="WhatsApp"
+                  id="customerPhone"
+                  value={form.customerPhone}
+                  onChange={(e) => patch({ customerPhone: e.target.value })}
+                  placeholder="(11) 99999-9999"
+                  inputMode="tel"
+                  autoComplete="tel"
+                />
+                <Field
+                  label="E-mail (opcional)"
+                  id="customerEmail"
+                  type="email"
+                  value={form.customerEmail}
+                  onChange={(e) => patch({ customerEmail: e.target.value })}
+                  autoComplete="email"
+                />
                 <fieldset>
                   <legend className="label">Recebimento</legend>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -418,30 +393,28 @@ export function CustomOrderWizard({
                   </div>
                 </fieldset>
                 {form.fulfillment === "DELIVERY" && store.deliveryZones.length > 0 && (
-                  <div>
-                    <Label htmlFor="zone">Região</Label>
-                    <Select
-                      id="zone"
-                      value={form.deliveryZone}
-                      onChange={(e) => patch({ deliveryZone: e.target.value })}
-                    >
-                      {store.deliveryZones.map((z) => (
-                        <option key={z.name} value={z.name}>
-                          {z.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
+                  <Field
+                    as="select"
+                    label="Região"
+                    id="zone"
+                    value={form.deliveryZone}
+                    onChange={(e) => patch({ deliveryZone: e.target.value })}
+                  >
+                    {store.deliveryZones.map((z) => (
+                      <option key={z.name} value={z.name}>
+                        {z.name}
+                      </option>
+                    ))}
+                  </Field>
                 )}
-                <div>
-                  <Label htmlFor="notes">Observações</Label>
-                  <Textarea
-                    id="notes"
-                    value={form.notes}
-                    onChange={(e) => patch({ notes: e.target.value })}
-                    placeholder="Alergias, preferências, detalhes extras"
-                  />
-                </div>
+                <Field
+                  as="textarea"
+                  label="Observações"
+                  id="notes"
+                  value={form.notes}
+                  onChange={(e) => patch({ notes: e.target.value })}
+                  placeholder="Alergias, preferências, detalhes extras"
+                />
               </div>
             )}
 

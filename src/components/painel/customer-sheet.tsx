@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Field } from "@/components/ui/input";
 import { MaskedInput } from "@/components/ui/masked-input";
 import {
   Sheet,
@@ -98,72 +99,54 @@ export function CustomerSheet({
         <SheetHeader title={editing ? "Editar cliente" : "Novo cliente"} />
         <SheetForm onSubmit={onSubmit}>
           <SheetBody className="space-y-4">
-            <div>
-              <label className="label" htmlFor="customer-name">
-                Nome
-              </label>
-              <input
-                id="customer-name"
-                className="input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex.: Ana Paula"
-                required
-                autoFocus
-              />
-            </div>
+            <Field
+              label="Nome"
+              id="customer-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex.: Ana Paula"
+              required
+              autoFocus
+            />
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="label" htmlFor="customer-phone">
-                  WhatsApp
-                </label>
-                <MaskedInput
-                  kind="phone"
-                  id="customer-phone"
-                  className="input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label className="label" htmlFor="customer-email">
-                  E-mail
-                </label>
-                <input
-                  id="customer-email"
-                  className="input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ana@email.com"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="label" htmlFor="customer-instagram">
-                Instagram
-              </label>
-              <input
-                id="customer-instagram"
-                className="input"
-                value={instagram}
-                onChange={(e) => setInstagram(e.target.value)}
-                placeholder="@cliente"
+              <Field
+                label="WhatsApp"
+                id="customer-phone"
+                control={
+                  <MaskedInput
+                    kind="phone"
+                    id="customer-phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                }
+              />
+              <Field
+                label="E-mail"
+                id="customer-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ana@email.com"
               />
             </div>
-            <div>
-              <label className="label" htmlFor="customer-notes">
-                Observações
-              </label>
-              <textarea
-                id="customer-notes"
-                className="input min-h-28"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Preferências, restrições, datas especiais…"
-              />
-            </div>
+            <Field
+              label="Instagram"
+              id="customer-instagram"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              placeholder="@cliente"
+            />
+            <Field
+              as="textarea"
+              label="Observações"
+              id="customer-notes"
+              controlClassName="min-h-28"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Preferências, restrições, datas especiais…"
+            />
             {error && <p className="text-sm text-[#C85A5A]">{error}</p>}
           </SheetBody>
           <SheetFooter>

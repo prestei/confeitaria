@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { Field } from "@/components/ui/input";
 
 export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
@@ -57,19 +58,14 @@ export default function ForgotPasswordPage() {
           </div>
         ) : (
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="label" htmlFor="email">
-                E-mail
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="input"
-                autoComplete="email"
-              />
-            </div>
+            <Field
+              label="E-mail"
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+            />
             {error && <p className="text-sm text-berry-deep">{error}</p>}
             <button type="submit" className="btn-primary w-full" disabled={loading}>
               {loading ? "Enviando..." : "Enviar link"}

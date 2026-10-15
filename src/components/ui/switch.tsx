@@ -21,7 +21,7 @@ export function Switch({
     <label
       htmlFor={id}
       className={cn(
-        "inline-flex cursor-pointer items-center gap-3",
+        "flex w-full max-w-full cursor-pointer items-start gap-3 sm:items-center",
         disabled && "cursor-not-allowed opacity-50",
       )}
     >
@@ -35,8 +35,8 @@ export function Switch({
         onClick={() => onCheckedChange(!checked)}
         className={cn(
           "relative h-6 w-11 shrink-0 rounded-full transition",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#483129]/25",
-          checked ? "bg-[#483129]" : "bg-[#CED0D4]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--painel-brand,#483129)]/25",
+          checked ? "bg-[var(--painel-brand,#483129)]" : "bg-[#CED0D4]",
         )}
       >
         <span
@@ -47,7 +47,9 @@ export function Switch({
         />
       </button>
       {label && (
-        <span className="text-sm font-medium text-cocoa">{label}</span>
+        <span className="min-w-0 flex-1 pt-0.5 text-sm font-medium leading-snug text-pretty text-cocoa sm:pt-0">
+          {label}
+        </span>
       )}
     </label>
   );

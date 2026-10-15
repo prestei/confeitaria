@@ -21,7 +21,7 @@ export function FilterChip({
   const styles = cn(
     "box-border inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded px-4 text-sm font-semibold leading-none transition",
     active
-      ? "bg-[#483129] text-white shadow-sm"
+      ? "bg-[var(--painel-brand,#0f352e)] text-white shadow-sm"
       : "bg-[#E4E6EB] text-[#65676B] hover:bg-[#D8DADF]",
     className,
   );

@@ -117,7 +117,7 @@ export function SheetContent({
           <motion.button
             type="button"
             aria-label="Fechar"
-            className="absolute inset-0 bg-[#2D2926]/40 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-[#0f352e]/40 backdrop-blur-[2px]"
             onClick={close}
             initial={reduced ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -129,10 +129,10 @@ export function SheetContent({
             aria-modal="true"
             aria-labelledby={titleId}
             className={cn(
-              "absolute inset-y-0 flex w-full flex-col bg-white shadow-2xl shadow-[#2D2926]/20",
+              "absolute inset-y-0 flex w-full flex-col bg-white shadow-2xl shadow-[#0f352e]/15",
               fromRight
-                ? "right-0 border-l border-[#E8E2DE]"
-                : "left-0 border-r border-[#E8E2DE]",
+                ? "right-0 border-l border-[#e5e7eb]"
+                : "left-0 border-r border-[#e5e7eb]",
               sizes[size],
               className,
             )}
@@ -153,19 +153,24 @@ export function SheetContent({
             >
               <X className="h-4 w-4" />
             </button>
-            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+            <div className="painel-fields flex min-h-0 flex-1 flex-col">
+              {children}
+            </div>
           </motion.aside>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 
 export function SheetHeader({
   title,
+  description,
   className,
 }: {
   title: string;
+  description?: string;
   className?: string;
 }) {
   const { titleId } = useSheet();
@@ -173,13 +178,16 @@ export function SheetHeader({
   return (
     <div
       className={cn(
-        "shrink-0 border-b border-[#E8E2DE] px-5 pb-4 pt-5 pr-12",
+        "shrink-0 border-b border-[#E8E2DE] px-6 pb-4 pt-6 pr-14",
         className,
       )}
     >
-      <PageTitle as="h2" id={titleId}>
+      <PageTitle as="h2" id={titleId} className="text-xl text-cocoa">
         {title}
       </PageTitle>
+      {description ? (
+        <p className="mt-1 text-sm text-[#8C8682]">{description}</p>
+      ) : null}
     </div>
   );
 }

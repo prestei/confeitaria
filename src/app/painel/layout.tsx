@@ -57,7 +57,7 @@ export default async function PainelLayout({
         : "Starter";
 
   return (
-    <div className="painel-shell flex min-h-screen flex-col bg-[#FAF7F4] font-sans md:h-screen md:flex-row md:overflow-hidden">
+    <div className="painel-shell flex min-h-screen flex-col font-sans md:h-screen md:flex-row md:overflow-hidden">
       <PainelSidebar
         storeName={store?.name || session.user.name || "Sua confeitaria"}
         storeLogoUrl={store?.logoUrl || null}

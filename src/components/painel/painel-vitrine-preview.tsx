@@ -25,7 +25,7 @@ export function PainelVitrinePreview({
         <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-[#9A8F88]">
           Pré-visualização
         </p>
-        <div className="mx-auto rounded-[2rem] border-[10px] border-[#2D2926] bg-[#2D2926] p-1 shadow-xl">
+        <div className="mx-auto rounded-[2rem] border-[10px] border-[var(--painel-brand)] bg-[var(--painel-brand)] p-1 shadow-xl">
           <div className="overflow-hidden rounded-[1.4rem] bg-[#FFFBF7]">
             <div className="h-6 bg-[#FFFBF7]" />
             {store.coverUrl ? (
@@ -85,7 +85,7 @@ export function PainelVitrinePreview({
         <Link
           href={publicPath}
           target="_blank"
-          className="mt-4 block text-center text-xs font-semibold text-[#C45B7A] hover:underline"
+          className="mt-4 block text-center text-xs font-semibold text-[var(--painel-accent)] hover:underline"
         >
           Abrir vitrine completa
         </Link>

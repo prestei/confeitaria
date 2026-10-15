@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FormEvent, Suspense, useState } from "react";
+import { Field } from "@/components/ui/input";
 
 function LoginForm() {
   const router = useRouter();
@@ -44,37 +45,29 @@ function LoginForm() {
         </p>
       ) : null}
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <div>
-          <label className="label" htmlFor="email">
-            E-mail
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            className="input"
-            defaultValue="demo@doceencanto.com"
-          />
-        </div>
-        <div>
-          <label className="label" htmlFor="password">
-            Senha
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            className="input"
-            defaultValue="demo1234"
-          />
-          <p className="mt-2 text-right text-xs">
-            <Link href="/esqueci-senha" className="font-medium text-rosewood">
-              Esqueci minha senha
-            </Link>
-          </p>
-        </div>
+        <Field
+          label="E-mail"
+          id="email"
+          name="email"
+          type="email"
+          required
+          defaultValue="demo@doceencanto.com"
+        />
+        <Field
+          label="Senha"
+          id="password"
+          name="password"
+          type="password"
+          required
+          defaultValue="demo1234"
+          footer={
+            <p className="mt-2 text-right text-xs">
+              <Link href="/esqueci-senha" className="font-medium text-rosewood">
+                Esqueci minha senha
+              </Link>
+            </p>
+          }
+        />
         {error && <p className="text-sm text-berry-deep">{error}</p>}
         <button type="submit" className="btn-primary w-full" disabled={loading}>
           {loading ? "Entrando..." : "Entrar"}

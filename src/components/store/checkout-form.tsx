@@ -27,6 +27,7 @@ import {
   paymentMethodHint,
   paymentMethodSummary,
 } from "@/lib/utils";
+import { Field, Label } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
@@ -612,66 +613,54 @@ export function CheckoutForm({
 
                 {step === 2 && (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <label className="label">Nome</label>
-                      <input
-                        className="input"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="Como devemos te chamar"
-                      />
-                    </div>
-                    <div>
-                      <label className="label">WhatsApp</label>
-                      <input
-                        className="input"
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        placeholder="(11) 99999-9999"
-                      />
-                    </div>
-                    <div>
-                      <label className="label">
-                        E-mail{isOnlinePayment ? "" : " (opcional)"}
-                      </label>
-                      <input
-                        type="email"
-                        className="input"
-                        value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        required={isOnlinePayment}
-                      />
-                      {onlineEligible && (
-                        <p className="mt-1.5 text-xs text-cocoa-soft/65">
-                          Necessário se você pagar online com Mercado Pago.
-                        </p>
-                      )}
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="label">Observações</label>
-                      <textarea
-                        className="input min-h-28"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Alergias, detalhes do tema, preferências…"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="label">Referência (opcional)</label>
-                      <input
-                        className="input"
-                        value={referenceNote}
-                        onChange={(e) => setReferenceNote(e.target.value)}
-                        placeholder="Link ou descrição de referência"
-                      />
-                    </div>
+                    <Field
+                      label="Nome"
+                      className="sm:col-span-2"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Como devemos te chamar"
+                    />
+                    <Field
+                      label="WhatsApp"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="(11) 99999-9999"
+                    />
+                    <Field
+                      label={`E-mail${isOnlinePayment ? "" : " (opcional)"}`}
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      required={isOnlinePayment}
+                      hint={
+                        onlineEligible
+                          ? "Necessário se você pagar online com Mercado Pago."
+                          : undefined
+                      }
+                    />
+                    <Field
+                      as="textarea"
+                      label="Observações"
+                      className="sm:col-span-2"
+                      controlClassName="min-h-28"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Alergias, detalhes do tema, preferências…"
+                    />
+                    <Field
+                      label="Referência (opcional)"
+                      className="sm:col-span-2"
+                      value={referenceNote}
+                      onChange={(e) => setReferenceNote(e.target.value)}
+                      placeholder="Link ou descrição de referência"
+                    />
                   </div>
                 )}
 
                 {step === 3 && (
                   <div className="space-y-5">
                     <div>
-                      <p className="label">Modalidade</p>
+                      <Label>Modalidade</Label>
                       <div className="mt-2 grid gap-3 sm:grid-cols-2">
                         {store.pickupEnabled && (
                           <button
@@ -740,58 +729,46 @@ export function CheckoutForm({
 
                     {fulfillment === "DELIVERY" &&
                       store.deliveryZones.length > 0 && (
-                        <div>
-                          <label className="label">Região</label>
-                          <select
-                            className="input"
-                            value={zone}
-                            onChange={(e) => setZone(e.target.value)}
-                          >
-                            {store.deliveryZones.map((z) => (
-                              <option key={z.name} value={z.name}>
-                                {z.name} ({formatBRL(z.feeCents)})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                        <Field
+                          as="select"
+                          label="Região"
+                          value={zone}
+                          onChange={(e) => setZone(e.target.value)}
+                        >
+                          {store.deliveryZones.map((z) => (
+                            <option key={z.name} value={z.name}>
+                              {z.name} ({formatBRL(z.feeCents)})
+                            </option>
+                          ))}
+                        </Field>
                       )}
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="label">Data (encomenda)</label>
-                        <input
-                          type="date"
-                          className="input"
-                          value={eventDate}
-                          onChange={(e) => setEventDate(e.target.value)}
-                        />
-                        <p className="mt-1.5 text-xs text-cocoa-soft/65">
-                          Antecedência mínima: {store.minAdvanceDays}{" "}
-                          {store.minAdvanceDays === 1 ? "dia" : "dias"}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="label">Horário</label>
-                        <input
-                          type="time"
-                          className="input"
-                          value={eventTime}
-                          onChange={(e) => setEventTime(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="label">Convidados (opcional)</label>
-                      <input
-                        type="number"
-                        min={1}
-                        className="input"
-                        value={guests}
-                        onChange={(e) => setGuests(e.target.value)}
-                        placeholder="Ex.: 20"
+                      <Field
+                        label="Data (encomenda)"
+                        type="date"
+                        value={eventDate}
+                        onChange={(e) => setEventDate(e.target.value)}
+                        hint={`Antecedência mínima: ${store.minAdvanceDays} ${
+                          store.minAdvanceDays === 1 ? "dia" : "dias"
+                        }`}
+                      />
+                      <Field
+                        label="Horário"
+                        type="time"
+                        value={eventTime}
+                        onChange={(e) => setEventTime(e.target.value)}
                       />
                     </div>
+
+                    <Field
+                      label="Convidados (opcional)"
+                      type="number"
+                      min={1}
+                      value={guests}
+                      onChange={(e) => setGuests(e.target.value)}
+                      placeholder="Ex.: 20"
+                    />
                   </div>
                 )}
 

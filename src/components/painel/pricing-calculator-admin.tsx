@@ -13,6 +13,7 @@ import {
   SheetHeader,
   SheetPrimary,
 } from "@/components/ui/sheet";
+import { Field } from "@/components/ui/input";
 import { calculateSuggestedPrice } from "@/lib/pricing";
 import { formatBRL } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
@@ -240,87 +241,62 @@ export function PricingCalculatorAdmin({
           <SheetForm onSubmit={onSubmit}>
             <SheetBody className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <label className="label">Nome do produto</label>
-                  <input
-                    className="input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex.: Bolo de chocolate"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label">Custo dos ingredientes (R$)</label>
-                  <input
-                    className="input"
-                    inputMode="decimal"
-                    value={ingredients}
-                    onChange={(e) => setIngredients(e.target.value)}
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="label">Embalagem (R$)</label>
-                  <input
-                    className="input"
-                    inputMode="decimal"
-                    value={packaging}
-                    onChange={(e) => setPackaging(e.target.value)}
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="label">Mão de obra (R$)</label>
-                  <input
-                    className="input"
-                    inputMode="decimal"
-                    value={labor}
-                    onChange={(e) => setLabor(e.target.value)}
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="label">Outras despesas (R$)</label>
-                  <input
-                    className="input"
-                    inputMode="decimal"
-                    value={other}
-                    onChange={(e) => setOther(e.target.value)}
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="label">Taxas sobre a venda (%)</label>
-                  <input
-                    className="input"
-                    inputMode="decimal"
-                    value={fees}
-                    onChange={(e) => setFees(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="label">Margem de lucro desejada (%)</label>
-                  <input
-                    className="input"
-                    inputMode="decimal"
-                    value={margin}
-                    onChange={(e) => setMargin(e.target.value)}
-                  />
-                  <p className="mt-1 text-xs text-[#8C8682]">
-                    Margem sobre o preço de venda, não sobre o custo.
-                  </p>
-                </div>
-                <div>
-                  <label className="label">Quantidade produzida</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1}
-                    value={batchQty}
-                    onChange={(e) => setBatchQty(e.target.value)}
-                  />
-                </div>
+                <Field
+                  label="Nome do produto"
+                  className="sm:col-span-2"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex.: Bolo de chocolate"
+                  required
+                />
+                <Field
+                  label="Custo dos ingredientes (R$)"
+                  inputMode="decimal"
+                  value={ingredients}
+                  onChange={(e) => setIngredients(e.target.value)}
+                  placeholder="0,00"
+                />
+                <Field
+                  label="Embalagem (R$)"
+                  inputMode="decimal"
+                  value={packaging}
+                  onChange={(e) => setPackaging(e.target.value)}
+                  placeholder="0,00"
+                />
+                <Field
+                  label="Mão de obra (R$)"
+                  inputMode="decimal"
+                  value={labor}
+                  onChange={(e) => setLabor(e.target.value)}
+                  placeholder="0,00"
+                />
+                <Field
+                  label="Outras despesas (R$)"
+                  inputMode="decimal"
+                  value={other}
+                  onChange={(e) => setOther(e.target.value)}
+                  placeholder="0,00"
+                />
+                <Field
+                  label="Taxas sobre a venda (%)"
+                  inputMode="decimal"
+                  value={fees}
+                  onChange={(e) => setFees(e.target.value)}
+                />
+                <Field
+                  label="Margem de lucro desejada (%)"
+                  inputMode="decimal"
+                  value={margin}
+                  onChange={(e) => setMargin(e.target.value)}
+                  hint="Margem sobre o preço de venda, não sobre o custo."
+                />
+                <Field
+                  label="Quantidade produzida"
+                  type="number"
+                  min={1}
+                  value={batchQty}
+                  onChange={(e) => setBatchQty(e.target.value)}
+                />
               </div>
 
               {preview.ok ? (

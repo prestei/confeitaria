@@ -14,6 +14,7 @@ import {
   SheetHeader,
   SheetPrimary,
 } from "@/components/ui/sheet";
+import { Field } from "@/components/ui/input";
 import {
   PageAction,
   PageHeader,
@@ -130,53 +131,43 @@ export function EstoqueAdmin({
           <SheetHeader title="Nova movimentação" />
           <SheetForm onSubmit={onMove}>
             <SheetBody className="space-y-4">
-              <div>
-                <label className="label">Produto</label>
-                <select
-                  className="input"
-                  value={productId}
-                  onChange={(e) => setProductId(e.target.value)}
-                  required
-                >
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Field
+                as="select"
+                label="Produto"
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                required
+              >
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </Field>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Tipo</label>
-                  <select
-                    className="input"
-                    value={type}
-                    onChange={(e) => setType(e.target.value as typeof type)}
-                  >
-                    <option value="IN">Entrada</option>
-                    <option value="OUT">Saída</option>
-                    <option value="ADJUST">Ajuste manual</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Quantidade</label>
-                  <input
-                    className="input"
-                    value={qty}
-                    onChange={(e) => setQty(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="label">Observação</label>
-                <input
-                  className="input"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Opcional"
+                <Field
+                  as="select"
+                  label="Tipo"
+                  value={type}
+                  onChange={(e) => setType(e.target.value as typeof type)}
+                >
+                  <option value="IN">Entrada</option>
+                  <option value="OUT">Saída</option>
+                  <option value="ADJUST">Ajuste manual</option>
+                </Field>
+                <Field
+                  label="Quantidade"
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value)}
+                  required
                 />
               </div>
+              <Field
+                label="Observação"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Opcional"
+              />
             </SheetBody>
             <SheetFooter>
               <SheetCancel />

@@ -1,4 +1,4 @@
-import { ProductFormRoute } from "@/components/painel/product-form-route";
+import { redirect } from "next/navigation";
 
 export default async function NovoProdutoPage({
   searchParams,
@@ -6,36 +6,8 @@ export default async function NovoProdutoPage({
   searchParams: Promise<{ preco?: string; nome?: string }>;
 }) {
   const sp = await searchParams;
-  const price = sp.preco?.replace(".", ",") ?? "";
-  const name = sp.nome ? decodeURIComponent(sp.nome) : "";
-
-  return (
-    <ProductFormRoute
-      initial={
-        name || price
-          ? {
-              name,
-              description: "",
-              imageUrl: "",
-              gallery: "",
-              categoryId: "",
-              productType: "READY",
-              priceMode: "FIXED",
-              price,
-              promoPrice: "",
-              availability: "AVAILABLE",
-              featured: false,
-              active: true,
-              showOnStorefront: true,
-              trackStock: false,
-              stockQty: "0",
-              stockMin: "5",
-              unit: "un",
-              optionGroups: [],
-              addons: [],
-            }
-          : undefined
-      }
-    />
-  );
+  const params = new URLSearchParams({ novo: "1" });
+  if (sp.preco) params.set("preco", sp.preco);
+  if (sp.nome) params.set("nome", sp.nome);
+  redirect(`/painel/produtos?${params.toString()}`);
 }

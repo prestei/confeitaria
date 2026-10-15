@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
+import { Field, Input } from "@/components/ui/input";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -57,63 +58,56 @@ export default function RegisterPage() {
           Em minutos você terá um link público e um painel para gerenciar produtos.
         </p>
         <form onSubmit={onSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="name">
-              Seu nome
-            </label>
-            <input id="name" name="name" required className="input" />
-          </div>
-          <div>
-            <label className="label" htmlFor="email">
-              E-mail
-            </label>
-            <input id="email" name="email" type="email" required className="input" />
-          </div>
-          <div>
-            <label className="label" htmlFor="password">
-              Senha
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              minLength={6}
-              required
-              className="input"
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="storeName">
-              Nome da confeitaria
-            </label>
-            <input id="storeName" name="storeName" required className="input" />
-          </div>
-          <div>
-            <label className="label" htmlFor="whatsapp">
-              WhatsApp
-            </label>
-            <input
-              id="whatsapp"
-              name="whatsapp"
-              required
-              placeholder="11999998888"
-              className="input"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="slug">
-              Link personalizado (opcional)
-            </label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-cocoa-soft/60">/</span>
-              <input
-                id="slug"
-                name="slug"
-                placeholder="minha-confeitaria"
-                className="input"
-              />
-            </div>
-          </div>
+          <Field
+            label="Seu nome"
+            id="name"
+            name="name"
+            required
+            className="sm:col-span-2"
+          />
+          <Field
+            label="E-mail"
+            id="email"
+            name="email"
+            type="email"
+            required
+          />
+          <Field
+            label="Senha"
+            id="password"
+            name="password"
+            type="password"
+            minLength={6}
+            required
+          />
+          <Field
+            label="Nome da confeitaria"
+            id="storeName"
+            name="storeName"
+            required
+          />
+          <Field
+            label="WhatsApp"
+            id="whatsapp"
+            name="whatsapp"
+            required
+            placeholder="11999998888"
+          />
+          <Field
+            label="Link personalizado (opcional)"
+            id="slug"
+            className="sm:col-span-2"
+            control={
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-cocoa-soft/60">/</span>
+                <Input
+                  id="slug"
+                  name="slug"
+                  placeholder="minha-confeitaria"
+                />
+              </div>
+            }
+          />
           {error && (
             <p className="sm:col-span-2 text-sm text-rosewood-deep">{error}</p>
           )}

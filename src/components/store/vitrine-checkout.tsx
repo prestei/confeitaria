@@ -4,6 +4,7 @@ import { FormEvent, useRef, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/components/cart/cart-context";
+import { Field, Label } from "@/components/ui/input";
 import { MaskedInput } from "@/components/ui/masked-input";
 import { cn } from "@/lib/cn";
 import { formatBRL } from "@/lib/utils";
@@ -171,7 +172,7 @@ export function VitrineCheckout({
       <div className="space-y-3 rounded-2xl border border-cocoa/8 bg-white p-4">
         {showFulfillmentChoice ? (
           <div>
-            <p className="label">Como deseja receber?</p>
+            <Label>Como deseja receber?</Label>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -207,47 +208,39 @@ export function VitrineCheckout({
           </p>
         )}
 
-        <div>
-          <label className="label">Nome</label>
-          <input
-            className="input"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label className="label">WhatsApp</label>
-          <MaskedInput
-            kind="phone"
-            className="input"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-        </div>
+        <Field
+          label="Nome"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <Field
+          label="WhatsApp"
+          control={
+            <MaskedInput
+              kind="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
+          }
+        />
 
         {store.schedulingEnabled ? (
           <>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label">Data desejada</label>
-                <input
-                  className="input"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">Horário desejado</label>
-                <input
-                  className="input"
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                />
-              </div>
+              <Field
+                label="Data desejada"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+              <Field
+                label="Horário desejado"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
             </div>
             <p className="text-xs text-cocoa-soft/60">
               Data e horário dependem da confirmação da confeitaria no WhatsApp.
@@ -256,25 +249,21 @@ export function VitrineCheckout({
         ) : null}
 
         {needsAddress ? (
-          <div>
-            <label className="label">Endereço para entrega</label>
-            <input
-              className="input"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
-          </div>
+          <Field
+            label="Endereço para entrega"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            required
+          />
         ) : null}
 
-        <div>
-          <label className="label">Observações</label>
-          <textarea
-            className="input min-h-20"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </div>
+        <Field
+          as="textarea"
+          label="Observações"
+          controlClassName="min-h-20"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
 
         {store.minAdvanceDays > 0 && store.schedulingEnabled ? (
           <p className="text-xs text-cocoa-soft/60">

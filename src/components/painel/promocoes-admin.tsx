@@ -52,7 +52,7 @@ type DiscountType = "PERCENT" | "FIXED";
 const fieldLabel =
   "mb-1.5 block text-[13px] font-semibold text-[#5C5652]";
 const fieldInput =
-  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[#2D2926]/40 focus:ring-2 focus:ring-[#2D2926]/10";
+  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[var(--painel-brand)]/40 focus:ring-2 focus:ring-[var(--painel-brand)]/10";
 
 function generateCouponCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

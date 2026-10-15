@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type InputHTMLAttributes } from "react";
+import { cn } from "@/lib/cn";
 import { maskMoney, maskPhone } from "@/lib/utils";
 
 type MaskedInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
@@ -24,9 +25,12 @@ export function MaskedInput({
   );
   const shown = controlled ? mask(String(value)) : uncontrolled;
 
+  const { className, ...rest } = props;
+
   return (
     <input
-      {...props}
+      className={cn("input", className)}
+      {...rest}
       inputMode={inputMode ?? (kind === "money" ? "decimal" : "tel")}
       autoComplete={
         autoComplete ?? (kind === "phone" ? "tel" : undefined)

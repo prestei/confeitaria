@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Field } from "@/components/ui/input";
 import { formatBRL } from "@/lib/utils";
 
 type Product = {
@@ -62,20 +63,19 @@ export function InstagramContentTool({
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="label">Produto</label>
-        <select
-          className="input max-w-md"
-          value={productId}
-          onChange={(e) => setProductId(e.target.value)}
-        >
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <Field
+        as="select"
+        label="Produto"
+        controlClassName="max-w-md"
+        value={productId}
+        onChange={(e) => setProductId(e.target.value)}
+      >
+        {products.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </Field>
 
       {product && content && (
         <div className="grid gap-4 lg:grid-cols-[200px_1fr]">

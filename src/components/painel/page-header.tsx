@@ -62,7 +62,7 @@ export function PageHeader({
       <div className="min-w-0 flex-1">
         <PageTitle>{title}</PageTitle>
         {description && (
-          <p className="mt-0.5 max-w-2xl text-sm leading-snug text-[#8C8682]">
+          <p className="mt-0.5 max-w-2xl text-sm leading-snug text-[var(--painel-muted,#6b7280)]">
             {description}
           </p>
         )}

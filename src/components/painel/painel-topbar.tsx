@@ -43,7 +43,7 @@ export function PainelTopbar({
   }, [bakeryName]);
 
   return (
-    <header className="shrink-0 border-b border-[#E4E6EB] bg-white px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
+    <header className="shrink-0 border-b border-[var(--painel-border,#e5e7eb)] bg-white px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
       <div className="flex h-9 items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-2.5">
           {storeLogoUrl ? (
@@ -54,11 +54,11 @@ export function PainelTopbar({
               className="h-8 w-8 shrink-0 rounded-lg object-cover ring-1 ring-[#E4E6EB]"
             />
           ) : (
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F3D5C8] text-[11px] font-bold uppercase tracking-wide text-[#3D2B1F]">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E8F0EE] text-[11px] font-bold uppercase tracking-wide text-[var(--painel-brand,#0f352e)]">
               {storeInitials}
             </span>
           )}
-          <p className="min-w-0 truncate font-sans text-[15px] font-semibold leading-none tracking-tight text-[#3D2B1F]">
+          <p className="min-w-0 truncate font-sans text-[15px] font-semibold leading-none tracking-tight text-[#111827]">
             {bakeryName}
           </p>
         </div>
@@ -117,7 +117,7 @@ export function PainelTopbar({
                 className="h-7 w-7 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F3D5C8] text-[10px] font-bold uppercase leading-none tracking-wide text-[#3D2B1F]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E8F0EE] text-[10px] font-bold uppercase leading-none tracking-wide text-[var(--painel-brand,#0f352e)]">
                 {userInitials}
               </span>
             )}

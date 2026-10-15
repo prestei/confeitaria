@@ -2,16 +2,24 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { PageAction, PageHeader, PageShell } from "@/components/painel/page-header";
-import { GalleryField, ImageField } from "@/components/painel/image-field";
+import { ImageField } from "@/components/painel/image-field";
 import {
   ProductPricingFields,
   productCostCents,
   type PricingStockItem,
   type RecipeDraft,
 } from "@/components/painel/product-pricing-fields";
-import { formatBRL } from "@/lib/utils";
+import { Field } from "@/components/ui/input";
+import { MaskedInput } from "@/components/ui/masked-input";
+import { Switch } from "@/components/ui/switch";
+import {
+  DEFAULT_PRODUCT_UNIT,
+  isStandardProductUnit,
+  PRODUCT_UNITS,
+} from "@/lib/product-units";
+import { formatBRL, parseMoneyToCents } from "@/lib/utils";
 import { cn } from "@/lib/cn";
 
 type Category = { id: string; name: string };
@@ -20,18 +28,14 @@ type OptionRow = { name: string; priceDelta: string };
 type GroupRow = { name: string; options: OptionRow[] };
 type AddonRow = { name: string; price: string };
 
-const emptyGroup = (): GroupRow => ({
-  name: "",
-  options: [{ name: "", priceDelta: "0" }],
-});
-
 const STEPS = [
   { id: 1, label: "Básico" },
   { id: 2, label: "Preço e estoque" },
   { id: 3, label: "Precificação" },
-  { id: 4, label: "Opções" },
-  { id: 5, label: "Revisar" },
+  { id: 4, label: "Revisar" },
 ] as const;
+
+const DESCRIPTION_MAX = 500;
 
 function reaisToCents(value: string) {
   const n = Number(value.replace(",", "."));
@@ -39,40 +43,46 @@ function reaisToCents(value: string) {
   return Math.round(n * 100);
 }
 
+export type ProductFormInitial = {
+  name: string;
+  description: string;
+  imageUrl: string;
+  gallery: string;
+  categoryId: string;
+  productType: string;
+  priceMode: string;
+  price: string;
+  promoPrice: string;
+  availability: string;
+  featured: boolean;
+  active: boolean;
+  showOnStorefront?: boolean;
+  trackStock: boolean;
+  hideWhenOutOfStock?: boolean;
+  stockQty: string;
+  stockMin: string;
+  unit: string;
+  optionGroups: GroupRow[];
+  addons: AddonRow[];
+  packaging?: string;
+  labor?: string;
+  otherCosts?: string;
+  indirect?: string;
+  recipe?: RecipeDraft[];
+};
+
 export function ProductForm({
   productId,
   initial,
   layout = "page",
+  onSaved,
+  onCancel,
 }: {
   layout?: "page" | "sheet";
   productId?: string;
-  initial?: {
-    name: string;
-    description: string;
-    imageUrl: string;
-    gallery: string;
-    categoryId: string;
-    productType: string;
-    priceMode: string;
-    price: string;
-    promoPrice: string;
-    availability: string;
-    featured: boolean;
-    active: boolean;
-    showOnStorefront?: boolean;
-    trackStock: boolean;
-    hideWhenOutOfStock?: boolean;
-    stockQty: string;
-    stockMin: string;
-    unit: string;
-    optionGroups: GroupRow[];
-    addons: AddonRow[];
-    packaging?: string;
-    labor?: string;
-    otherCosts?: string;
-    indirect?: string;
-    recipe?: RecipeDraft[];
-  };
+  initial?: ProductFormInitial;
+  onSaved?: () => void;
+  onCancel?: () => void;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -84,31 +94,27 @@ export function ProductForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
-  const [gallery, setGallery] = useState(initial?.gallery ?? "");
+  const [gallery] = useState(initial?.gallery ?? "");
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
-  const [productType, setProductType] = useState(initial?.productType ?? "READY");
-  const [priceMode, setPriceMode] = useState(initial?.priceMode ?? "FIXED");
+  const [productType] = useState(initial?.productType ?? "READY");
+  const [priceMode] = useState(initial?.priceMode ?? "FIXED");
   const [price, setPrice] = useState(initial?.price ?? "");
   const [promoPrice, setPromoPrice] = useState(initial?.promoPrice ?? "");
-  const [availability, setAvailability] = useState(
-    initial?.availability ?? "AVAILABLE",
-  );
-  const [unit, setUnit] = useState(initial?.unit ?? "un");
+  const [availability] = useState(initial?.availability ?? "AVAILABLE");
+  const [unit, setUnit] = useState(initial?.unit ?? DEFAULT_PRODUCT_UNIT);
   const [trackStock, setTrackStock] = useState(initial?.trackStock ?? false);
-  const [hideWhenOutOfStock, setHideWhenOutOfStock] = useState(
-    initial?.hideWhenOutOfStock ?? false,
-  );
+  const [hideWhenOutOfStock] = useState(initial?.hideWhenOutOfStock ?? false);
   const [stockQty, setStockQty] = useState(initial?.stockQty ?? "0");
-  const [stockMin, setStockMin] = useState(initial?.stockMin ?? "5");
+  const [stockMin] = useState(initial?.stockMin ?? "5");
   const [featured, setFeatured] = useState(initial?.featured ?? false);
   const [active, setActive] = useState(initial?.active ?? true);
   const [showOnStorefront, setShowOnStorefront] = useState(
     initial?.showOnStorefront ?? true,
   );
-  const [groups, setGroups] = useState<GroupRow[]>(
+  const [groups] = useState<GroupRow[]>(
     initial?.optionGroups?.length ? initial.optionGroups : [],
   );
-  const [addons, setAddons] = useState<AddonRow[]>(
+  const [addons] = useState<AddonRow[]>(
     initial?.addons?.length ? initial.addons : [],
   );
   const [packaging, setPackaging] = useState(initial?.packaging ?? "");
@@ -139,12 +145,8 @@ export function ProductForm({
     setError("");
 
     const priceCents =
-      priceMode === "QUOTE" || !price
-        ? null
-        : Math.round(Number(price.replace(",", ".")) * 100);
-    const promoPriceCents = promoPrice
-      ? Math.round(Number(promoPrice.replace(",", ".")) * 100)
-      : null;
+      priceMode === "QUOTE" || !price ? null : parseMoneyToCents(price);
+    const promoPriceCents = promoPrice ? parseMoneyToCents(promoPrice) : null;
 
     const galleryUrls = gallery
       .split("\n")
@@ -169,7 +171,7 @@ export function ProductForm({
       hideWhenOutOfStock: trackStock ? hideWhenOutOfStock : false,
       stockQty: Number(stockQty || 0),
       stockMin: Number(stockMin || 5),
-      unit: unit || "un",
+      unit: unit || DEFAULT_PRODUCT_UNIT,
       optionGroups: groups
         .filter((g) => g.name.trim())
         .map((g) => ({
@@ -216,17 +218,14 @@ export function ProductForm({
       setError(data.error || "Erro ao salvar produto");
       return;
     }
+    if (onSaved) {
+      onSaved();
+      return;
+    }
     router.push("/painel/produtos");
     router.refresh();
   }
 
-  const typeLabel: Record<string, string> = {
-    READY: "Pronta entrega",
-    CUSTOM: "Sob encomenda",
-    CAKE: "Bolo personalizado",
-    PARTY_KIT: "Kit festa",
-    CORPORATE: "Corporativo",
-  };
   const priceLabel: Record<string, string> = {
     FIXED: "Fixo",
     FROM: "A partir de",
@@ -234,260 +233,283 @@ export function ProductForm({
   };
 
   const shell = layout === "page";
+  const sheet = layout === "sheet";
+  const fieldRound = sheet ? "!rounded-xl" : undefined;
 
-  const content = (
-    <>
-      <nav aria-label="Etapas" className="overflow-x-auto">
-        <ol className="flex min-w-max items-center gap-2">
-          {STEPS.map((s, i) => {
-            const done = step > s.id;
-            const current = step === s.id;
-            return (
-              <li key={s.id} className="flex items-center gap-2">
-                {i > 0 && (
-                  <span className="mx-1 h-px w-6 bg-[#CED0D4] sm:w-10" aria-hidden />
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (s.id < step || (s.id === step + 1 && canGoNext())) {
-                      setStep(s.id);
-                    } else if (s.id < step) {
-                      setStep(s.id);
-                    }
-                  }}
+  function goToStep(id: number) {
+    if (id < step || (id === step + 1 && canGoNext())) setStep(id);
+    else if (id < step) setStep(id);
+  }
+
+  const stepperNav = sheet ? (
+    <nav
+      aria-label="Etapas"
+      className="shrink-0 overflow-x-hidden border-b border-[#E8E2DE]"
+    >
+      <ol className="flex px-1 sm:px-2">
+        {STEPS.map((s) => {
+          const done = step > s.id;
+          const current = step === s.id;
+          return (
+            <li key={s.id} className="relative min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => goToStep(s.id)}
+                className="flex w-full flex-col items-center gap-1.5 px-0.5 pb-3 pt-4"
+              >
+                <span
                   className={cn(
-                    "inline-flex items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold transition",
-                    current && "bg-[#2D2926] text-white",
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                    current && "bg-[var(--painel-brand)] text-white",
                     done && !current && "bg-[#E7F8ED] text-[#31A24C]",
-                    !done && !current && "bg-white text-[#65676B] ring-1 ring-[#CED0D4]",
+                    !done && !current && "bg-[#F0F2F5] text-[#8C8682]",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "flex h-5 w-5 items-center justify-center rounded-full text-[10px]",
-                      current && "bg-white/20",
-                      done && !current && "bg-[#31A24C] text-white",
-                      !done && !current && "bg-[#F0F2F5]",
-                    )}
-                  >
-                    {done ? <Check className="h-3 w-3" /> : s.id}
-                  </span>
+                  {done && !current ? (
+                    <Check className="h-3.5 w-3.5" aria-hidden />
+                  ) : (
+                    s.id
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "text-center text-[10px] font-semibold leading-tight text-balance sm:text-[11px]",
+                    current ? "text-[var(--painel-brand)]" : "text-[#8C8682]",
+                  )}
+                >
                   {s.label}
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
+                </span>
+              </button>
+              {current ? (
+                <span
+                  className="absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-[var(--painel-brand)]"
+                  aria-hidden
+                />
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  ) : (
+    <nav aria-label="Etapas" className="overflow-x-auto">
+      <ol className="flex min-w-max items-center gap-2">
+        {STEPS.map((s, i) => {
+          const done = step > s.id;
+          const current = step === s.id;
+          return (
+            <li key={s.id} className="flex items-center gap-2">
+              {i > 0 && (
+                <span className="mx-1 h-px w-6 bg-[#CED0D4] sm:w-10" aria-hidden />
+              )}
+              <button
+                type="button"
+                onClick={() => goToStep(s.id)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold transition",
+                  current && "bg-[var(--painel-brand)] text-white",
+                  done && !current && "bg-[#E7F8ED] text-[#31A24C]",
+                  !done && !current && "bg-white text-[#65676B] ring-1 ring-[#CED0D4]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-full text-[10px]",
+                    current && "bg-white/20",
+                    done && !current && "bg-[#31A24C] text-white",
+                    !done && !current && "bg-[#F0F2F5]",
+                  )}
+                >
+                  {done ? <Check className="h-3 w-3" /> : s.id}
+                </span>
+                {s.label}
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (step < 5) {
-            if (canGoNext()) setStep((s) => s + 1);
-            return;
-          }
-          onSubmit();
-        }}
-        className="space-y-5"
-      >
+  const formBody = (
+    <>
         {step === 1 && (
-          <section className="grid gap-4 rounded-2xl border border-cocoa/8 bg-white p-5 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <p className="mb-3 text-sm font-semibold text-cocoa">
-                Informações básicas
-              </p>
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label">Nome</label>
-              <input
-                className="input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label">Descrição</label>
-              <textarea
-                className="input min-h-24"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-            <div>
-              <ImageField
-                label="Foto principal"
-                value={imageUrl}
-                onChange={setImageUrl}
-              />
-            </div>
-            <div>
-              <label className="label">Categoria</label>
-              <select
-                className="input"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-              >
-                <option value="">Sem categoria</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:col-span-2">
-              <GalleryField
-                label="Galeria"
-                value={gallery}
-                onChange={setGallery}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label">Tipo</label>
-              <select
-                className="input"
-                value={productType}
-                onChange={(e) => setProductType(e.target.value)}
-              >
-                <option value="READY">Pronta entrega</option>
-                <option value="CUSTOM">Sob encomenda</option>
-                <option value="CAKE">Bolo personalizado</option>
-                <option value="PARTY_KIT">Kit festa</option>
-                <option value="CORPORATE">Corporativo</option>
-              </select>
-            </div>
+          <section
+            className={cn(
+              sheet
+                ? "space-y-4"
+                : "grid gap-4 rounded-2xl border border-cocoa/8 bg-white p-5 sm:grid-cols-2",
+            )}
+          >
+            <Field
+              className={sheet ? undefined : "sm:col-span-2"}
+              label={sheet ? "Nome do produto" : "Nome"}
+              placeholder={sheet ? "Ex.: Bolo de chocolate belga" : undefined}
+              controlClassName={fieldRound}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoFocus
+            />
+            <Field
+              className={sheet ? undefined : "sm:col-span-2"}
+              as="textarea"
+              label="Descrição"
+              placeholder={
+                sheet ? "Descreva o produto para seus clientes…" : undefined
+              }
+              controlClassName={cn(fieldRound, "min-h-28")}
+              value={description}
+              maxLength={DESCRIPTION_MAX}
+              onChange={(e) => setDescription(e.target.value)}
+              footer={
+                sheet ? (
+                  <p className="mt-1 text-right text-xs text-[#8C8682]">
+                    {description.length}/{DESCRIPTION_MAX}
+                  </p>
+                ) : undefined
+              }
+            />
+            <Field
+              as="select"
+              label="Categoria"
+              controlClassName={fieldRound}
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="">Selecione uma categoria</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Field>
+            <ImageField
+              label="Foto principal"
+              value={imageUrl}
+              onChange={setImageUrl}
+              variant={sheet ? "dropzone" : "compact"}
+              className={sheet ? undefined : "sm:col-span-2"}
+            />
           </section>
         )}
 
         {step === 2 && (
-          <section className="grid gap-4 rounded-2xl border border-cocoa/8 bg-white p-5 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <p className="mb-3 text-sm font-semibold text-cocoa">
-                Preço, disponibilidade e estoque
-              </p>
-            </div>
-            <div>
-              <label className="label">Modo de preço</label>
-              <select
-                className="input"
-                value={priceMode}
-                onChange={(e) => setPriceMode(e.target.value)}
-              >
-                <option value="FIXED">Fixo</option>
-                <option value="FROM">A partir de</option>
-                <option value="QUOTE">Sob consulta</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Preço (R$)</label>
-              <input
-                className="input"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                disabled={priceMode === "QUOTE"}
+          <section
+            className={cn(
+              "min-w-0",
+              sheet ? "space-y-4" : "grid gap-4 sm:grid-cols-2",
+            )}
+          >
+            <div
+              className={cn(
+                "grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2",
+                !sheet && "sm:col-span-2",
+              )}
+            >
+              <Field
+                className="min-w-0"
+                label="Preço (R$)"
+                control={
+                  <MaskedInput
+                    kind="money"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    disabled={priceMode === "QUOTE"}
+                    className={cn(fieldRound, "min-w-0 w-full")}
+                  />
+                }
+              />
+              <Field
+                className="min-w-0"
+                label="Preço promocional (R$)"
+                control={
+                  <MaskedInput
+                    kind="money"
+                    value={promoPrice}
+                    onChange={(e) => setPromoPrice(e.target.value)}
+                    className={cn(fieldRound, "min-w-0 w-full")}
+                  />
+                }
               />
             </div>
-            <div>
-              <label className="label">Preço promocional (R$)</label>
-              <input
-                className="input"
-                value={promoPrice}
-                onChange={(e) => setPromoPrice(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label">Disponibilidade</label>
-              <select
-                className="input"
-                value={availability}
-                onChange={(e) => setAvailability(e.target.value)}
-              >
-                <option value="AVAILABLE">Disponível</option>
-                <option value="SOLD_OUT">Esgotado</option>
-                <option value="MADE_TO_ORDER">Sob encomenda</option>
-                <option value="LAST_UNITS">Últimas unidades</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Unidade</label>
-              <input
-                className="input"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-              />
-            </div>
-            <label className="flex items-center gap-2 text-sm font-medium text-cocoa">
-              <input
-                type="checkbox"
+            <Field
+              as="select"
+              className={cn("min-w-0", !sheet ? "sm:col-span-2" : undefined)}
+              label="Unidade"
+              controlClassName={cn(fieldRound, "max-w-full")}
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+            >
+              {!isStandardProductUnit(unit) && unit ? (
+                <option value={unit}>{unit}</option>
+              ) : null}
+              {PRODUCT_UNITS.map((u) => (
+                <option key={u.value} value={u.value}>
+                  {u.label}
+                </option>
+              ))}
+            </Field>
+            <div
+              className={cn(
+                "flex flex-col gap-3",
+                !sheet && "sm:col-span-2",
+              )}
+            >
+              <Switch
+                id="product-track-stock"
                 checked={trackStock}
-                onChange={(e) => setTrackStock(e.target.checked)}
+                onCheckedChange={setTrackStock}
+                label="Usar estoque"
               />
-              Controlar estoque
-            </label>
-            {trackStock ? (
-              <label className="flex items-center gap-2 text-sm font-medium text-cocoa sm:col-span-2">
-                <input
-                  type="checkbox"
-                  checked={hideWhenOutOfStock}
-                  onChange={(e) => setHideWhenOutOfStock(e.target.checked)}
-                />
-                Ocultar da vitrine quando esgotar (em vez de mostrar como esgotado)
-              </label>
-            ) : null}
-            <div className="grid grid-cols-2 gap-3 sm:col-span-2">
-              <div>
-                <label className="label">Qtd. disponível</label>
-                <input
-                  className="input"
+              {trackStock ? (
+                <Field
+                  label="Qtd. disponível"
+                  type="number"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  controlClassName={fieldRound}
                   value={stockQty}
-                  onChange={(e) => setStockQty(e.target.value)}
-                  disabled={!trackStock}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    if (next === "" || /^\d+$/.test(next)) setStockQty(next);
+                  }}
                 />
-              </div>
-              <div>
-                <label className="label">Estoque mínimo</label>
-                <input
-                  className="input"
-                  value={stockMin}
-                  onChange={(e) => setStockMin(e.target.value)}
-                  disabled={!trackStock}
-                />
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-sm font-medium text-cocoa">
-              <input
-                type="checkbox"
+              ) : null}
+              <Switch
+                id="product-featured"
                 checked={featured}
-                onChange={(e) => setFeatured(e.target.checked)}
+                onCheckedChange={setFeatured}
+                label="Produto em destaque"
               />
-              Produto em destaque
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-cocoa">
-              <input
-                type="checkbox"
+              <Switch
+                id="product-active"
                 checked={active}
-                onChange={(e) => setActive(e.target.checked)}
+                onCheckedChange={setActive}
+                label="Produto ativo"
               />
-              Produto ativo
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-cocoa">
-              <input
-                type="checkbox"
+              <Switch
+                id="product-storefront"
                 checked={showOnStorefront}
-                onChange={(e) => setShowOnStorefront(e.target.checked)}
+                onCheckedChange={setShowOnStorefront}
+                label="Exibir na vitrine"
               />
-              Exibir na vitrine
-            </label>
+            </div>
           </section>
         )}
 
         {step === 3 && (
-          <section className="rounded-2xl border border-cocoa/8 bg-white p-5">
+          <section
+            className={cn(
+              "min-w-0",
+              sheet
+                ? undefined
+                : "rounded-2xl border border-cocoa/8 bg-white p-5",
+            )}
+          >
             <ProductPricingFields
+              variant={sheet ? "sheet" : "default"}
               stockItems={stockItems}
               lines={recipe}
               onLines={setRecipe}
@@ -499,237 +521,20 @@ export function ProductForm({
               onLabor={setLabor}
               onOther={setOtherCosts}
               onIndirect={setIndirect}
-              saleCents={priceMode === "QUOTE" || !price ? 0 : reaisToCents(price)}
+              saleCents={
+                priceMode === "QUOTE" || !price ? 0 : parseMoneyToCents(price)
+              }
             />
           </section>
         )}
 
         {step === 4 && (
-          <div className="space-y-5">
-            <section className="rounded-2xl border border-cocoa/8 bg-white p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-semibold text-cocoa">Opções</h2>
-                  <p className="text-xs text-cocoa-soft/60">
-                    Ex.: Tamanho, Sabor — cada opção pode alterar o preço.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="btn-secondary !px-3 !py-1.5 text-xs"
-                  onClick={() => setGroups((g) => [...g, emptyGroup()])}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Grupo
-                </button>
-              </div>
-              <div className="mt-4 space-y-4">
-                {groups.length === 0 && (
-                  <p className="text-sm text-cocoa-soft/55">
-                    Nenhum grupo de opções. Pode pular esta etapa.
-                  </p>
-                )}
-                {groups.map((g, gi) => (
-                  <div key={gi} className="rounded-xl border border-cocoa/8 p-4">
-                    <div className="flex gap-2">
-                      <input
-                        className="input"
-                        placeholder="Nome do grupo (ex.: Tamanho)"
-                        value={g.name}
-                        onChange={(e) =>
-                          setGroups((list) =>
-                            list.map((item, i) =>
-                              i === gi ? { ...item, name: e.target.value } : item,
-                            ),
-                          )
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="rounded-xl p-2 text-cocoa-soft/50 hover:bg-fog"
-                        onClick={() =>
-                          setGroups((list) => list.filter((_, i) => i !== gi))
-                        }
-                        aria-label="Remover grupo"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="mt-3 space-y-2">
-                      {g.options.map((o, oi) => (
-                        <div
-                          key={oi}
-                          className="grid grid-cols-[1fr_100px_auto] gap-2"
-                        >
-                          <input
-                            className="input !py-2 text-sm"
-                            placeholder="Opção"
-                            value={o.name}
-                            onChange={(e) =>
-                              setGroups((list) =>
-                                list.map((item, i) =>
-                                  i === gi
-                                    ? {
-                                        ...item,
-                                        options: item.options.map((opt, j) =>
-                                          j === oi
-                                            ? { ...opt, name: e.target.value }
-                                            : opt,
-                                        ),
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                          />
-                          <input
-                            className="input !py-2 text-sm"
-                            placeholder="+R$"
-                            value={o.priceDelta}
-                            onChange={(e) =>
-                              setGroups((list) =>
-                                list.map((item, i) =>
-                                  i === gi
-                                    ? {
-                                        ...item,
-                                        options: item.options.map((opt, j) =>
-                                          j === oi
-                                            ? {
-                                                ...opt,
-                                                priceDelta: e.target.value,
-                                              }
-                                            : opt,
-                                        ),
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                          />
-                          <button
-                            type="button"
-                            className="rounded-xl p-2 text-cocoa-soft/50 hover:bg-fog"
-                            onClick={() =>
-                              setGroups((list) =>
-                                list.map((item, i) =>
-                                  i === gi
-                                    ? {
-                                        ...item,
-                                        options: item.options.filter(
-                                          (_, j) => j !== oi,
-                                        ),
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="text-xs font-semibold text-berry-deep"
-                        onClick={() =>
-                          setGroups((list) =>
-                            list.map((item, i) =>
-                              i === gi
-                                ? {
-                                    ...item,
-                                    options: [
-                                      ...item.options,
-                                      { name: "", priceDelta: "0" },
-                                    ],
-                                  }
-                                : item,
-                            ),
-                          )
-                        }
-                      >
-                        + Opção
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-cocoa/8 bg-white p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-semibold text-cocoa">Adicionais</h2>
-                  <p className="text-xs text-cocoa-soft/60">
-                    Ex.: Morangos, brigadeiros, decoração especial.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="btn-secondary !px-3 !py-1.5 text-xs"
-                  onClick={() =>
-                    setAddons((a) => [...a, { name: "", price: "0" }])
-                  }
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Adicional
-                </button>
-              </div>
-              <div className="mt-4 space-y-2">
-                {addons.map((a, ai) => (
-                  <div key={ai} className="grid grid-cols-[1fr_100px_auto] gap-2">
-                    <input
-                      className="input !py-2 text-sm"
-                      placeholder="Nome"
-                      value={a.name}
-                      onChange={(e) =>
-                        setAddons((list) =>
-                          list.map((item, i) =>
-                            i === ai ? { ...item, name: e.target.value } : item,
-                          ),
-                        )
-                      }
-                    />
-                    <input
-                      className="input !py-2 text-sm"
-                      placeholder="R$"
-                      value={a.price}
-                      onChange={(e) =>
-                        setAddons((list) =>
-                          list.map((item, i) =>
-                            i === ai ? { ...item, price: e.target.value } : item,
-                          ),
-                        )
-                      }
-                    />
-                    <button
-                      type="button"
-                      className="rounded-xl p-2 text-cocoa-soft/50 hover:bg-fog"
-                      onClick={() =>
-                        setAddons((list) => list.filter((_, i) => i !== ai))
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
-
-        {step === 5 && (
           <section className="space-y-4 rounded-2xl border border-cocoa/8 bg-white p-5">
             <p className="text-sm font-semibold text-cocoa">Revisão</p>
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-xs text-cocoa-soft/55">Nome</dt>
                 <dd className="font-medium text-cocoa">{name || "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-cocoa-soft/55">Tipo</dt>
-                <dd className="font-medium text-cocoa">
-                  {typeLabel[productType] || productType}
-                </dd>
               </div>
               <div>
                 <dt className="text-xs text-cocoa-soft/55">Categoria</dt>
@@ -749,9 +554,7 @@ export function ProductForm({
               <div>
                 <dt className="text-xs text-cocoa-soft/55">Estoque</dt>
                 <dd className="font-medium text-cocoa">
-                  {trackStock
-                    ? `${stockQty} ${unit} (mín. ${stockMin})`
-                    : "Sem controle"}
+                  {trackStock ? `${stockQty} ${unit}` : "Sem controle"}
                 </dd>
               </div>
               <div>
@@ -770,13 +573,6 @@ export function ProductForm({
                   )}
                 </dd>
               </div>
-              <div>
-                <dt className="text-xs text-cocoa-soft/55">Opções / adicionais</dt>
-                <dd className="font-medium text-cocoa">
-                  {groups.filter((g) => g.name.trim()).length} grupos ·{" "}
-                  {addons.filter((a) => a.name.trim()).length} adicionais
-                </dd>
-              </div>
               <div className="sm:col-span-2">
                 <dt className="text-xs text-cocoa-soft/55">Status</dt>
                 <dd className="font-medium text-cocoa">
@@ -789,45 +585,125 @@ export function ProductForm({
         )}
 
         {error && <p className="text-sm text-berry-deep">{error}</p>}
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            className="btn-secondary !py-2.5 text-sm"
-            disabled={step === 1}
-            onClick={() => setStep((s) => Math.max(1, s - 1))}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Voltar
-          </button>
-          {step < 5 ? (
-            <button
-              type="submit"
-              className="btn-primary !py-2.5 text-sm"
-              disabled={!canGoNext()}
-            >
-              Continuar
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              className="btn-primary !py-2.5 text-sm"
-              disabled={loading}
-            >
-              {loading
-                ? "Salvando…"
-                : productId
-                  ? "Salvar alterações"
-                  : "Criar produto"}
-            </button>
-          )}
-        </div>
-      </form>
     </>
   );
 
-  if (!shell) return content;
+  const formFooter = sheet ? (
+    <div
+      className="sticky bottom-0 z-10 mt-auto flex shrink-0 items-center justify-between gap-2 border-t border-[#E8E2DE] bg-white px-4 py-3 shadow-[0_-6px_16px_-6px_rgba(45,41,38,0.08)] sm:gap-3 sm:px-6 sm:py-4"
+    >
+      {step === 1 ? (
+        <button
+          type="button"
+          className="btn-secondary shrink-0 !rounded-xl !px-4 !py-2.5 text-sm sm:!px-5"
+          onClick={() => onCancel?.()}
+        >
+          Cancelar
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn-secondary shrink-0 !rounded-xl !px-3 !py-2.5 text-sm sm:!px-5"
+          onClick={() => setStep((s) => Math.max(1, s - 1))}
+        >
+          <ChevronLeft className="h-4 w-4 shrink-0" />
+          Voltar
+        </button>
+      )}
+      {step < 4 ? (
+        <button
+          type="submit"
+          className="btn-primary inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 !rounded-xl !px-4 !py-2.5 text-sm sm:flex-none sm:!px-5"
+          disabled={!canGoNext()}
+        >
+          Continuar
+          <ChevronRight className="h-4 w-4 shrink-0" />
+        </button>
+      ) : (
+        <button
+          type="submit"
+          className="btn-primary min-w-0 flex-1 !rounded-xl !px-4 !py-2.5 text-sm sm:flex-none sm:!px-5"
+          disabled={loading}
+        >
+          {loading ? "Salvando…" : "Criar produto"}
+        </button>
+      )}
+    </div>
+  ) : (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <button
+        type="button"
+        className="btn-secondary !py-2.5 text-sm"
+        disabled={step === 1}
+        onClick={() => setStep((s) => Math.max(1, s - 1))}
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Voltar
+      </button>
+      {step < 4 ? (
+        <button
+          type="submit"
+          className="btn-primary !py-2.5 text-sm"
+          disabled={!canGoNext()}
+        >
+          Continuar
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      ) : (
+        <button
+          type="submit"
+          className="btn-primary !py-2.5 text-sm"
+          disabled={loading}
+        >
+          {loading
+            ? "Salvando…"
+            : productId
+              ? "Salvar alterações"
+              : "Criar produto"}
+        </button>
+      )}
+    </div>
+  );
+
+  const form = (
+    <form
+      id={sheet ? "product-form-sheet" : undefined}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (step < 4) {
+          if (canGoNext()) setStep((s) => s + 1);
+          return;
+        }
+        onSubmit();
+      }}
+      className={sheet ? "flex min-h-0 flex-1 flex-col" : "space-y-5"}
+    >
+      {sheet ? (
+        <div className="min-h-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto px-4 py-5 scrollbar-thin sm:px-6">
+          {formBody}
+        </div>
+      ) : (
+        formBody
+      )}
+      {formFooter}
+    </form>
+  );
+
+  if (!shell) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {stepperNav}
+        {form}
+      </div>
+    );
+  }
+
+  const content = (
+    <>
+      {stepperNav}
+      {form}
+    </>
+  );
 
   return (
     <PageShell>

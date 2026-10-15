@@ -59,7 +59,7 @@ export function OverviewLinkCard({
         </div>
       </div>
       <p
-        className="mt-4 text-right text-sm text-[#C45B7A] sm:text-base"
+        className="mt-4 text-right text-sm text-[var(--painel-accent)] sm:text-base"
         style={{ fontFamily: "var(--font-display), cursive" }}
       >
         Compartilhe seu link e conquiste mais clientes!

@@ -16,6 +16,7 @@ import {
   SheetHeader,
   SheetPrimary,
 } from "@/components/ui/sheet";
+import { Field } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { formatBRL } from "@/lib/utils";
 
@@ -169,46 +170,31 @@ export function InsumosCadastro({ initialItems }: { initialItems: Item[] }) {
           <SheetHeader title={editing ? "Editar insumo" : "Novo insumo"} />
           <SheetForm onSubmit={(e) => void onSubmit(e)}>
             <SheetBody className="space-y-4">
-              <div>
-                <label className="label" htmlFor="insumo-name">
-                  Nome
-                </label>
-                <input
-                  id="insumo-name"
-                  className="input"
-                  value={draft.name}
-                  onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                  placeholder="Farinha, ovos, chocolate…"
-                  required
-                  autoFocus
-                />
-              </div>
+              <Field
+                label="Nome"
+                id="insumo-name"
+                value={draft.name}
+                onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                placeholder="Farinha, ovos, chocolate…"
+                required
+                autoFocus
+              />
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="label" htmlFor="insumo-unit">
-                    Unidade
-                  </label>
-                  <input
-                    id="insumo-unit"
-                    className="input"
-                    value={draft.unit}
-                    onChange={(e) => setDraft((d) => ({ ...d, unit: e.target.value }))}
-                    placeholder="kg, g, un, L"
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="insumo-cost">
-                    Preço de compra (R$)
-                  </label>
-                  <input
-                    id="insumo-cost"
-                    className="input"
-                    inputMode="decimal"
-                    value={draft.cost}
-                    onChange={(e) => setDraft((d) => ({ ...d, cost: e.target.value }))}
-                    placeholder="0,00"
-                  />
-                </div>
+                <Field
+                  label="Unidade"
+                  id="insumo-unit"
+                  value={draft.unit}
+                  onChange={(e) => setDraft((d) => ({ ...d, unit: e.target.value }))}
+                  placeholder="kg, g, un, L"
+                />
+                <Field
+                  label="Preço de compra (R$)"
+                  id="insumo-cost"
+                  inputMode="decimal"
+                  value={draft.cost}
+                  onChange={(e) => setDraft((d) => ({ ...d, cost: e.target.value }))}
+                  placeholder="0,00"
+                />
               </div>
               {error && <p className="text-sm text-berry-deep">{error}</p>}
             </SheetBody>

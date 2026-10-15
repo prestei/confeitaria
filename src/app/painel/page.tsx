@@ -142,7 +142,7 @@ export default async function PainelPage() {
             </h2>
             <Link
               href="/painel/produtos"
-              className="text-xs font-semibold text-[#C45B7A] hover:underline"
+              className="text-xs font-semibold text-[var(--painel-accent)] hover:underline"
             >
               Ver todos
             </Link>
@@ -167,7 +167,7 @@ export default async function PainelPage() {
                       className="h-28 w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-28 items-center justify-center bg-[#FFF5F0] text-[#C45B7A]">
+                    <div className="flex h-28 items-center justify-center bg-[#E8F0EE] text-[var(--painel-brand)]">
                       🍰
                     </div>
                   )}
@@ -284,7 +284,7 @@ function StatCard({
       </p>
       <p className="mt-1 text-xs text-[#9A8F88]">{label}</p>
       {hint ? (
-        <p className="mt-1 text-[11px] font-medium text-[#C45B7A]">{hint}</p>
+        <p className="mt-1 text-[11px] font-medium text-[var(--painel-accent)]">{hint}</p>
       ) : null}
     </div>
   );
@@ -304,7 +304,7 @@ function QuickAction({
       href={href}
       className="flex items-center justify-center gap-2 rounded-2xl border border-[#F0E6E0] bg-white px-4 py-5 text-sm font-semibold text-[#4A3728] shadow-sm transition hover:border-[#E8D4DC] hover:bg-[#FFF8F5]"
     >
-      <Icon className="h-5 w-5 text-[#C45B7A]" aria-hidden />
+      <Icon className="h-5 w-5 text-[var(--painel-accent)]" aria-hidden />
       {label}
     </Link>
   );

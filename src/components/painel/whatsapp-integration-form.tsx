@@ -12,6 +12,7 @@ import {
   SheetHeader,
   SheetPrimary,
 } from "@/components/ui/sheet";
+import { Field } from "@/components/ui/input";
 
 export function WhatsAppIntegrationForm({
   whatsapp,
@@ -80,27 +81,23 @@ export function WhatsAppIntegrationForm({
           <SheetHeader title="WhatsApp" />
           <SheetForm onSubmit={onSubmit}>
             <SheetBody className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label className="label">Número conectado</label>
-                <input
-                  className="input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                />
-                <p className="mt-1 text-[11px] text-cocoa-soft/50">
-                  Status: {status}
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="label">Mensagem automática</label>
-                <textarea
-                  className="input min-h-20"
-                  value={msg}
-                  onChange={(e) => setMsg(e.target.value)}
-                  placeholder="Olá! Vi sua vitrine e quero fazer um pedido."
-                />
-              </div>
+              <Field
+                label="Número conectado"
+                className="sm:col-span-2"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                hint={`Status: ${status}`}
+              />
+              <Field
+                as="textarea"
+                label="Mensagem automática"
+                className="sm:col-span-2"
+                controlClassName="min-h-20"
+                value={msg}
+                onChange={(e) => setMsg(e.target.value)}
+                placeholder="Olá! Vi sua vitrine e quero fazer um pedido."
+              />
               {feedback ? (
                 <p className="text-sm text-cocoa-soft/60 sm:col-span-2">
                   {feedback}

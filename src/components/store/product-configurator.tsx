@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Minus, Plus } from "lucide-react";
 import { useCart } from "@/components/cart/cart-context";
+import { Field, Input, Label } from "@/components/ui/input";
 import { formatBRL, isQuoteFlow, PRODUCT_TYPE_LABELS } from "@/lib/utils";
 import { priceLabel } from "@/components/store/product-card";
 import type { PriceMode, ProductType } from "@/lib/enums";
@@ -286,7 +287,7 @@ export function ProductConfigurator({
 
       {product.optionGroups.map((g) => (
         <div key={g.id}>
-          <p className="label">{g.name}</p>
+          <Label>{g.name}</Label>
           <div className="flex flex-wrap gap-2">
             {g.options.map((o) => {
               const active = selected[g.id] === o.id;
@@ -314,7 +315,7 @@ export function ProductConfigurator({
 
       {product.addons.length > 0 && (
         <div>
-          <p className="label">Adicionais</p>
+          <Label>Adicionais</Label>
           <div className="space-y-2">
             {product.addons.map((a) => (
               <div
@@ -382,26 +383,24 @@ export function ProductConfigurator({
             </p>
           )}
           {product.productType === "CAKE" && (
-            <div>
-              <label className="label">Tema / decoração</label>
-              <input
-                className="input"
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                placeholder="Ex: floral, personagem, casamento"
-              />
-            </div>
+            <Field
+              label="Tema / decoração"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              placeholder="Ex: floral, personagem, casamento"
+            />
           )}
           <div>
-            <label className="label">Data do evento / retirada</label>
+            <Label htmlFor="product-event-date">Data do evento / retirada</Label>
             <div className="relative">
               <CalendarDays
                 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-rosewood/70"
                 aria-hidden
               />
-              <input
+              <Input
+                id="product-event-date"
                 type="date"
-                className="input !pl-10"
+                className="!pl-10"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
               />
@@ -412,29 +411,25 @@ export function ProductConfigurator({
             </p>
           </div>
           {product.productType === "PARTY_KIT" && (
-            <div>
-              <label className="label">Quantidade de convidados</label>
-              <input
-                type="number"
-                min={1}
-                className="input"
-                value={guests}
-                onChange={(e) => setGuests(e.target.value)}
-              />
-            </div>
-          )}
-          <div>
-            <label className="label">Referência / observações</label>
-            <textarea
-              className="input min-h-[5.5rem] resize-y"
-              value={referenceNote || notes}
-              onChange={(e) => {
-                setReferenceNote(e.target.value);
-                setNotes(e.target.value);
-              }}
-              placeholder="Descreva a referência ou detalhes que ajudem no orçamento"
+            <Field
+              label="Quantidade de convidados"
+              type="number"
+              min={1}
+              value={guests}
+              onChange={(e) => setGuests(e.target.value)}
             />
-          </div>
+          )}
+          <Field
+            as="textarea"
+            label="Referência / observações"
+            controlClassName="min-h-[5.5rem] resize-y"
+            value={referenceNote || notes}
+            onChange={(e) => {
+              setReferenceNote(e.target.value);
+              setNotes(e.target.value);
+            }}
+            placeholder="Descreva a referência ou detalhes que ajudem no orçamento"
+          />
         </div>
       )}
 
@@ -446,33 +441,24 @@ export function ProductConfigurator({
               : "space-y-5"
           }
         >
-          <div>
-            <label className="label">Empresa</label>
-            <input
-              className="input"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="label">Quantidade aproximada</label>
-            <input
-              type="number"
-              min={1}
-              className="input"
-              value={qty}
-              onChange={(e) => setQty(Number(e.target.value) || 1)}
-            />
-          </div>
-          <div>
-            <label className="label">Prazo desejado</label>
-            <input
-              type="date"
-              className="input"
-              value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-            />
-          </div>
+          <Field
+            label="Empresa"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+          />
+          <Field
+            label="Quantidade aproximada"
+            type="number"
+            min={1}
+            value={qty}
+            onChange={(e) => setQty(Number(e.target.value) || 1)}
+          />
+          <Field
+            label="Prazo desejado"
+            type="date"
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
+          />
           <label className="flex items-center gap-2.5 text-sm text-cocoa">
             <input
               type="checkbox"
@@ -482,21 +468,20 @@ export function ProductConfigurator({
             />
             Preciso de nota fiscal
           </label>
-          <div>
-            <label className="label">Personalização / logo</label>
-            <textarea
-              className="input min-h-[5.5rem] resize-y"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Descreva branding, cores, embalagem..."
-            />
-          </div>
+          <Field
+            as="textarea"
+            label="Personalização / logo"
+            controlClassName="min-h-[5.5rem] resize-y"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Descreva branding, cores, embalagem..."
+          />
         </div>
       )}
 
       {!quote && product.productType === "READY" && (
         <div>
-          <p className="label">Quantidade</p>
+          <Label>Quantidade</Label>
           <div className="inline-flex items-center gap-1 rounded-xl border border-cocoa/10 bg-sand/40 p-1">
             <button
               type="button"

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ImagePlus, Link2, Loader2, Trash2, Upload } from "lucide-react";
+import { Input, Label, Textarea } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 
 async function uploadFile(file: File): Promise<string> {
@@ -24,16 +25,21 @@ export function ImageField({
   onChange,
   hint,
   className,
+  variant = "compact",
+  required,
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
   hint?: string;
   className?: string;
+  variant?: "compact" | "dropzone";
+  required?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const [showUrl, setShowUrl] = useState(Boolean(value && !value.startsWith("/uploads/")));
 
   async function onPick(files: FileList | null) {
@@ -53,10 +59,100 @@ export function ImageField({
     }
   }
 
+  if (variant === "dropzone") {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <Label>
+          {label}
+          {required ? (
+            <span className="text-berry-deep" aria-hidden> *</span>
+          ) : null}
+        </Label>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="sr-only"
+          onChange={(e) => onPick(e.target.files)}
+        />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            onPick(e.dataTransfer.files);
+          }}
+          className={cn(
+            "flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-10 text-center transition",
+            value
+              ? "border-[#CED0D4] bg-[#FAFAFA]"
+              : dragOver
+                ? "border-cocoa/40 bg-[#F7F5F3]"
+                : "border-[#E8E2DE] bg-[#FAFAFA] hover:border-[#CED0D4]",
+          )}
+        >
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={value}
+              alt=""
+              className="max-h-40 w-full rounded-lg object-contain"
+            />
+          ) : (
+            <>
+              <ImagePlus className="h-10 w-10 text-[#B0AAA6]" aria-hidden />
+              <p className="text-sm font-medium text-cocoa">
+                {uploading
+                  ? "Enviando…"
+                  : "Arraste a imagem ou clique para enviar"}
+              </p>
+              <p className="text-xs text-[#8C8682]">
+                {hint ?? "JPG, PNG ou WebP · até 5 MB"}
+              </p>
+            </>
+          )}
+        </button>
+        {value ? (
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              className="text-xs font-semibold text-[#65676B] hover:underline"
+              onClick={() => inputRef.current?.click()}
+            >
+              Trocar imagem
+            </button>
+            <button
+              type="button"
+              className="text-xs font-semibold text-berry-deep hover:underline"
+              onClick={() => onChange("")}
+            >
+              Remover
+            </button>
+          </div>
+        ) : null}
+        {error ? (
+          <p className="text-xs font-medium text-warning">{error}</p>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between gap-2">
-        <label className="label !mb-0">{label}</label>
+        <Label className="!mb-0">
+          {label}
+          {required ? (
+            <span className="text-berry-deep" aria-hidden> *</span>
+          ) : null}
+        </Label>
         {value ? (
           <button
             type="button"
@@ -124,8 +220,8 @@ export function ImageField({
       </div>
 
       {showUrl ? (
-        <input
-          className="input font-mono text-sm"
+        <Input
+          className="font-mono text-sm"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://… ou /uploads/…"
@@ -178,7 +274,7 @@ export function GalleryField({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="label !mb-0">{label}</label>
+        <Label className="!mb-0">{label}</Label>
         <button
           type="button"
           className="btn-secondary inline-flex items-center gap-1.5 !py-1.5 text-xs"
@@ -224,8 +320,8 @@ export function GalleryField({
         </ul>
       ) : null}
 
-      <textarea
-        className="input min-h-20 font-mono text-sm"
+      <Textarea
+        className="min-h-20 font-mono text-sm"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Ou cole uma URL por linha"

@@ -16,8 +16,8 @@ import { cn } from "@/lib/cn";
 import { NAV_SECTIONS, isNavActive } from "@/lib/painel-nav";
 import { DoceLinkMark } from "@/components/painel/doce-link-mark";
 
-const SIDEBAR_BG = "bg-[#2A2522]";
-const SIDEBAR_BORDER = "border-[#3D3632]";
+const SIDEBAR_BG = "bg-[var(--painel-brand)]";
+const SIDEBAR_BORDER = "border-white/10";
 const BRAND_ROW = cn(
   "flex shrink-0 items-center border-b px-4 py-4",
   SIDEBAR_BORDER,
@@ -45,8 +45,8 @@ export function PainelSidebar({
         className="flex h-9 min-w-0 items-center gap-2.5"
         aria-label="Doce Link — início do painel"
       >
-        <DoceLinkMark className="h-9 w-9" />
-        <span className="truncate text-[17px] font-semibold tracking-tight text-[#F5EDE8]">
+        <DoceLinkMark variant="sidebar" className="h-9 w-9" />
+        <span className="truncate text-[17px] font-semibold tracking-tight text-white">
           Doce Link
         </span>
       </Link>
@@ -70,14 +70,14 @@ export function PainelSidebar({
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition",
                   active
-                    ? "bg-[#C45B7A]/20 text-[#FCE4EC] ring-1 ring-[#C45B7A]/35"
-                    : "text-[#B8AEA8] hover:bg-white/5 hover:text-[#F5EDE8]",
+                    ? "bg-[var(--painel-brand-mid)] text-white"
+                    : "text-[var(--painel-sidebar-muted)] hover:bg-white/8 hover:text-white",
                 )}
               >
                 <Icon
                   className={cn(
                     "h-[18px] w-[18px] shrink-0",
-                    active ? "text-[#F4A9BC]" : "opacity-80",
+                    active ? "text-white" : "opacity-90",
                   )}
                   strokeWidth={1.75}
                   aria-hidden
@@ -117,14 +117,14 @@ export function PainelSidebar({
         )}
       >
         <div className="flex items-center gap-2">
-          <DoceLinkMark className="h-8 w-8" />
-          <p className="min-w-0 truncate text-sm font-semibold text-[#F5EDE8]">
+          <DoceLinkMark variant="sidebar" className="h-8 w-8" />
+          <p className="min-w-0 truncate text-sm font-semibold text-white">
             {storeName}
           </p>
         </div>
         <button
           type="button"
-          className="rounded-xl border border-[#4A4340] bg-[#332E2B] p-2 text-[#F5EDE8]"
+          className="rounded-xl border border-white/15 bg-[var(--painel-brand-mid)] p-2 text-white"
           onClick={() => setOpen(true)}
           aria-label="Abrir menu"
         >
@@ -142,7 +142,7 @@ export function PainelSidebar({
           >
             <button
               type="button"
-              className="absolute inset-0 bg-[#1A1715]/60"
+              className="absolute inset-0 bg-[#0a1f1b]/60"
               aria-label="Fechar"
               onClick={() => setOpen(false)}
             />
@@ -163,15 +163,15 @@ export function PainelSidebar({
                   onClick={() => setOpen(false)}
                   className="flex h-9 min-w-0 items-center gap-2.5"
                 >
-                  <DoceLinkMark className="h-9 w-9" />
-                  <span className="truncate text-[17px] font-semibold text-[#F5EDE8]">
+                  <DoceLinkMark variant="sidebar" className="h-9 w-9" />
+                  <span className="truncate text-[17px] font-semibold text-white">
                     Doce Link
                   </span>
                 </Link>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl p-2 text-[#B8AEA8] hover:bg-white/5"
+                  className="rounded-xl p-2 text-[var(--painel-sidebar-muted)] hover:bg-white/8"
                   aria-label="Fechar"
                 >
                   <X className="h-5 w-5" />
@@ -211,7 +211,7 @@ export function PainelSidebar({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex flex-col items-center gap-1 py-2 text-[11px] font-medium text-[#B8AEA8]"
+          className="flex flex-col items-center gap-1 py-2 text-[11px] font-medium text-[var(--painel-sidebar-muted)]"
         >
           <MoreHorizontal className="h-5 w-5" />
           Mais
@@ -238,7 +238,7 @@ function MobileTab({
       href={href}
       className={cn(
         "flex flex-col items-center gap-1 py-2 text-[11px] font-medium",
-        active ? "text-[#F4A9BC]" : "text-[#B8AEA8]",
+        active ? "text-white" : "text-[var(--painel-sidebar-muted)]",
       )}
     >
       <Icon className="h-5 w-5" />

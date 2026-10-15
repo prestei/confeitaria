@@ -4,9 +4,15 @@ import { requireStoreSession } from "@/lib/tenant";
 import { Product } from "@/models/Product";
 import { Category } from "@/models/Category";
 import ProductsAdmin from "@/components/painel/products-admin";
+import { productCreateInitialFromSearch } from "@/lib/product-create-initial";
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ novo?: string; preco?: string; nome?: string }>;
+}) {
   const session = await requireStoreSession();
+  const sp = await searchParams;
   await connectDB();
 
   const [products, categories] = await Promise.all([
@@ -31,6 +37,8 @@ export default async function ProductsPage() {
   return (
     <ProductsAdmin
       initialProducts={JSON.parse(JSON.stringify(withCategory))}
+      startCreateOpen={sp.novo === "1"}
+      createInitial={productCreateInitialFromSearch(sp.nome, sp.preco)}
     />
   );
 }

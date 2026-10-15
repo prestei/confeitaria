@@ -285,7 +285,7 @@ function OrderCardContent({
         order.status === "IN_PRODUCTION" && `border-l-[3px] ${theme.accent}`,
         isNew && paidLooksReady && !awaitingOnlinePay && "border-[#F5D9A8]",
         awaitingOnlinePay && "border-[#F5D9A8]/80",
-        dragging && "shadow-lg ring-2 ring-[#2D2926]/10",
+        dragging && "shadow-lg ring-2 ring-[var(--painel-brand)]/10",
       )}
     >
       {onOpenDetail && (
@@ -697,7 +697,7 @@ function KanbanColumn({
       ref={setNodeRef}
       className={cn(
         "flex h-fit w-[320px] shrink-0 flex-col rounded-2xl bg-[#F4F6F8] p-2.5",
-        isOver && "ring-2 ring-[#2D2926]/15",
+        isOver && "ring-2 ring-[var(--painel-brand)]/15",
       )}
     >
       <div className="mb-2.5 flex shrink-0 items-center gap-2 px-1.5 py-1">

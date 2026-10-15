@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+} from "react";
 import {
   DndContext,
   closestCenter,
@@ -19,6 +26,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Plus, Power, Tags, Trash2 } from "lucide-react";
+import { Field, Label } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -39,6 +47,7 @@ import {
 import { RowActionsMenu } from "@/components/painel/row-actions-menu";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
+import { useClientMounted } from "@/lib/use-client-mounted";
 import {
   ALL_CATEGORY_DAYS,
   CATEGORY_DAY_LABELS,
@@ -101,6 +110,7 @@ export function CategoriesAdmin({
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(initialCategories.length === 0);
   const { toast } = useToast();
+  const dndMounted = useClientMounted();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -278,70 +288,55 @@ export function CategoriesAdmin({
           />
           <SheetForm onSubmit={save}>
             <SheetBody className="space-y-5">
-              <div>
-                <label className="label" htmlFor="category-name">
-                  Nome
-                </label>
-                <input
-                  id="category-name"
-                  className="input"
-                  placeholder="Ex.: Bolos personalizados"
-                  value={form.name}
+              <Field
+                label="Nome"
+                id="category-name"
+                placeholder="Ex.: Bolos personalizados"
+                value={form.name}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, name: e.target.value }))
+                }
+                required
+                autoFocus
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="Desconto (%)"
+                  id="category-discount"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  inputMode="decimal"
+                  value={form.discountPercent}
                   onChange={(e) =>
-                    setForm((p) => ({ ...p, name: e.target.value }))
+                    setForm((p) => ({
+                      ...p,
+                      discountPercent: e.target.value,
+                    }))
                   }
-                  required
-                  autoFocus
+                />
+                <Field
+                  label="Acréscimo (%)"
+                  id="category-surcharge"
+                  type="number"
+                  min={0}
+                  max={500}
+                  step={0.5}
+                  inputMode="decimal"
+                  value={form.surchargePercent}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      surchargePercent: e.target.value,
+                    }))
+                  }
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="label" htmlFor="category-discount">
-                    Desconto (%)
-                  </label>
-                  <input
-                    id="category-discount"
-                    className="input"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    inputMode="decimal"
-                    value={form.discountPercent}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        discountPercent: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="category-surcharge">
-                    Acréscimo (%)
-                  </label>
-                  <input
-                    id="category-surcharge"
-                    className="input"
-                    type="number"
-                    min={0}
-                    max={500}
-                    step={0.5}
-                    inputMode="decimal"
-                    value={form.surchargePercent}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        surchargePercent: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="label">Dias de exibição</label>
+                <Label>Dias de exibição</Label>
                 <div className="flex flex-wrap gap-1.5">
                   {CATEGORY_DAY_LABELS.map(({ key, short }) => {
                     const selected = form.displayDays.includes(key);
@@ -353,7 +348,7 @@ export function CategoriesAdmin({
                         className={cn(
                           "inline-flex size-10 shrink-0 items-center justify-center rounded-full border p-0 text-xs font-semibold transition",
                           selected
-                            ? "border-[#483129] bg-[#483129] text-white"
+                            ? "border-[var(--painel-brand)] bg-[var(--painel-brand)] text-white"
                             : "border-[#CED0D4] bg-white text-[#5C5652] hover:border-[#B0AAA6] hover:bg-[#F7F8FA]",
                         )}
                         aria-pressed={selected}
@@ -409,7 +404,7 @@ export function CategoriesAdmin({
             onClick: openCreate,
           }}
         />
-      ) : (
+      ) : dndMounted ? (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -430,6 +425,19 @@ export function CategoriesAdmin({
             </ul>
           </SortableContext>
         </DndContext>
+      ) : (
+        <ul className="overflow-hidden rounded-lg border border-[#E8E2DE] bg-white">
+          {categories.map((c, index) => (
+            <CategoryRow
+              key={c.id}
+              category={c}
+              index={index}
+              onEdit={() => openEdit(c)}
+              onToggle={() => patch({ id: c.id, active: !c.active })}
+              onRemove={() => remove(c.id)}
+            />
+          ))}
+        </ul>
       )}
     </PageShell>
   );
@@ -457,31 +465,70 @@ function SortableCategoryRow({
     isDragging,
   } = useSortable({ id: category.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  return (
+    <CategoryRow
+      category={category}
+      index={index}
+      onEdit={onEdit}
+      onToggle={onToggle}
+      onRemove={onRemove}
+      sortable={{
+        setNodeRef,
+        style: {
+          transform: CSS.Transform.toString(transform),
+          transition,
+        },
+        isDragging,
+        handleProps: { ...attributes, ...listeners },
+      }}
+    />
+  );
+}
 
+function CategoryRow({
+  category,
+  index,
+  onEdit,
+  onToggle,
+  onRemove,
+  sortable,
+}: {
+  category: Category;
+  index: number;
+  onEdit: () => void;
+  onToggle: () => void;
+  onRemove: () => void;
+  sortable?: {
+    setNodeRef: (node: HTMLElement | null) => void;
+    style: CSSProperties;
+    isDragging: boolean;
+    handleProps: ButtonHTMLAttributes<HTMLButtonElement>;
+  };
+}) {
   const count = category._count?.products ?? 0;
   const discount = category.discountPercent ?? 0;
   const surcharge = category.surchargePercent ?? 0;
 
   return (
     <li
-      ref={setNodeRef}
-      style={style}
+      ref={sortable?.setNodeRef}
+      style={sortable?.style}
       className={cn(
         "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#E8E2DE] px-3 py-3 last:border-b-0 sm:gap-4 sm:px-4",
-        isDragging && "relative z-10 bg-[#F7F8FA] shadow-md ring-1 ring-[#CED0D4]",
+        sortable?.isDragging &&
+          "relative z-10 bg-[#F7F8FA] shadow-md ring-1 ring-[#CED0D4]",
         !category.active && "opacity-70",
       )}
     >
       <button
         type="button"
-        className="inline-flex h-9 w-9 shrink-0 touch-none items-center justify-center rounded-md text-[#B0AAA6] hover:bg-[#F0F2F5] hover:text-cocoa"
+        disabled={!sortable}
+        className={cn(
+          "inline-flex h-9 w-9 shrink-0 touch-none items-center justify-center rounded-md text-[#B0AAA6] hover:bg-[#F0F2F5] hover:text-cocoa",
+          !sortable && "cursor-default opacity-30 hover:bg-transparent hover:text-[#B0AAA6]",
+        )}
         aria-label={`Arrastar ${category.name}`}
-        {...attributes}
-        {...listeners}
+        {...(sortable?.handleProps ?? {})}
       >
         <GripVertical className="h-4 w-4" />
       </button>
@@ -491,7 +538,7 @@ function SortableCategoryRow({
         className="flex min-w-0 items-center gap-3 text-left"
         onClick={onEdit}
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#F3EEE8] text-[#483129]">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#E8F0EE] text-[var(--painel-brand)]">
           <Tags className="h-4 w-4" aria-hidden />
         </span>
         <div className="min-w-0">

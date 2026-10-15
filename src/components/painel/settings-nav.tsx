@@ -24,7 +24,7 @@ export function SettingsSubnav() {
             className={cn(
               "inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition",
               active
-                ? "bg-[#2D2926] text-white"
+                ? "bg-[var(--painel-brand)] text-white"
                 : "border border-[#CED0D4] bg-white text-[#65676B] hover:bg-[#F0F2F5] hover:text-cocoa",
             )}
           >

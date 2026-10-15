@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
+import { Field } from "@/components/ui/input";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -58,34 +59,24 @@ function ResetPasswordForm() {
 
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
-      <div>
-        <label className="label" htmlFor="password">
-          Nova senha
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          minLength={6}
-          className="input"
-          autoComplete="new-password"
-        />
-      </div>
-      <div>
-        <label className="label" htmlFor="confirm">
-          Confirmar senha
-        </label>
-        <input
-          id="confirm"
-          name="confirm"
-          type="password"
-          required
-          minLength={6}
-          className="input"
-          autoComplete="new-password"
-        />
-      </div>
+      <Field
+        label="Nova senha"
+        id="password"
+        name="password"
+        type="password"
+        required
+        minLength={6}
+        autoComplete="new-password"
+      />
+      <Field
+        label="Confirmar senha"
+        id="confirm"
+        name="confirm"
+        type="password"
+        required
+        minLength={6}
+        autoComplete="new-password"
+      />
       {error && <p className="text-sm text-berry-deep">{error}</p>}
       <button type="submit" className="btn-primary w-full" disabled={loading}>
         {loading ? "Salvando..." : "Redefinir senha"}

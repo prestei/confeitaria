@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { Field } from "@/components/ui/input";
 import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
 
 export type VitrineStore = {
@@ -131,88 +132,75 @@ export function VitrineEditor({
 
         {tab === "identity" ? (
           <div className="grid gap-4 rounded-2xl border border-cocoa/8 bg-white p-5 sm:grid-cols-2">
-            <Field label="Nome da marca">
-              <input
-                className="input"
-                value={form.name}
-                onChange={(e) => set("name", e.target.value)}
-                required
-              />
-            </Field>
-            <Field label="WhatsApp">
-              <input
-                className="input"
-                value={form.whatsapp}
-                onChange={(e) => set("whatsapp", e.target.value)}
-                required
-              />
-            </Field>
-            <Field label="Instagram" className="sm:col-span-2">
-              <input
-                className="input"
-                placeholder="@suamarca"
-                value={form.instagram || ""}
-                onChange={(e) => set("instagram", e.target.value)}
-              />
-            </Field>
-            <Field label="Tagline" className="sm:col-span-2">
-              <input
-                className="input"
-                value={form.tagline || ""}
-                onChange={(e) => set("tagline", e.target.value)}
-              />
-            </Field>
-            <Field label="Descrição" className="sm:col-span-2">
-              <textarea
-                className="input min-h-24"
-                value={form.description || ""}
-                onChange={(e) => set("description", e.target.value)}
-              />
-            </Field>
-            <Field label="URL do logo">
-              <input
-                className="input"
-                value={form.logoUrl || ""}
-                onChange={(e) => set("logoUrl", e.target.value)}
-              />
-            </Field>
-            <Field label="URL da capa">
-              <input
-                className="input"
-                value={form.coverUrl || ""}
-                onChange={(e) => set("coverUrl", e.target.value)}
-              />
-            </Field>
-            <Field label="Endereço">
-              <input
-                className="input"
-                value={form.address || ""}
-                onChange={(e) => set("address", e.target.value)}
-              />
-            </Field>
-            <Field label="Cidade">
-              <input
-                className="input"
-                value={form.city || ""}
-                onChange={(e) => set("city", e.target.value)}
-              />
-            </Field>
-            <Field label="Horário de atendimento" className="sm:col-span-2">
-              <input
-                className="input"
-                placeholder="Seg–Sex 9h–18h · Sáb 9h–13h"
-                value={form.businessHours || ""}
-                onChange={(e) => set("businessHours", e.target.value)}
-              />
-            </Field>
-            <Field label="Mensagem automática do WhatsApp" className="sm:col-span-2">
-              <textarea
-                className="input min-h-20"
-                placeholder="Olá! Vi sua vitrine e gostaria de fazer um pedido."
-                value={form.whatsappMessage || ""}
-                onChange={(e) => set("whatsappMessage", e.target.value)}
-              />
-            </Field>
+            <Field
+              label="Nome da marca"
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              required
+            />
+            <Field
+              label="WhatsApp"
+              value={form.whatsapp}
+              onChange={(e) => set("whatsapp", e.target.value)}
+              required
+            />
+            <Field
+              label="Instagram"
+              className="sm:col-span-2"
+              placeholder="@suamarca"
+              value={form.instagram || ""}
+              onChange={(e) => set("instagram", e.target.value)}
+            />
+            <Field
+              label="Tagline"
+              className="sm:col-span-2"
+              value={form.tagline || ""}
+              onChange={(e) => set("tagline", e.target.value)}
+            />
+            <Field
+              as="textarea"
+              label="Descrição"
+              className="sm:col-span-2"
+              controlClassName="min-h-24"
+              value={form.description || ""}
+              onChange={(e) => set("description", e.target.value)}
+            />
+            <Field
+              label="URL do logo"
+              value={form.logoUrl || ""}
+              onChange={(e) => set("logoUrl", e.target.value)}
+            />
+            <Field
+              label="URL da capa"
+              value={form.coverUrl || ""}
+              onChange={(e) => set("coverUrl", e.target.value)}
+            />
+            <Field
+              label="Endereço"
+              value={form.address || ""}
+              onChange={(e) => set("address", e.target.value)}
+            />
+            <Field
+              label="Cidade"
+              value={form.city || ""}
+              onChange={(e) => set("city", e.target.value)}
+            />
+            <Field
+              label="Horário de atendimento"
+              className="sm:col-span-2"
+              placeholder="Seg–Sex 9h–18h · Sáb 9h–13h"
+              value={form.businessHours || ""}
+              onChange={(e) => set("businessHours", e.target.value)}
+            />
+            <Field
+              as="textarea"
+              label="Mensagem automática do WhatsApp"
+              className="sm:col-span-2"
+              controlClassName="min-h-20"
+              placeholder="Olá! Vi sua vitrine e gostaria de fazer um pedido."
+              value={form.whatsappMessage || ""}
+              onChange={(e) => set("whatsappMessage", e.target.value)}
+            />
             <label className="flex items-center gap-2 text-sm font-medium text-cocoa sm:col-span-2">
               <input
                 type="checkbox"
@@ -232,54 +220,50 @@ export function VitrineEditor({
           </div>
         ) : (
           <div className="grid gap-4 rounded-2xl border border-cocoa/8 bg-white p-5 sm:grid-cols-2">
-            <Field label="Cor principal">
-              <input
-                type="color"
-                className="h-11 w-full cursor-pointer rounded-xl border border-cocoa/10 bg-white p-1"
-                value={form.accentColor}
-                onChange={(e) => set("accentColor", e.target.value)}
-              />
+            <Field
+              label="Cor principal"
+              type="color"
+              controlClassName="h-11 w-full cursor-pointer rounded-xl border border-cocoa/10 bg-white p-1"
+              value={form.accentColor}
+              onChange={(e) => set("accentColor", e.target.value)}
+            />
+            <Field
+              label="Cor secundária"
+              type="color"
+              controlClassName="h-11 w-full cursor-pointer rounded-xl border border-cocoa/10 bg-white p-1"
+              value={form.secondaryColor}
+              onChange={(e) => set("secondaryColor", e.target.value)}
+            />
+            <Field
+              as="select"
+              label="Tipografia"
+              value={form.typography}
+              onChange={(e) => set("typography", e.target.value)}
+            >
+              <option value="elegant">Elegante</option>
+              <option value="sans">Moderna (sans)</option>
+              <option value="soft">Acolhedora</option>
             </Field>
-            <Field label="Cor secundária">
-              <input
-                type="color"
-                className="h-11 w-full cursor-pointer rounded-xl border border-cocoa/10 bg-white p-1"
-                value={form.secondaryColor}
-                onChange={(e) => set("secondaryColor", e.target.value)}
-              />
+            <Field
+              as="select"
+              label="Estilo dos cards"
+              value={form.cardStyle}
+              onChange={(e) => set("cardStyle", e.target.value)}
+            >
+              <option value="soft">Suave</option>
+              <option value="sharp">Reto</option>
+              <option value="minimal">Minimal</option>
             </Field>
-            <Field label="Tipografia">
-              <select
-                className="input"
-                value={form.typography}
-                onChange={(e) => set("typography", e.target.value)}
-              >
-                <option value="elegant">Elegante</option>
-                <option value="sans">Moderna (sans)</option>
-                <option value="soft">Acolhedora</option>
-              </select>
-            </Field>
-            <Field label="Estilo dos cards">
-              <select
-                className="input"
-                value={form.cardStyle}
-                onChange={(e) => set("cardStyle", e.target.value)}
-              >
-                <option value="soft">Suave</option>
-                <option value="sharp">Reto</option>
-                <option value="minimal">Minimal</option>
-              </select>
-            </Field>
-            <Field label="Organização da página" className="sm:col-span-2">
-              <select
-                className="input"
-                value={form.pageLayout}
-                onChange={(e) => set("pageLayout", e.target.value)}
-              >
-                <option value="classic">Clássica — capa + destaques + lista</option>
-                <option value="catalog">Catálogo — categorias em evidência</option>
-                <option value="showcase">Vitrine — foco em imagens</option>
-              </select>
+            <Field
+              as="select"
+              label="Organização da página"
+              className="sm:col-span-2"
+              value={form.pageLayout}
+              onChange={(e) => set("pageLayout", e.target.value)}
+            >
+              <option value="classic">Clássica — capa + destaques + lista</option>
+              <option value="catalog">Catálogo — categorias em evidência</option>
+              <option value="showcase">Vitrine — foco em imagens</option>
             </Field>
           </div>
         )}
@@ -411,23 +395,6 @@ export function VitrineEditor({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-  className,
-}: {
-  label: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <label className="label">{label}</label>
-      {children}
     </div>
   );
 }

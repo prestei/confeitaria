@@ -14,6 +14,7 @@ import {
   SheetHeader,
   SheetPrimary,
 } from "@/components/ui/sheet";
+import { Field } from "@/components/ui/input";
 
 export function OrderDepositForm({
   orderId,
@@ -93,14 +94,11 @@ export function OrderDepositForm({
                   {formatBRL(totalCents)}
                 </span>
               </div>
-              <div>
-                <label className="label">Valor pago / sinal</label>
-                <input
-                  className="input"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                />
-              </div>
+              <Field
+                label="Valor pago / sinal"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+              />
               <div className="flex justify-between">
                 <span className="text-cocoa-soft/70">Saldo restante</span>
                 <span className="font-medium text-cocoa">

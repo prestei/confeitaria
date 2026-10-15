@@ -13,6 +13,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { SectionCard } from "@/components/painel/page-header";
+import { Field, Input, Label } from "@/components/ui/input";
 import { ImageField } from "@/components/painel/image-field";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
@@ -46,10 +47,6 @@ function FormFooter({
       </button>
     </div>
   );
-}
-
-function FieldHint({ children }: { children: React.ReactNode }) {
-  return <p className="mt-2 text-xs leading-relaxed text-[#8C8682]">{children}</p>;
 }
 
 function ToggleRow({
@@ -200,44 +197,32 @@ export function EstablishmentForm({
     <form onSubmit={onSubmit}>
       <SectionCard title="Dados da loja">
         <div className="grid gap-4 p-5 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="store-name">
-              Nome
-            </label>
-            <input
-              id="store-name"
-              name="name"
-              className="input"
-              defaultValue={store.name}
-              required
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="store-whatsapp">
-              WhatsApp
-            </label>
-            <input
-              id="store-whatsapp"
-              name="whatsapp"
-              className="input"
-              defaultValue={store.whatsapp}
-              required
-              placeholder="5511999999999"
-            />
-            <FieldHint>Com DDI e DDD, só números. Usado nos pedidos.</FieldHint>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="store-description">
-              Descrição
-            </label>
-            <textarea
-              id="store-description"
-              name="description"
-              className="input min-h-24"
-              defaultValue={store.description}
-              placeholder="Conte um pouco sobre a confeitaria…"
-            />
-          </div>
+          <Field
+            label="Nome"
+            id="store-name"
+            name="name"
+            defaultValue={store.name}
+            required
+          />
+          <Field
+            label="WhatsApp"
+            id="store-whatsapp"
+            name="whatsapp"
+            defaultValue={store.whatsapp}
+            required
+            placeholder="5511999999999"
+            hint="Com DDI e DDD, só números. Usado nos pedidos."
+          />
+          <Field
+            as="textarea"
+            label="Descrição"
+            id="store-description"
+            name="description"
+            className="sm:col-span-2"
+            controlClassName="min-h-24"
+            defaultValue={store.description}
+            placeholder="Conte um pouco sobre a confeitaria…"
+          />
           <div className="sm:col-span-2">
             <ImageField
               label="Logo"
@@ -251,34 +236,27 @@ export function EstablishmentForm({
       <SectionCard title="Endereço" className="mt-4">
         <div className="grid gap-4 p-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="label" htmlFor="store-address">
-              Endereço
-            </label>
+            <Label htmlFor="store-address">Endereço</Label>
             <div className="relative">
               <MapPin
                 className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#8C8682]"
                 aria-hidden
               />
-              <input
+              <Input
                 id="store-address"
                 name="address"
-                className="input pl-9"
+                className="pl-9"
                 defaultValue={store.address}
                 placeholder="Rua, número, bairro"
               />
             </div>
           </div>
-          <div>
-            <label className="label" htmlFor="store-city">
-              Cidade
-            </label>
-            <input
-              id="store-city"
-              name="city"
-              className="input"
-              defaultValue={store.city}
-            />
-          </div>
+          <Field
+            label="Cidade"
+            id="store-city"
+            name="city"
+            defaultValue={store.city}
+          />
         </div>
         <FormFooter saving={saving} label="Salvar estabelecimento" />
       </SectionCard>
@@ -337,7 +315,7 @@ export function HoursForm({ businessHours }: { businessHours: string }) {
               className={cn(
                 "rounded-md px-2.5 py-1 text-xs font-semibold transition",
                 mode === "week"
-                  ? "bg-[#2D2926] text-white"
+                  ? "bg-[var(--painel-brand)] text-white"
                   : "text-[#65676B] hover:bg-[#F0F2F5]",
               )}
             >
@@ -352,7 +330,7 @@ export function HoursForm({ businessHours }: { businessHours: string }) {
               className={cn(
                 "rounded-md px-2.5 py-1 text-xs font-semibold transition",
                 mode === "text"
-                  ? "bg-[#2D2926] text-white"
+                  ? "bg-[var(--painel-brand)] text-white"
                   : "text-[#65676B] hover:bg-[#F0F2F5]",
               )}
             >
@@ -426,21 +404,14 @@ export function HoursForm({ businessHours }: { businessHours: string }) {
               })}
             </div>
           ) : (
-            <div>
-              <label className="label" htmlFor="business-hours-text">
-                Horário de funcionamento
-              </label>
-              <input
-                id="business-hours-text"
-                className="input"
-                value={freeText}
-                onChange={(e) => setFreeText(e.target.value)}
-                placeholder="Ex.: Seg–Sex 9h–18h · Sáb 9h–13h"
-              />
-              <FieldHint>
-                Texto livre exibido na vitrine e no painel.
-              </FieldHint>
-            </div>
+            <Field
+              label="Horário de funcionamento"
+              id="business-hours-text"
+              value={freeText}
+              onChange={(e) => setFreeText(e.target.value)}
+              placeholder="Ex.: Seg–Sex 9h–18h · Sáb 9h–13h"
+              hint="Texto livre exibido na vitrine e no painel."
+            />
           )}
 
           {preview.trim() ? (
@@ -534,43 +505,32 @@ export function AttendanceForm({
 
       <SectionCard title="Detalhes">
         <div className="grid gap-4 p-5">
-          <div>
-            <label className="label" htmlFor="pickup-instructions">
-              Instruções de retirada
-            </label>
-            <textarea
-              id="pickup-instructions"
-              name="pickupInstructions"
-              className="input min-h-20"
-              defaultValue={store.pickupInstructions}
-              placeholder="Ex.: Retirar com 15 min de antecedência"
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="delivery-fee">
-              Taxa fixa de entrega (R$)
-            </label>
-            <input
-              id="delivery-fee"
-              name="deliveryFee"
-              className="input"
-              inputMode="decimal"
-              defaultValue={feeDefault}
-              placeholder="Deixe vazio se não houver taxa fixa"
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="delivery-instructions">
-              Regiões e orientações de entrega
-            </label>
-            <textarea
-              id="delivery-instructions"
-              name="deliveryInstructions"
-              className="input min-h-20"
-              defaultValue={store.deliveryInstructions}
-              placeholder="Ex.: Atendemos bairros X e Y"
-            />
-          </div>
+          <Field
+            as="textarea"
+            label="Instruções de retirada"
+            id="pickup-instructions"
+            name="pickupInstructions"
+            controlClassName="min-h-20"
+            defaultValue={store.pickupInstructions}
+            placeholder="Ex.: Retirar com 15 min de antecedência"
+          />
+          <Field
+            label="Taxa fixa de entrega (R$)"
+            id="delivery-fee"
+            name="deliveryFee"
+            inputMode="decimal"
+            defaultValue={feeDefault}
+            placeholder="Deixe vazio se não houver taxa fixa"
+          />
+          <Field
+            as="textarea"
+            label="Regiões e orientações de entrega"
+            id="delivery-instructions"
+            name="deliveryInstructions"
+            controlClassName="min-h-20"
+            defaultValue={store.deliveryInstructions}
+            placeholder="Ex.: Atendemos bairros X e Y"
+          />
         </div>
         <FormFooter saving={saving} label="Salvar atendimento" />
       </SectionCard>
@@ -639,47 +599,35 @@ export function SchedulingForm({
           />
         </div>
         <div className="grid gap-5 p-5 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="min-advance-days">
-              Antecedência mínima (dias)
-            </label>
-            <input
-              id="min-advance-days"
-              name="minAdvanceDays"
-              type="number"
-              min={0}
-              className="input"
-              defaultValue={store.minAdvanceDays}
-              disabled={!schedulingEnabled}
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="min-advance-hours">
-              Antecedência mínima (horas)
-            </label>
-            <input
-              id="min-advance-hours"
-              name="minAdvanceHours"
-              type="number"
-              min={0}
-              className="input"
-              defaultValue={store.minAdvanceHours}
-              disabled={!schedulingEnabled}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="production-note">
-              Orientações de prazo
-            </label>
-            <textarea
-              id="production-note"
-              name="productionNote"
-              className="input min-h-20"
-              defaultValue={store.productionNote}
-              placeholder="Ex.: Bolos decorados precisam de 3 dias de antecedência"
-              disabled={!schedulingEnabled}
-            />
-          </div>
+          <Field
+            label="Antecedência mínima (dias)"
+            id="min-advance-days"
+            name="minAdvanceDays"
+            type="number"
+            min={0}
+            defaultValue={store.minAdvanceDays}
+            disabled={!schedulingEnabled}
+          />
+          <Field
+            label="Antecedência mínima (horas)"
+            id="min-advance-hours"
+            name="minAdvanceHours"
+            type="number"
+            min={0}
+            defaultValue={store.minAdvanceHours}
+            disabled={!schedulingEnabled}
+          />
+          <Field
+            as="textarea"
+            label="Orientações de prazo"
+            id="production-note"
+            name="productionNote"
+            className="sm:col-span-2"
+            controlClassName="min-h-20"
+            defaultValue={store.productionNote}
+            placeholder="Ex.: Bolos decorados precisam de 3 dias de antecedência"
+            disabled={!schedulingEnabled}
+          />
         </div>
         <FormFooter saving={saving} label="Salvar agendamento" />
       </SectionCard>
@@ -727,54 +675,35 @@ export function AccountForm({
         }
       >
         <div className="grid gap-4 p-5 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="account-name">
-              Nome
-            </label>
-            <input
-              id="account-name"
-              name="name"
-              className="input"
-              defaultValue={user.name}
-              required
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="account-email">
-              E-mail
-            </label>
-            <input
-              id="account-email"
-              className="input bg-[#F0F2F5]/60"
-              value={user.email}
-              disabled
-            />
-            <FieldHint>O e-mail não pode ser alterado por aqui.</FieldHint>
-          </div>
-          <div>
-            <label className="label" htmlFor="account-phone">
-              Telefone
-            </label>
-            <input
-              id="account-phone"
-              name="phone"
-              className="input"
-              defaultValue={user.phone}
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="account-password">
-              Nova senha
-            </label>
-            <input
-              id="account-password"
-              name="password"
-              type="password"
-              className="input"
-              placeholder="Deixe em branco para manter"
-              minLength={6}
-            />
-          </div>
+          <Field
+            label="Nome"
+            id="account-name"
+            name="name"
+            defaultValue={user.name}
+            required
+          />
+          <Field
+            label="E-mail"
+            id="account-email"
+            controlClassName="bg-[#F0F2F5]/60"
+            value={user.email}
+            disabled
+            hint="O e-mail não pode ser alterado por aqui."
+          />
+          <Field
+            label="Telefone"
+            id="account-phone"
+            name="phone"
+            defaultValue={user.phone}
+          />
+          <Field
+            label="Nova senha"
+            id="account-password"
+            name="password"
+            type="password"
+            placeholder="Deixe em branco para manter"
+            minLength={6}
+          />
         </div>
         <FormFooter saving={saving} label="Salvar conta" />
       </SectionCard>

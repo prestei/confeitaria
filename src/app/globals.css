@@ -300,8 +300,19 @@ h3,
 }
 
 .painel-shell {
+  /* Paleta do painel (referência Doce Link) */
+  --painel-brand: #0f352e;
+  --painel-brand-mid: #1e4d45;
+  --painel-brand-hover: #164a40;
+  --painel-canvas: #f9fafb;
+  --painel-border: #e5e7eb;
+  --painel-muted: #6b7280;
+  --painel-sidebar-muted: #b8c4c1;
+  --painel-accent: #1e6b5c;
+
   font-family: var(--font-sora), system-ui, sans-serif;
-  background: #faf7f4;
+  background: var(--painel-canvas);
+  color: #111827;
 }
 
 .painel-shell h1,
@@ -311,6 +322,25 @@ h3,
   font-family: var(--font-sora), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+/* Sheets do painel são portaled — repetir tokens para botões/etapas. */
+.painel-fields {
+  --painel-brand: #0f352e;
+  --painel-brand-mid: #1e4d45;
+  --painel-brand-hover: #164a40;
+  --painel-canvas: #f9fafb;
+  --painel-border: #e5e7eb;
+  --painel-muted: #6b7280;
+  --painel-accent: #1e6b5c;
+}
+
+.painel-fields .btn-primary {
+  background: var(--painel-brand);
+}
+
+.painel-fields .btn-primary:hover {
+  background: var(--painel-brand-hover);
 }
 
 ::selection {
@@ -461,11 +491,11 @@ h3,
 }
 
 .painel-shell .btn-primary {
-  background: #2d2926;
+  background: var(--painel-brand);
 }
 
 .painel-shell .btn-primary:hover {
-  background: #3d3834;
+  background: var(--painel-brand-hover);
 }
 
 .painel-shell .btn-secondary {
@@ -497,19 +527,34 @@ h3,
   background: #f0f2f5;
 }
 
-/* Inputs do painel alinhados à altura padrão (h-9 = FilterChip / Button). */
-.painel-shell .input {
-  height: 2.25rem;
+/* Inputs do painel — compactos (lista + sheets portaled). */
+.painel-shell .input:not(textarea),
+.painel-fields .input:not(textarea) {
+  height: 2rem;
   padding-top: 0;
   padding-bottom: 0;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
   font-size: 0.875rem;
-  border-color: #ced0d4;
+  line-height: 1.25rem;
+  border-color: var(--painel-border);
   background: white;
 }
 
-.painel-shell .input:focus {
-  border-color: #d4c9c2;
-  box-shadow: 0 0 0 3px color-mix(in oklab, #d6715a 18%, transparent);
+.painel-shell textarea.input,
+.painel-fields textarea.input {
+  height: auto;
+  min-height: 5.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border-color: var(--painel-border);
+  background: white;
+}
+
+.painel-shell .input:focus,
+.painel-fields .input:focus {
+  border-color: color-mix(in oklab, var(--painel-brand) 35%, #d4c9c2);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--painel-brand) 14%, transparent);
 }
 
 .input {
@@ -517,7 +562,9 @@ h3,
   border-radius: var(--radius);
   border: 1px solid var(--hairline);
   background: var(--surface);
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
   color: var(--cocoa);
   outline: none;
   transition:
@@ -532,9 +579,10 @@ h3,
 
 .label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   font-size: 0.8125rem;
   font-weight: 600;
+  line-height: 1.25;
   color: var(--cocoa-soft);
 }
 
@@ -547,7 +595,25 @@ h3,
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklab, var(--rosewood) 30%, transparent) transparent;
+  scrollbar-color: color-mix(in oklab, var(--rosewood) 35%, #d0d0d0) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--rosewood) 28%, #c8c8c8);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--rosewood) 40%, #b0b0b0);
 }
 
 /* Editorial page shell */

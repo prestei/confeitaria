@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+} from "react";
 import {
   DndContext,
   closestCenter,
@@ -43,6 +51,11 @@ import {
   type RowActionItem,
 } from "@/components/painel/row-actions-menu";
 import { useToast } from "@/components/ui/toast";
+import { useClientMounted } from "@/lib/use-client-mounted";
+import {
+  ProductSheet,
+} from "@/components/painel/product-sheet";
+import type { ProductFormInitial } from "@/components/painel/product-form";
 
 type Category = { id: string; name: string; sortOrder?: number };
 type Product = {
@@ -76,15 +89,22 @@ const UNCATEGORIZED_KEY = "__none__";
 
 export default function ProductsAdminPage({
   initialProducts = [],
+  startCreateOpen = false,
+  createInitial,
 }: {
   initialProducts?: Product[];
+  startCreateOpen?: boolean;
+  createInitial?: ProductFormInitial;
 }) {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [createOpen, setCreateOpen] = useState(startCreateOpen);
   const [loading, setLoading] = useState(initialProducts.length === 0);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "featured" | "inactive">("all");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+  const dndMounted = useClientMounted();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -104,6 +124,16 @@ export default function ProductsAdminPage({
     else setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const onCreateOpenChange = useCallback(
+    (open: boolean) => {
+      setCreateOpen(open);
+      if (!open) router.replace("/painel/produtos");
+    },
+    [router],
+  );
+
+  const openCreate = useCallback(() => setCreateOpen(true), []);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -301,7 +331,7 @@ export default function ProductsAdminPage({
         title="Produtos"
         description="Agrupe por categoria e arraste para ordenar na vitrine."
         actions={
-          <PageAction href="/painel/produtos/novo">
+          <PageAction onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Novo produto
           </PageAction>
@@ -345,7 +375,7 @@ export default function ProductsAdminPage({
           icon={Package}
           title="Sua vitrine ainda não possui produtos"
           description="Adicione o primeiro produto para começar a receber pedidos."
-          action={{ label: "Adicionar primeiro produto", href: "/painel/produtos/novo" }}
+          action={{ label: "Adicionar primeiro produto", onClick: openCreate }}
         />
       ) : (
         <div className="space-y-3">
@@ -395,40 +425,60 @@ export default function ProductsAdminPage({
                 </div>
 
                 {open && (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={onDragEnd(group)}
-                  >
-                    <SortableContext
-                      items={ids}
-                      strategy={verticalListSortingStrategy}
+                  dndMounted ? (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={onDragEnd(group)}
                     >
-                      <ul className="divide-y divide-[#E8E2DE]">
-                        {group.products.map((p) => (
-                          <SortableProductItem
-                            key={p.id}
-                            product={p}
-                            actions={productActions(p)}
-                            disabled={!canReorder}
-                            onToggleActive={toggleActive}
-                          />
-                        ))}
-                      </ul>
-                    </SortableContext>
-                  </DndContext>
+                      <SortableContext
+                        items={ids}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <ul className="divide-y divide-[#E8E2DE]">
+                          {group.products.map((p) => (
+                            <SortableProductItem
+                              key={p.id}
+                              product={p}
+                              actions={productActions(p)}
+                              disabled={!canReorder}
+                              onToggleActive={toggleActive}
+                            />
+                          ))}
+                        </ul>
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    <ul className="divide-y divide-[#E8E2DE]">
+                      {group.products.map((p) => (
+                        <ProductRow
+                          key={p.id}
+                          product={p}
+                          actions={productActions(p)}
+                          reorderDisabled={!canReorder}
+                          onToggleActive={toggleActive}
+                        />
+                      ))}
+                    </ul>
+                  )
                 )}
               </div>
             );
           })}
         </div>
       )}
+      <ProductSheet
+        open={createOpen}
+        onOpenChange={onCreateOpenChange}
+        initial={createInitial}
+        onSaved={() => void load()}
+      />
     </PageShell>
   );
 }
 
 function SortableProductItem({
-  product: p,
+  product,
   actions,
   disabled = false,
   onToggleActive,
@@ -438,10 +488,6 @@ function SortableProductItem({
   disabled?: boolean;
   onToggleActive: (id: string, active: boolean) => void;
 }) {
-  const statusLabel = !p.active
-    ? "Inativo"
-    : AVAILABILITY_LABELS[p.availability];
-
   const {
     attributes,
     listeners,
@@ -449,33 +495,71 @@ function SortableProductItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: p.id, disabled });
+  } = useSortable({ id: product.id, disabled });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  return (
+    <ProductRow
+      product={product}
+      actions={actions}
+      reorderDisabled={disabled}
+      onToggleActive={onToggleActive}
+      sortable={{
+        setNodeRef,
+        style: {
+          transform: CSS.Transform.toString(transform),
+          transition,
+        },
+        isDragging,
+        handleProps: { ...attributes, ...listeners },
+      }}
+    />
+  );
+}
+
+function ProductRow({
+  product: p,
+  actions,
+  reorderDisabled = false,
+  onToggleActive,
+  sortable,
+}: {
+  product: Product;
+  actions: RowActionItem[];
+  reorderDisabled?: boolean;
+  onToggleActive: (id: string, active: boolean) => void;
+  sortable?: {
+    setNodeRef: (node: HTMLElement | null) => void;
+    style: CSSProperties;
+    isDragging: boolean;
+    handleProps: ButtonHTMLAttributes<HTMLButtonElement>;
   };
+}) {
+  const statusLabel = !p.active
+    ? "Inativo"
+    : AVAILABILITY_LABELS[p.availability];
+
+  const dragDisabled = reorderDisabled || !sortable;
 
   return (
     <li
-      ref={setNodeRef}
-      style={style}
+      ref={sortable?.setNodeRef}
+      style={sortable?.style}
       className={cn(
         "grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-2 px-2 py-3 md:grid-cols-[2.5rem_minmax(0,1.8fr)_1fr_0.8fr_1.1fr_3rem] md:gap-2 md:px-4",
         "hover:bg-fog/30",
-        isDragging && "relative z-10 bg-[#F7F8FA] shadow-md",
+        sortable?.isDragging && "relative z-10 bg-[#F7F8FA] shadow-md",
       )}
     >
       <button
         type="button"
-        disabled={disabled}
+        disabled={dragDisabled}
         className={cn(
           "inline-flex h-8 w-8 touch-none items-center justify-center rounded-md text-[#B0AAA6] hover:bg-[#F0F2F5] hover:text-cocoa",
-          disabled && "cursor-default opacity-30 hover:bg-transparent hover:text-[#B0AAA6]",
+          dragDisabled &&
+            "cursor-default opacity-30 hover:bg-transparent hover:text-[#B0AAA6]",
         )}
         aria-label={`Arrastar ${p.name}`}
-        {...attributes}
-        {...listeners}
+        {...(sortable?.handleProps ?? {})}
       >
         <GripVertical className="h-4 w-4" />
       </button>

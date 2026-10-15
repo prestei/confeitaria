@@ -13,6 +13,7 @@ import {
   SheetHeader,
   SheetPrimary,
 } from "@/components/ui/sheet";
+import { Field } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 
 export function BlockDateForm() {
@@ -60,26 +61,20 @@ export function BlockDateForm() {
           <SheetHeader title="Bloquear data" />
           <SheetForm onSubmit={onSubmit}>
             <SheetBody className="space-y-4">
-              <div>
-                <label className="label">Data</label>
-                <input
-                  type="date"
-                  className="input"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="label">Motivo</label>
-                <input
-                  className="input"
-                  placeholder="Ex.: Não aceitar encomendas"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </div>
+              <Field
+                label="Data"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                autoFocus
+              />
+              <Field
+                label="Motivo"
+                placeholder="Ex.: Não aceitar encomendas"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
             </SheetBody>
             <SheetFooter>
               <SheetCancel />

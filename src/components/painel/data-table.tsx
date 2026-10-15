@@ -173,7 +173,7 @@ export function DataTablePagination({
               className={cn(
                 "inline-flex h-8 w-8 items-center justify-center rounded text-[13px] font-semibold transition",
                 p === page
-                  ? "bg-[#F3D5C8] text-[#3D2B1F]"
+                  ? "bg-[#E8F0EE] text-[var(--painel-brand)]"
                   : "text-[#8C8682] hover:bg-[#F5F0ED]",
               )}
             >
@@ -294,7 +294,7 @@ export function TableAvatar({
   return (
     <span
       className={cn(
-        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F3D5C8] text-[11px] font-bold uppercase tracking-wide text-[#3D2B1F]",
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E8F0EE] text-[11px] font-bold uppercase tracking-wide text-[var(--painel-brand)]",
         className,
       )}
       aria-hidden
