@@ -157,15 +157,18 @@ export function SheetContent({
           </motion.aside>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 
 export function SheetHeader({
   title,
+  description,
   className,
 }: {
   title: string;
+  description?: string;
   className?: string;
 }) {
   const { titleId } = useSheet();
@@ -180,6 +183,11 @@ export function SheetHeader({
       <PageTitle as="h2" id={titleId}>
         {title}
       </PageTitle>
+      {description ? (
+        <p className="mt-1.5 text-sm leading-snug text-[#8C8682]">
+          {description}
+        </p>
+      ) : null}
     </div>
   );
 }

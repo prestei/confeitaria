@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   DndContext,
   closestCenter,
@@ -18,7 +18,16 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Plus, Power, Tags, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  GripVertical,
+  Percent,
+  Pencil,
+  Plus,
+  Power,
+  Tags,
+  Trash2,
+} from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -42,8 +51,51 @@ import { cn } from "@/lib/cn";
 import {
   ALL_CATEGORY_DAYS,
   CATEGORY_DAY_LABELS,
+  CATEGORY_MENU_EMOJIS,
+  DEFAULT_CATEGORY_EMOJI,
   type CategoryDayKey,
 } from "@/lib/category";
+
+const fieldLabel =
+  "mb-1.5 block text-[13px] font-semibold text-[#5C5652]";
+const fieldInput =
+  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[#2D2926]/40 focus:ring-2 focus:ring-[#2D2926]/10";
+
+function CategoryFormSection({
+  icon: Icon,
+  title,
+  description,
+  children,
+  action,
+}: {
+  icon?: typeof Percent;
+  title: string;
+  description: string;
+  children: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-[#E8E2DE] bg-white p-4">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 gap-3">
+          {Icon ? (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3EEE8] text-[#483129]">
+              <Icon className="h-4 w-4" aria-hidden />
+            </span>
+          ) : null}
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-cocoa">{title}</h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-[#8C8682]">
+              {description}
+            </p>
+          </div>
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 type Category = {
   id: string;
@@ -59,6 +111,7 @@ type Category = {
 
 type FormState = {
   name: string;
+  emoji: string;
   active: boolean;
   discountPercent: string;
   surchargePercent: string;
@@ -67,6 +120,7 @@ type FormState = {
 
 const emptyForm = (): FormState => ({
   name: "",
+  emoji: DEFAULT_CATEGORY_EMOJI,
   active: true,
   discountPercent: "0",
   surchargePercent: "0",
@@ -76,6 +130,7 @@ const emptyForm = (): FormState => ({
 function formFromCategory(c: Category): FormState {
   return {
     name: c.name,
+    emoji: c.emoji || DEFAULT_CATEGORY_EMOJI,
     active: c.active,
     discountPercent: String(c.discountPercent ?? 0),
     surchargePercent: String(c.surchargePercent ?? 0),
@@ -156,11 +211,11 @@ export function CategoriesAdmin({
 
     const payload = {
       name: form.name.trim(),
+      emoji: form.emoji,
       active: form.active,
       discountPercent: Math.min(100, Math.max(0, parsePercent(form.discountPercent))),
       surchargePercent: Math.max(0, parsePercent(form.surchargePercent)),
       displayDays: form.displayDays,
-      ...(isEditing ? {} : { emoji: null }),
     };
 
     const res = await fetch("/api/categories", {
@@ -275,73 +330,152 @@ export function CategoriesAdmin({
         <SheetContent size="md">
           <SheetHeader
             title={isEditing ? "Editar categoria" : "Nova categoria"}
+            description="Mesmas opções que impactam o menu e os preços na vitrine."
           />
           <SheetForm onSubmit={save}>
-            <SheetBody className="space-y-5">
-              <div>
-                <label className="label" htmlFor="category-name">
-                  Nome
-                </label>
-                <input
-                  id="category-name"
-                  className="input"
-                  placeholder="Ex.: Bolos personalizados"
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, name: e.target.value }))
-                  }
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="label" htmlFor="category-discount">
-                    Desconto (%)
-                  </label>
-                  <input
-                    id="category-discount"
-                    className="input"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    inputMode="decimal"
-                    value={form.discountPercent}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        discountPercent: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="category-surcharge">
-                    Acréscimo (%)
-                  </label>
-                  <input
-                    id="category-surcharge"
-                    className="input"
-                    type="number"
-                    min={0}
-                    max={500}
-                    step={0.5}
-                    inputMode="decimal"
-                    value={form.surchargePercent}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        surchargePercent: e.target.value,
-                      }))
-                    }
-                  />
+            <SheetBody className="space-y-4">
+              <div className="rounded-xl border border-[#2D2926]/20 bg-[#2D2926] px-4 py-3.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                  Prévia no menu da vitrine
+                </p>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#E8A4B8] px-3 py-1.5 text-xs font-semibold text-[#2D2926]">
+                    <span className="text-base leading-none" aria-hidden>
+                      {form.emoji}
+                    </span>
+                    {form.name.trim() || "Sua categoria"}
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/45">
+                    Outra categoria
+                  </span>
                 </div>
               </div>
 
-              <div>
-                <label className="label">Dias de exibição</label>
+              <CategoryFormSection
+                title="Identidade na vitrine"
+                description="Nome e ícone do menu horizontal do cardápio."
+              >
+                <div className="space-y-4">
+                  <div>
+                    <label className={fieldLabel} htmlFor="category-name">
+                      Nome
+                    </label>
+                    <input
+                      id="category-name"
+                      className={fieldInput}
+                      placeholder="Ex.: Bolos personalizados"
+                      value={form.name}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, name: e.target.value }))
+                      }
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <span className={fieldLabel}>Ícone no menu</span>
+                    <div
+                      className="grid grid-cols-8 gap-2"
+                      role="listbox"
+                      aria-label="Ícone no menu"
+                    >
+                      {CATEGORY_MENU_EMOJIS.map((emoji) => {
+                        const selected = form.emoji === emoji;
+                        return (
+                          <button
+                            key={emoji}
+                            type="button"
+                            role="option"
+                            aria-selected={selected}
+                            onClick={() =>
+                              setForm((p) => ({ ...p, emoji }))
+                            }
+                            className={cn(
+                              "flex aspect-square items-center justify-center rounded-full text-xl transition",
+                              selected
+                                ? "bg-[#483129] shadow-sm ring-2 ring-[#483129]/25"
+                                : "bg-[#F7F8FA] hover:bg-[#F0F2F5]",
+                            )}
+                          >
+                            <span aria-hidden>{emoji}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </CategoryFormSection>
+
+              <CategoryFormSection
+                icon={Percent}
+                title="Preços dos produtos"
+                description="Aplica-se a todos os itens desta categoria no cardápio."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={fieldLabel} htmlFor="category-discount">
+                      Desconto (%)
+                    </label>
+                    <input
+                      id="category-discount"
+                      className={fieldInput}
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      inputMode="decimal"
+                      value={form.discountPercent}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          discountPercent: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className={fieldLabel} htmlFor="category-surcharge">
+                      Acréscimo (%)
+                    </label>
+                    <input
+                      id="category-surcharge"
+                      className={fieldInput}
+                      type="number"
+                      min={0}
+                      max={500}
+                      step={0.5}
+                      inputMode="decimal"
+                      value={form.surchargePercent}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          surchargePercent: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </CategoryFormSection>
+
+              <CategoryFormSection
+                icon={CalendarDays}
+                title="Dias de exibição"
+                description="Fora desses dias a categoria some do menu da vitrine."
+                action={
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((p) => ({
+                        ...p,
+                        displayDays: [...ALL_CATEGORY_DAYS],
+                      }))
+                    }
+                    className="shrink-0 text-xs font-semibold text-[#483129] underline-offset-2 transition hover:underline"
+                  >
+                    Marcar todos os dias
+                  </button>
+                }
+              >
                 <div className="flex flex-wrap gap-1.5">
                   {CATEGORY_DAY_LABELS.map(({ key, short }) => {
                     const selected = form.displayDays.includes(key);
@@ -363,15 +497,15 @@ export function CategoriesAdmin({
                     );
                   })}
                 </div>
-              </div>
+              </CategoryFormSection>
 
-              <div className="flex items-center justify-between gap-4 rounded border border-[#E8E2DE] bg-[#FBF7F2] px-3.5 py-3">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-[#E8E2DE] bg-[#FBF7F2] px-4 py-3.5">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-cocoa">
-                    Categoria ativa na vitrine
+                    Publicada na vitrine
                   </p>
-                  <p className="mt-0.5 text-xs text-[#8C8682]">
-                    Quando desativada, some da loja.
+                  <p className="mt-0.5 text-xs leading-relaxed text-[#8C8682]">
+                    Desligada, some do cardápio mesmo nos dias marcados.
                   </p>
                 </div>
                 <Switch
@@ -491,8 +625,12 @@ function SortableCategoryRow({
         className="flex min-w-0 items-center gap-3 text-left"
         onClick={onEdit}
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#F3EEE8] text-[#483129]">
-          <Tags className="h-4 w-4" aria-hidden />
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#F3EEE8] text-lg text-[#483129]">
+          {category.emoji ? (
+            <span aria-hidden>{category.emoji}</span>
+          ) : (
+            <Tags className="h-4 w-4" aria-hidden />
+          )}
         </span>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
