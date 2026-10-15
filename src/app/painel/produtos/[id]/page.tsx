@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import { leanDoc, type LeanDoc } from "@/lib/serialize";
 import { requireStoreSession } from "@/lib/tenant";
 import { Product } from "@/models/Product";
-import { ProductForm } from "@/components/painel/product-form";
+import { ProductFormRoute } from "@/components/painel/product-form-route";
 
 function sortProductEmbeds(product: LeanDoc): LeanDoc {
   const optionGroups = [...(product.optionGroups || [])]
@@ -34,7 +34,7 @@ export default async function EditProductPage({
   const product = sortProductEmbeds(raw);
 
   return (
-    <ProductForm
+    <ProductFormRoute
       productId={product.id}
       initial={{
         name: product.name,
@@ -55,7 +55,9 @@ export default async function EditProductPage({
         availability: product.availability,
         featured: product.featured,
         active: product.active,
+        showOnStorefront: product.showOnStorefront !== false,
         trackStock: product.trackStock,
+        hideWhenOutOfStock: Boolean(product.hideWhenOutOfStock),
         stockQty: String(product.stockQty),
         stockMin: String(product.stockMin),
         unit: product.unit,
@@ -69,6 +71,26 @@ export default async function EditProductPage({
         addons: (product.addons || []).map((a: any) => ({
           name: a.name,
           price: (a.priceCents / 100).toFixed(2).replace(".", ","),
+        })),
+        packaging:
+          product.packagingCents > 0
+            ? (product.packagingCents / 100).toFixed(2).replace(".", ",")
+            : "",
+        labor:
+          product.laborCents > 0
+            ? (product.laborCents / 100).toFixed(2).replace(".", ",")
+            : "",
+        otherCosts:
+          product.otherCostsCents > 0
+            ? (product.otherCostsCents / 100).toFixed(2).replace(".", ",")
+            : "",
+        indirect:
+          product.indirectCents > 0
+            ? (product.indirectCents / 100).toFixed(2).replace(".", ",")
+            : "",
+        recipe: (product.recipe || []).map((line: any) => ({
+          stockItemId: line.stockItemId,
+          quantity: String(line.quantity).replace(".", ","),
         })),
       }}
     />

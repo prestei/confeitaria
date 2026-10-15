@@ -36,3 +36,47 @@ export { Switch, Checkbox } from "./switch";
 export { AnimatedNumber } from "./animated-number";
 export { FilterChip, FilterChipGroup } from "./filter-chip";
 
+export { Alert } from "../alert";
+export type { AlertVariant } from "../alert";
+export { Icon } from "../icon";
+export type { IconSize } from "../icon";
+export { CardMetric } from "../card-metric";
+export {
+  FormField,
+  CheckboxField,
+  RadioField,
+  SwitchField,
+  Radio,
+} from "../input";
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+  TableActionsCell,
+  TableActionsButton,
+  ResponsiveTable,
+  TableMobileList,
+  TableMobileToolbar,
+  TableMobileCard,
+  TableMobileCardHeader,
+  TableMobileTitle,
+  TableMobileFields,
+  TableMobileField,
+  TableMobileEmpty,
+} from "../table";
+export {
+  AppShell,
+  AppShellSidebar,
+  AppShellBrand,
+  AppShellNav,
+  AppShellNavSection,
+  AppShellNavLink,
+  AppShellSidebarFooter,
+  AppShellMain,
+} from "../app-shell";
+export { PageContent } from "../page-header";
+

@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { motionPresets } from "@/lib/animations/presets";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { PageTitle } from "@/components/painel/page-header";
 
 export function Drawer({
   open,
@@ -65,7 +66,7 @@ export function Drawer({
           >
             <div className="flex items-center justify-between border-b border-cocoa/6 px-5 py-4">
               {title ? (
-                <h2 className="font-display text-xl text-cocoa">{title}</h2>
+                <PageTitle as="h2">{title}</PageTitle>
               ) : (
                 <span />
               )}

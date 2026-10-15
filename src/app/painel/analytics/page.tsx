@@ -130,7 +130,10 @@ export default async function AnalyticsPage({
           icon={BarChart3}
           title="Ainda sem métricas"
           description="À medida que clientes visitam a vitrine e fazem pedidos, os dados aparecem aqui."
-          action={{ label: "Ver vitrine", href: "/painel/vitrine" }}
+          action={{
+            label: "Configurar loja",
+            href: "/painel/configuracoes/estabelecimento",
+          }}
         />
       ) : (
         <>

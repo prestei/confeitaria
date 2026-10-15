@@ -48,32 +48,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   pages: {
     signIn: "/entrar",
   },
   callbacks: {
     async jwt({ token, user }) {
+      if (
+        typeof token.exp === "number" &&
+        token.exp * 1000 <= Date.now()
+      ) {
+        return null;
+      }
       if (user) {
         token.id = user.id;
       }
       if (token.id) {
         await connectDB();
         const dbUser = await User.findById(token.id as string).lean();
-        const store = dbUser
-          ? await Store.findOne({ userId: dbUser._id })
-              .select("_id slug")
-              .lean()
-          : null;
+        if (!dbUser) return null;
+        const store = await Store.findOne({ userId: dbUser._id })
+          .select("_id slug")
+          .lean();
         token.storeId = store ? String(store._id) : null;
         token.storeSlug = store?.slug ?? null;
-        if (user) {
-          token.name = user.name;
-          token.email = user.email;
-        } else if (dbUser) {
-          token.name = dbUser.name;
-          token.email = dbUser.email;
-        }
+        token.name = user?.name ?? dbUser.name;
+        token.email = user?.email ?? dbUser.email;
       }
       return token;
     },

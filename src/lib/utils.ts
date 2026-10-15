@@ -1,9 +1,11 @@
 export function formatBRL(cents: number | null | undefined) {
   if (cents == null) return "Sob consulta";
-  return (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+  const negative = cents < 0;
+  const abs = Math.abs(Math.round(cents));
+  const reais = Math.floor(abs / 100);
+  const frac = String(abs % 100).padStart(2, "0");
+  const grouped = String(reais).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${negative ? "-" : ""}R$ ${grouped},${frac}`;
 }
 
 export function slugify(text: string) {
@@ -20,19 +22,45 @@ export function digitsOnly(value: string) {
   return value.replace(/\D/g, "");
 }
 
-/** Formata BR celular/fixo de forma leve (ex.: (11) 99999-8888). */
-export function formatPhone(phone: string) {
-  const d = digitsOnly(phone);
-  if (d.length === 11) {
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  }
-  if (d.length === 10) {
+/** Máscara de telefone BR enquanto digita: (11) 99999-8888. */
+export function maskPhone(value: string) {
+  let d = digitsOnly(value);
+  if (d.startsWith("55") && d.length > 11) d = d.slice(2);
+  d = d.slice(0, 11);
+  if (!d) return "";
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) {
     return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   }
-  if (d.length === 13 && d.startsWith("55")) {
-    return formatPhone(d.slice(2));
-  }
-  return phone;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+/** Máscara de reais digitando da direita: 1 → 0,01, 1250 → 12,50. */
+export function maskMoney(value: string) {
+  const digits = digitsOnly(value).slice(0, 11);
+  if (!digits) return "";
+  const amount = digits.replace(/^0+(?=\d)/, "");
+  const padded = amount.padStart(3, "0");
+  const cents = padded.slice(-2);
+  const reais = padded
+    .slice(0, -2)
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${reais},${cents}`;
+}
+
+/** Converte o texto mascarado (ou só dígitos de centavos) em centavos. */
+export function parseMoneyToCents(value: string) {
+  const digits = digitsOnly(value);
+  if (!digits) return 0;
+  const n = Number(digits);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Formata BR celular/fixo (ex.: (11) 99999-8888). */
+export function formatPhone(phone: string) {
+  if (!digitsOnly(phone)) return phone;
+  return maskPhone(phone);
 }
 
 export function whatsappLink(phone: string, message: string) {
@@ -58,12 +86,12 @@ export const AVAILABILITY_LABELS = {
 } as const;
 
 export const ORDER_STATUS_LABELS = {
-  NEW: "Solicitado",
+  NEW: "Aguardando confirmação",
   REVIEWING: "Em análise",
   CONFIRMED: "Confirmado",
   IN_PRODUCTION: "Em produção",
   READY: "Pronto",
-  DELIVERED: "Entregue/Retirado",
+  DELIVERED: "Entregue",
   CANCELLED: "Cancelado",
 } as const;
 
@@ -77,11 +105,39 @@ export const PAYMENT_STATUS_LABELS = {
 
 export const ONLINE_PAYMENT_METHOD = "Mercado Pago";
 
-/** Formas manuais sugeridas no painel (além do Mercado Pago online). */
+/** Formas aceitas na retirada ou entrega (combinadas pelo WhatsApp). */
 export const OFFLINE_PAYMENT_PRESETS = [
   "Pix",
+  "Dinheiro",
+  "Cartão de débito",
+  "Cartão de crédito",
+  "Vale-refeição (VR)",
+  "Vale-alimentação (VA)",
+  "Transferência bancária",
   "Sinal para encomenda",
 ] as const;
+
+/** Valores padrão para lojas novas — pagar na entrega/retirada. */
+export const DEFAULT_ON_DELIVERY_PAYMENT_METHODS: readonly string[] = [
+  "Pix",
+  "Dinheiro",
+  "Cartão de débito",
+  "Cartão de crédito",
+  "Vale-refeição (VR)",
+  "Vale-alimentação (VA)",
+];
+
+export const CARD_BRAND_PRESETS = [
+  "Visa",
+  "Mastercard",
+  "Elo",
+  "American Express",
+  "Hipercard",
+] as const;
+
+export function acceptsCardBrands(methods: string[]) {
+  return methods.some((m) => /cartão de crédito|cartão de débito/i.test(m));
+}
 
 export const DEPOSIT_PAYMENT_METHOD = "Sinal para encomenda";
 
@@ -101,6 +157,9 @@ export function paymentMethodHint(
   }
   if (isDepositPaymentMethod(method)) {
     return "50% de entrada + 50% na retirada ou entrega";
+  }
+  if (/vale-refeição|vale-alimentação|\(vr\)|\(va\)/i.test(method)) {
+    return "Aceito na retirada ou entrega";
   }
   if (method.toLowerCase() === "pix") {
     return "Combinar pelo WhatsApp na retirada ou entrega";

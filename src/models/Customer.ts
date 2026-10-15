@@ -6,6 +6,7 @@ const customerSchema = baseSchema(
     name: { type: String, required: true },
     phone: { type: String, required: true },
     email: { type: String, default: null },
+    instagram: { type: String, default: null },
     notes: { type: String, default: null },
   },
   { timestamps: true, tenant: true },
@@ -20,6 +21,7 @@ export type CustomerDoc = {
   name: string;
   phone: string;
   email: string | null;
+  instagram: string | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;

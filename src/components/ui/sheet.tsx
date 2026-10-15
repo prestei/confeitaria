@@ -12,20 +12,19 @@ import {
   type FormHTMLAttributes,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { motionPresets } from "@/lib/animations/presets";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { Button } from "@/components/ui/button";
+import { PageTitle } from "@/components/painel/page-header";
 
 type SheetCtx = {
   open: boolean;
   setOpen: (v: boolean) => void;
   titleId: string;
-  descriptionId: string;
-  hasDescription: boolean;
-  setHasDescription: (v: boolean) => void;
 };
 
 const SheetContext = createContext<SheetCtx | null>(null);
@@ -50,19 +49,14 @@ export function Sheet({
   const open = controlledOpen ?? uncontrolled;
   const setOpen = onOpenChange ?? setUncontrolled;
   const titleId = useId();
-  const descriptionId = useId();
-  const [hasDescription, setHasDescription] = useState(false);
 
   const value = useMemo(
     () => ({
       open,
       setOpen,
       titleId,
-      descriptionId,
-      hasDescription,
-      setHasDescription,
     }),
-    [open, setOpen, titleId, descriptionId, hasDescription],
+    [open, setOpen, titleId],
   );
 
   return (
@@ -79,15 +73,22 @@ export function SheetContent({
   children: ReactNode;
   className?: string;
   /** Largura do painel. */
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   side?: "right" | "left";
 }) {
-  const { open, setOpen, titleId, descriptionId, hasDescription } = useSheet();
+  const { open, setOpen, titleId } = useSheet();
   const reduced = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const sizes = {
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
+    xl: "max-w-2xl",
+    "2xl": "max-w-3xl",
   };
   const fromRight = side === "right";
 
@@ -107,10 +108,12 @@ export function SheetContent({
     };
   }, [open, close]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 m-0">
           <motion.button
             type="button"
             aria-label="Fechar"
@@ -125,7 +128,6 @@ export function SheetContent({
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            aria-describedby={hasDescription ? descriptionId : undefined}
             className={cn(
               "absolute inset-y-0 flex w-full flex-col bg-white shadow-2xl shadow-[#2D2926]/20",
               fromRight
@@ -146,7 +148,7 @@ export function SheetContent({
             <button
               type="button"
               onClick={close}
-              className="absolute right-4 top-4 z-10 rounded-md p-1.5 text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-[#2D2926]"
+              className="absolute right-4 top-4 z-10 rounded-md p-1.5 text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-cocoa"
               aria-label="Fechar"
             >
               <X className="h-4 w-4" />
@@ -161,19 +163,12 @@ export function SheetContent({
 
 export function SheetHeader({
   title,
-  description,
   className,
 }: {
   title: string;
-  description?: string;
   className?: string;
 }) {
-  const { titleId, descriptionId, setHasDescription } = useSheet();
-
-  useEffect(() => {
-    setHasDescription(Boolean(description));
-    return () => setHasDescription(false);
-  }, [description, setHasDescription]);
+  const { titleId } = useSheet();
 
   return (
     <div
@@ -182,20 +177,9 @@ export function SheetHeader({
         className,
       )}
     >
-      <h2
-        id={titleId}
-        className="font-sans text-xl font-bold leading-tight tracking-tight text-[#2D2926]"
-      >
+      <PageTitle as="h2" id={titleId}>
         {title}
-      </h2>
-      {description ? (
-        <p
-          id={descriptionId}
-          className="mt-1 text-sm leading-snug text-[#8C8682]"
-        >
-          {description}
-        </p>
-      ) : null}
+      </PageTitle>
     </div>
   );
 }

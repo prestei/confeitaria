@@ -11,6 +11,7 @@ const createSchema = z.object({
   name: z.string().min(2),
   phone: z.string().min(8),
   email: z.string().email().optional().or(z.literal("")),
+  instagram: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
       name: data.name.trim(),
       phone,
       email: data.email?.trim() || null,
+      instagram: data.instagram?.trim() || null,
       notes: data.notes?.trim() || null,
     });
 

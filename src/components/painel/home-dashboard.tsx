@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatBRL } from "@/lib/utils";
+import { ColumnsTable } from "@/components/painel/data-table";
 
 export type DashStatus =
   | "IN_PRODUCTION"
@@ -222,62 +223,60 @@ export function HomeDashboard({
               Nenhuma encomenda para hoje.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[28rem] text-left">
-                <thead>
-                  <tr className="border-t border-[#F0EBE7] text-[11px] font-semibold uppercase tracking-wide text-[#A09A96]">
-                    <th className="px-4 py-2 font-semibold">Horário</th>
-                    <th className="px-2 py-2 font-semibold">Produto</th>
-                    <th className="px-2 py-2 font-semibold">Cliente</th>
-                    <th className="px-4 py-2 font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productionRows.map((row) => {
-                    const st = STATUS_STYLE[row.status];
+            <ColumnsTable
+              minWidth="28rem"
+              className="rounded-none border-0 shadow-none"
+              rows={productionRows}
+              rowKey={(row) => row.id}
+              columns={[
+                {
+                  id: "time",
+                  header: "Horário",
+                  tone: "strong",
+                  numeric: true,
+                  render: (row) => (
+                    <Link href={row.href} className="hover:underline">
+                      {row.time}
+                    </Link>
+                  ),
+                },
+                {
+                  id: "product",
+                  header: "Produto",
+                  render: (row) => (
+                    <Link href={row.href} className="flex min-w-0 items-center gap-2">
+                      <ProductThumb src={row.productImage} alt={row.productName} />
+                      <span className="truncate font-medium text-[#3D2B1F]">
+                        {row.productName}
+                      </span>
+                    </Link>
+                  ),
+                },
+                {
+                  id: "customer",
+                  header: "Cliente",
+                  tone: "soft",
+                  render: (row) => row.customerName,
+                },
+                {
+                  id: "status",
+                  header: "Status",
+                  render: (row) => {
+                    const status = STATUS_STYLE[row.status];
                     return (
-                      <tr
-                        key={row.id}
-                        className="border-t border-[#F7F3EE] text-[13px]"
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                          status.className,
+                        )}
                       >
-                        <td className="px-4 py-2.5 tabular-nums font-medium text-[#3D2B1F]">
-                          <Link href={row.href} className="hover:underline">
-                            {row.time}
-                          </Link>
-                        </td>
-                        <td className="px-2 py-2.5">
-                          <Link
-                            href={row.href}
-                            className="flex items-center gap-2 min-w-0"
-                          >
-                            <ProductThumb
-                              src={row.productImage}
-                              alt={row.productName}
-                            />
-                            <span className="truncate font-medium text-[#3D2B1F]">
-                              {row.productName}
-                            </span>
-                          </Link>
-                        </td>
-                        <td className="px-2 py-2.5 text-[#6B6560]">
-                          {row.customerName}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span
-                            className={cn(
-                              "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                              st.className,
-                            )}
-                          >
-                            {st.label}
-                          </span>
-                        </td>
-                      </tr>
+                        {status.label}
+                      </span>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  },
+                },
+              ]}
+            />
           )}
         </section>
 

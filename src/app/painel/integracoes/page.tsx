@@ -94,10 +94,10 @@ export default async function IntegracoesPage() {
                 : ig.status}
             </p>
             <Link
-              href="/painel/vitrine"
+              href="/painel/configuracoes/estabelecimento"
               className="mt-3 inline-block text-sm font-medium text-berry-deep hover:underline"
             >
-              Atualizar Instagram na vitrine
+              Atualizar Instagram no estabelecimento
             </Link>
           </div>
         </div>

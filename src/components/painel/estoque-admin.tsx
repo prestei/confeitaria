@@ -20,14 +20,7 @@ import {
   PageShell,
   StatusDot,
 } from "@/components/painel/page-header";
-import {
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeader,
-  DataTableRow,
-} from "@/components/painel/data-table";
+import { ColumnsTable } from "@/components/painel/data-table";
 import { useToast } from "@/components/ui/toast";
 
 type Product = {
@@ -134,10 +127,7 @@ export function EstoqueAdmin({
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent size="md">
-          <SheetHeader
-            title="Nova movimentação"
-            description="Registre entrada, saída ou ajuste manual."
-          />
+          <SheetHeader title="Nova movimentação" />
           <SheetForm onSubmit={onMove}>
             <SheetBody className="space-y-4">
               <div>
@@ -209,41 +199,44 @@ export function EstoqueAdmin({
         />
       ) : (
         <>
-          <DataTable>
-            <DataTableHeader>
-              <tr>
-                <DataTableHead>Produto</DataTableHead>
-                <DataTableHead>Qtd. atual</DataTableHead>
-                <DataTableHead>Mínimo</DataTableHead>
-                <DataTableHead>Status</DataTableHead>
-              </tr>
-            </DataTableHeader>
-            <DataTableBody>
-              {products.map((p) => {
-                const s = statusOf(p);
-                return (
-                  <DataTableRow key={p.id}>
-                    <DataTableCell className="font-semibold text-[#2D2926]">
-                      {p.name}
-                    </DataTableCell>
-                    <DataTableCell className="tabular-nums text-[#2D2926]">
-                      {p.stockQty} {p.unit}
-                    </DataTableCell>
-                    <DataTableCell className="tabular-nums text-[#8C8682]">
-                      {p.stockMin}
-                    </DataTableCell>
-                    <DataTableCell>
-                      <StatusDot tone={s.tone} label={s.label} />
-                    </DataTableCell>
-                  </DataTableRow>
-                );
-              })}
-            </DataTableBody>
-          </DataTable>
+          <ColumnsTable
+            rows={products}
+            rowKey={(product) => product.id}
+            columns={[
+              {
+                id: "name",
+                header: "Produto",
+                tone: "strong",
+                render: (product) => product.name,
+              },
+              {
+                id: "qty",
+                header: "Qtd. atual",
+                tone: "body",
+                numeric: true,
+                render: (product) => `${product.stockQty} ${product.unit}`,
+              },
+              {
+                id: "min",
+                header: "Mínimo",
+                tone: "muted",
+                numeric: true,
+                render: (product) => product.stockMin,
+              },
+              {
+                id: "status",
+                header: "Status",
+                render: (product) => {
+                  const status = statusOf(product);
+                  return <StatusDot tone={status.tone} label={status.label} />;
+                },
+              },
+            ]}
+          />
 
           <div className="overflow-hidden rounded-2xl border border-[#E8E2DE] bg-white shadow-[0_1px_2px_rgba(45,41,38,0.04)]">
             <div className="border-b border-[#E8E2DE] bg-[#FBF7F2] px-4 py-3.5">
-              <h2 className="text-sm font-semibold text-[#2D2926]">
+              <h2 className="text-sm font-semibold text-cocoa">
                 Histórico de movimentações
               </h2>
             </div>
@@ -259,7 +252,7 @@ export function EstoqueAdmin({
                     className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 text-sm"
                   >
                     <div>
-                      <p className="font-semibold text-[#2D2926]">
+                      <p className="font-semibold text-cocoa">
                         {m.product.name}
                       </p>
                       <p className="text-xs text-[#8C8682]">
@@ -267,7 +260,7 @@ export function EstoqueAdmin({
                         {m.note ? ` · ${m.note}` : ""}
                       </p>
                     </div>
-                    <span className="font-semibold tabular-nums text-[#2D2926]">
+                    <span className="font-semibold tabular-nums text-cocoa">
                       {m.type === "IN" ? "+" : m.type === "OUT" ? "−" : "="}
                       {m.quantity}
                     </span>

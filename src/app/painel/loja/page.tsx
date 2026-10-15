@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function LojaRedirect() {
-  redirect("/painel/vitrine");
+export default function LojaPage() {
+  redirect("/painel/configuracoes/estabelecimento");
 }

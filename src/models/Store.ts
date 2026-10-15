@@ -37,7 +37,14 @@ const storeSchema = baseSchema(
     productionNote: { type: String, default: null },
     paymentMethods: {
       type: [String],
-      default: ["Pix", "Sinal para encomenda"],
+      default: [
+        "Pix",
+        "Dinheiro",
+        "Cartão de débito",
+        "Cartão de crédito",
+        "Vale-refeição (VR)",
+        "Vale-alimentação (VA)",
+      ],
     },
     mpPublicKey: { type: String, default: null },
     mpAccessToken: { type: String, default: null },
@@ -50,7 +57,14 @@ const storeSchema = baseSchema(
     notifyNewCustomers: { type: Boolean, default: true },
     notifyViaEmail: { type: Boolean, default: true },
     notifyViaWhatsApp: { type: Boolean, default: true },
-    autoDeductStock: { type: Boolean, default: true },
+    autoDeductStock: { type: Boolean, default: false },
+    collectAddress: { type: Boolean, default: false },
+    cardBrands: { type: [String], default: [] },
+    schedulingEnabled: { type: Boolean, default: true },
+    minAdvanceHours: { type: Number, default: 0 },
+    deliveryFeeCents: { type: Number, default: null },
+    pickupInstructions: { type: String, default: null },
+    deliveryInstructions: { type: String, default: null },
     deliveryZones: { type: [deliveryZoneSchema], default: [] },
   },
   { timestamps: true },
@@ -101,6 +115,13 @@ export type StoreDoc = {
   notifyViaEmail: boolean;
   notifyViaWhatsApp: boolean;
   autoDeductStock: boolean;
+  collectAddress: boolean;
+  cardBrands: string[];
+  schedulingEnabled: boolean;
+  minAdvanceHours: number;
+  deliveryFeeCents: number | null;
+  pickupInstructions: string | null;
+  deliveryInstructions: string | null;
   deliveryZones: DeliveryZoneDoc[];
   createdAt: Date;
   updatedAt: Date;

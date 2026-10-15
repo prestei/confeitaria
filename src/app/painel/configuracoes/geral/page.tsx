@@ -4,7 +4,7 @@ import { leanDoc } from "@/lib/serialize";
 import { requireStoreSession } from "@/lib/tenant";
 import { Store } from "@/models/Store";
 import { User } from "@/models/User";
-import { SettingsSectionHeader } from "@/components/painel/settings-section-header";
+import { SettingsPageSheet } from "@/components/painel/settings-page-sheet";
 import {
   AccountForm,
   NotificationsForm,
@@ -24,11 +24,7 @@ export default async function GeralPage() {
   if (!user) redirect("/entrar");
 
   return (
-    <div className="space-y-4">
-      <SettingsSectionHeader
-        title="Configurações gerais"
-        description="Conta, notificações e plano da assinatura."
-      />
+    <SettingsPageSheet title="Configurações gerais" size="lg">
       <div className="space-y-4">
         <AccountForm
           user={{
@@ -48,6 +44,6 @@ export default async function GeralPage() {
         />
         <PlanCard plan={store.plan} />
       </div>
-    </div>
+    </SettingsPageSheet>
   );
 }

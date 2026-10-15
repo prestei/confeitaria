@@ -44,17 +44,17 @@ export function AgendaControls({
       <div className="flex items-center gap-1">
         <Link
           href={prevHref}
-          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[#CED0D4] bg-white text-[#2D2926] transition hover:bg-[#F0F2F5]"
+          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[#CED0D4] bg-white text-cocoa transition hover:bg-[#F0F2F5]"
           aria-label="Anterior"
         >
           <ChevronLeft className="h-4 w-4" />
         </Link>
-        <span className="min-w-[8rem] text-center text-xs font-semibold capitalize text-[#2D2926] sm:min-w-[11rem] sm:text-sm">
+        <span className="min-w-[8rem] text-center text-xs font-semibold capitalize text-cocoa sm:min-w-[11rem] sm:text-sm">
           {label}
         </span>
         <Link
           href={nextHref}
-          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[#CED0D4] bg-white text-[#2D2926] transition hover:bg-[#F0F2F5]"
+          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[#CED0D4] bg-white text-cocoa transition hover:bg-[#F0F2F5]"
           aria-label="Próximo"
         >
           <ChevronRight className="h-4 w-4" />

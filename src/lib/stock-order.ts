@@ -43,17 +43,33 @@ async function applyAvailability(productId: string, nextQty: number, trackStock:
   );
 }
 
+export type StockDeductResult = {
+  deducted: boolean;
+  shortage?: string;
+};
+
 /** Deducts stock once per order when auto-deduct is enabled. */
 export async function maybeDeductStockForOrder(input: {
   orderId: string;
   storeId: string;
   reason: "confirm" | "pay";
-}): Promise<boolean> {
+}): Promise<StockDeductResult> {
   const store = await Store.findOne({ _id: input.storeId })
     .select({ autoDeductStock: 1 })
     .lean();
   // Default ON when field is missing (legacy stores).
-  if (store?.autoDeductStock === false) return false;
+  if (store?.autoDeductStock === false) return { deducted: false };
+
+  const current = await Order.findOne({
+    _id: input.orderId,
+    storeId: input.storeId,
+  })
+    .select({ status: 1 })
+    .lean();
+  if (!current) return { deducted: false };
+  if (input.reason === "confirm" && !ACCEPTED_STATUSES.has(current.status)) {
+    return { deducted: false };
+  }
 
   const claimed = await Order.findOneAndUpdate(
     {
@@ -62,13 +78,13 @@ export async function maybeDeductStockForOrder(input: {
       stockDeducted: { $ne: true },
     },
     { $set: { stockDeducted: true } },
-    { new: false },
+    { returnDocument: "before" },
   ).lean();
 
-  if (!claimed) return false;
+  if (!claimed) return { deducted: false };
 
   const items = qtyByProduct(claimed.items ?? []);
-  if (items.size === 0) return true;
+  if (items.size === 0) return { deducted: true };
 
   const products = await Product.find({
     _id: { $in: [...items.keys()] },
@@ -81,18 +97,42 @@ export async function maybeDeductStockForOrder(input: {
       ? `Baixa automática — pagamento do pedido ${input.orderId.slice(0, 8)}`
       : `Baixa automática — confirmação do pedido ${input.orderId.slice(0, 8)}`;
 
+  const applied: { id: string; quantity: number }[] = [];
+
   for (const product of products) {
     const line = items.get(String(product._id));
     if (!line || line.quantity <= 0) continue;
 
-    const previousQty = product.stockQty;
-    const nextQty = Math.max(0, previousQty - line.quantity);
+    const updated = await Product.findOneAndUpdate(
+      {
+        _id: product._id,
+        storeId: input.storeId,
+        stockQty: { $gte: line.quantity },
+      },
+      { $inc: { stockQty: -line.quantity } },
+      { returnDocument: "after" },
+    ).lean();
 
+    if (!updated) {
+      for (const row of applied) {
+        await Product.updateOne(
+          { _id: row.id, storeId: input.storeId },
+          { $inc: { stockQty: row.quantity } },
+        );
+      }
+      await Order.updateOne(
+        { _id: input.orderId, storeId: input.storeId },
+        { $set: { stockDeducted: false } },
+      );
+      return {
+        deducted: false,
+        shortage: `Estoque insuficiente para "${product.name}".`,
+      };
+    }
+
+    applied.push({ id: String(product._id), quantity: line.quantity });
+    const nextQty = updated.stockQty;
     await Promise.all([
-      Product.updateOne(
-        { _id: product._id },
-        { $set: { stockQty: nextQty } },
-      ),
       StockMovement.create({
         storeId: input.storeId,
         productId: String(product._id),
@@ -106,14 +146,14 @@ export async function maybeDeductStockForOrder(input: {
     void maybeNotifyLowStockTransition({
       storeId: input.storeId,
       productName: product.name,
-      previousQty,
+      previousQty: product.stockQty,
       nextQty,
       stockMin: product.stockMin,
       trackStock: true,
     }).catch((err) => console.error("[notify:stock]", err));
   }
 
-  return true;
+  return { deducted: true };
 }
 
 /** Restores stock previously deducted when an order is cancelled. */
@@ -128,7 +168,7 @@ export async function maybeRestoreStockForOrder(input: {
       stockDeducted: true,
     },
     { $set: { stockDeducted: false } },
-    { new: false },
+    { returnDocument: "before" },
   ).lean();
 
   if (!claimed) return false;
@@ -148,14 +188,14 @@ export async function maybeRestoreStockForOrder(input: {
     const line = items.get(String(product._id));
     if (!line || line.quantity <= 0) continue;
 
-    const previousQty = product.stockQty;
-    const nextQty = previousQty + line.quantity;
+    const updated = await Product.findOneAndUpdate(
+      { _id: product._id, storeId: input.storeId },
+      { $inc: { stockQty: line.quantity } },
+      { returnDocument: "after" },
+    ).lean();
+    const nextQty = updated?.stockQty ?? product.stockQty + line.quantity;
 
     await Promise.all([
-      Product.updateOne(
-        { _id: product._id },
-        { $set: { stockQty: nextQty } },
-      ),
       StockMovement.create({
         storeId: input.storeId,
         productId: String(product._id),
@@ -166,6 +206,11 @@ export async function maybeRestoreStockForOrder(input: {
       applyAvailability(String(product._id), nextQty, true),
     ]);
   }
+
+  await Order.updateOne(
+    { _id: input.orderId, storeId: input.storeId },
+    { $set: { recipeDeductions: [] } },
+  );
 
   return true;
 }

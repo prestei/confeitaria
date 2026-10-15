@@ -25,6 +25,7 @@ export type VitrineStore = {
   address: string | null;
   city: string | null;
   isPublished: boolean;
+  collectAddress?: boolean;
 };
 
 type PreviewProduct = {
@@ -85,6 +86,7 @@ export function VitrineEditor({
         pageLayout: form.pageLayout,
         businessHours: form.businessHours || "",
         isPublished: form.isPublished,
+        collectAddress: Boolean(form.collectAddress),
       }),
     });
     setLoading(false);
@@ -106,7 +108,7 @@ export function VitrineEditor({
             target="_blank"
             className="inline-flex items-center gap-1.5 rounded-xl bg-cocoa px-3 py-2 text-xs font-semibold text-white"
           >
-            Ver minha vitrine
+            Abrir loja pública
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
         </div>
@@ -219,6 +221,14 @@ export function VitrineEditor({
               />
               Vitrine publicada
             </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-cocoa sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={Boolean(form.collectAddress)}
+                onChange={(e) => set("collectAddress", e.target.checked)}
+              />
+              Pedir endereço no checkout
+            </label>
           </div>
         ) : (
           <div className="grid gap-4 rounded-2xl border border-cocoa/8 bg-white p-5 sm:grid-cols-2">
@@ -244,7 +254,7 @@ export function VitrineEditor({
                 value={form.typography}
                 onChange={(e) => set("typography", e.target.value)}
               >
-                <option value="elegant">Elegante (serif)</option>
+                <option value="elegant">Elegante</option>
                 <option value="sans">Moderna (sans)</option>
                 <option value="soft">Acolhedora</option>
               </select>
@@ -276,7 +286,7 @@ export function VitrineEditor({
 
         <div className="flex flex-wrap items-center gap-3">
           <button type="submit" className="btn-primary !py-2.5 text-sm" disabled={loading}>
-            {loading ? "Salvando…" : "Salvar vitrine"}
+            {loading ? "Salvando…" : "Salvar"}
           </button>
           {message && (
             <p className="text-sm text-cocoa-soft/70">{message}</p>

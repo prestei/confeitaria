@@ -5,6 +5,7 @@ import { withIds } from "@/lib/serialize";
 import { Product } from "@/models/Product";
 import { mediaUrlSchema } from "@/lib/media-url";
 import { maybeNotifyLowStockTransition } from "@/lib/notify";
+import { productCostSchema, resolveOwnedRecipe } from "@/lib/product-recipe";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -40,7 +41,9 @@ const putSchema = z.object({
   ]),
   featured: z.boolean().optional(),
   active: z.boolean().optional(),
+  showOnStorefront: z.boolean().optional(),
   trackStock: z.boolean().optional(),
+  hideWhenOutOfStock: z.boolean().optional(),
   stockQty: z.number().int().optional(),
   stockMin: z.number().int().optional(),
   unit: z.string().optional(),
@@ -66,6 +69,7 @@ const putSchema = z.object({
       }),
     )
     .optional(),
+  ...productCostSchema,
 });
 
 async function getOwnedProduct(id: string, storeId: string) {
@@ -117,11 +121,24 @@ export async function PUT(
   try {
     const data = putSchema.parse(await req.json());
     const trackStock = data.trackStock ?? product.trackStock;
+    const hideWhenOutOfStock =
+      data.hideWhenOutOfStock ?? product.hideWhenOutOfStock ?? false;
     const stockQty = data.stockQty ?? product.stockQty;
     let availability = data.availability;
     if (trackStock && stockQty <= 0) availability = "SOLD_OUT";
 
     const stockMin = data.stockMin ?? product.stockMin;
+    const recipe = await resolveOwnedRecipe(
+      session.user.storeId,
+      data.recipe ?? [],
+    );
+    if (!recipe) {
+      return NextResponse.json(
+        { error: "Insumo não encontrado nesta loja" },
+        { status: 400 },
+      );
+    }
+
     const updated = await Product.findOneAndUpdate(
       { _id: id, storeId: session.user.storeId },
       {
@@ -138,7 +155,9 @@ export async function PUT(
           availability,
           featured: data.featured ?? false,
           active: data.active ?? true,
+          showOnStorefront: data.showOnStorefront ?? true,
           trackStock,
+          hideWhenOutOfStock,
           stockQty,
           stockMin,
           unit: data.unit || "un",
@@ -156,6 +175,11 @@ export async function PUT(
             name: a.name,
             priceCents: a.priceCents,
           })),
+          recipe,
+          packagingCents: data.packagingCents ?? 0,
+          laborCents: data.laborCents ?? 0,
+          otherCostsCents: data.otherCostsCents ?? 0,
+          indirectCents: data.indirectCents ?? 0,
         },
       },
       { new: true },

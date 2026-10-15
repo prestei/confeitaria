@@ -59,7 +59,7 @@ export function ProductCard({
   const addLabel =
     product.priceMode === "QUOTE"
       ? "Pedir orçamento"
-      : "Adicionar";
+      : "Adicionar ao carrinho";
 
   const availabilityText = stockLabel(product);
   const soldOut =

@@ -1,372 +1,311 @@
-import { redirect } from "next/navigation";
-import {
-  format,
-  subDays,
-  startOfDay,
-  endOfDay,
-  isSameDay,
-  startOfMonth,
-} from "date-fns";
+import Link from "next/link";
+import { startOfMonth } from "date-fns";
+import { Calculator, PackagePlus } from "lucide-react";
 import { connectDB } from "@/lib/db";
-import { leanDoc, leanList } from "@/lib/serialize";
-import { formatBRL, isAbandonedOnlineCheckout } from "@/lib/utils";
 import { requireStoreSession } from "@/lib/tenant";
 import { Store } from "@/models/Store";
-import { Order } from "@/models/Order";
 import { Product } from "@/models/Product";
-import { SetupChecklist } from "@/components/painel/setup-checklist";
-import {
-  HomeDashboard,
-  type DashStatus,
-  type ProductionRow,
-  type KanbanCard,
-} from "@/components/painel/home-dashboard";
+import { PricingCalculation } from "@/models/PricingCalculation";
+import { leanDoc, leanList } from "@/lib/serialize";
+import { cn } from "@/lib/cn";
+import { formatBRL } from "@/lib/utils";
+import { OverviewLinkCard } from "@/components/painel/overview-link-card";
+import { PainelVitrinePreview } from "@/components/painel/painel-vitrine-preview";
 
-const ACTIVE_STATUSES = [
-  "NEW",
-  "REVIEWING",
-  "CONFIRMED",
-  "IN_PRODUCTION",
-  "READY",
-] as const;
-
-function pctChange(current: number, previous: number): number | null {
-  if (previous === 0) return current === 0 ? 0 : 100;
-  return ((current - previous) / previous) * 100;
-}
-
-function mapStatus(status: string, fulfillment?: string): DashStatus {
-  if (status === "IN_PRODUCTION") return "IN_PRODUCTION";
-  if (status === "READY") {
-    return fulfillment === "DELIVERY" ? "DELIVERY" : "READY";
-  }
-  if (status === "NEW" || status === "REVIEWING") return "WAITING";
-  return "TO_PREPARE";
-}
-
-function orderTime(o: {
-  eventTime?: string | null;
-  eventDate?: Date | null;
-  createdAt: Date;
-}) {
-  if (o.eventTime) return o.eventTime.slice(0, 5);
-  if (o.eventDate) return format(o.eventDate, "HH:mm");
-  return format(o.createdAt, "HH:mm");
-}
-
-function firstItem(o: {
-  items: {
-    productName: string;
-    productId?: string | null;
-    referenceImage?: string | null;
-  }[];
-  kind?: string;
-}) {
-  const item = o.items[0];
-  return {
-    name:
-      item?.productName ||
-      (o.kind === "QUOTE" ? "Orçamento" : "Pedido"),
-    productId: item?.productId || null,
-    image: item?.referenceImage || null,
-  };
+function greetingForHour(hour: number) {
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
 }
 
 export default async function PainelPage() {
   const session = await requireStoreSession();
-  const storeId = session.storeId;
   await connectDB();
+  const storeId = session.storeId;
+  const firstName =
+    (session.name || "").split(" ").filter(Boolean)[0] || "Confeiteira";
 
   const store = leanDoc(await Store.findOne({ _id: storeId }).lean());
-  if (!store) {
-    redirect("/painel/vitrine");
-  }
+  if (!store) return null;
 
-  const now = new Date();
-  const todayStart = startOfDay(now);
-  const todayEnd = endOfDay(now);
-  const monthStart = startOfMonth(now);
-  const since90 = subDays(todayStart, 90);
+  const origin = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const base = origin.replace(/\/$/, "");
+  const publicUrl = `${base}/${store.slug}`;
+  const displayHost = publicUrl.replace(/^https?:\/\//, "");
 
-  const [orders, products, allActiveOrders] = await Promise.all([
+  const monthStart = startOfMonth(new Date());
+
+  const [
+    productTotal,
+    trackedCount,
+    outOfStockCount,
+    newProductsMonth,
+    newTrackedMonth,
+    featured,
+    recentPricing,
+  ] = await Promise.all([
+    Product.countDocuments({ storeId, active: true }),
+    Product.countDocuments({ storeId, trackStock: true, active: true }),
+    Product.countDocuments({
+      storeId,
+      active: true,
+      trackStock: true,
+      stockQty: { $lte: 0 },
+    }),
+    Product.countDocuments({ storeId, createdAt: { $gte: monthStart } }),
+    Product.countDocuments({
+      storeId,
+      trackStock: true,
+      createdAt: { $gte: monthStart },
+    }),
     leanList(
-      await Order.find({ storeId, createdAt: { $gte: since90 } })
-        .sort({ createdAt: -1 })
+      await Product.find({ storeId, active: true, featured: true })
+        .sort({ sortOrder: 1, name: 1 })
+        .limit(4)
         .lean(),
     ),
     leanList(
-      await Product.find({ storeId }).sort({ name: 1 }).lean(),
-    ),
-    leanList(
-      await Order.find({
-        storeId,
-        status: { $in: [...ACTIVE_STATUSES] },
-      })
-        .sort({ eventDate: 1, eventTime: 1, createdAt: 1 })
+      await PricingCalculation.find({ storeId })
+        .sort({ updatedAt: -1 })
+        .limit(4)
         .lean(),
     ),
   ]);
 
-  const productById = new Map(
-    products.map((p) => [p.id, p] as const),
-  );
-
-  function resolveImage(
-    productId: string | null,
-    fallback: string | null,
-  ): string | null {
-    if (fallback) return fallback;
-    if (!productId) return null;
-    return productById.get(productId)?.imageUrl || null;
-  }
-
-  const todayProduction = allActiveOrders.filter((o) => {
-    if (isAbandonedOnlineCheckout(o)) return false;
-    if (o.eventDate) return isSameDay(o.eventDate, now);
-    return o.createdAt >= todayStart && o.createdAt <= todayEnd;
-  });
-
-  const productionSource =
-    todayProduction.length > 0
-      ? todayProduction
-      : allActiveOrders.filter((o) => !isAbandonedOnlineCheckout(o));
-
-  const productionRows: ProductionRow[] = productionSource
-    .slice(0, 6)
-    .map((o) => {
-      const item = firstItem(o);
-      return {
-        id: o.id,
-        href: `/painel/pedidos/${o.id}`,
-        time: orderTime(o),
-        productName: item.name,
-        productImage: resolveImage(item.productId, item.image),
-        customerName: o.customerName,
-        status: mapStatus(o.status, o.fulfillment),
-      };
-    });
-
-  function toKanban(o: (typeof allActiveOrders)[number]): KanbanCard {
-    const item = firstItem(o);
-    return {
-      id: o.id,
-      href: `/painel/pedidos/${o.id}`,
-      productName: item.name,
-      productImage: resolveImage(item.productId, item.image),
-      customerName: o.customerName,
-      time: orderTime(o),
-    };
-  }
-
-  const kanbanPool = productionSource;
-
-  const kanban = {
-    todo: kanbanPool
-      .filter((o) =>
-        ["NEW", "REVIEWING", "CONFIRMED"].includes(o.status),
-      )
-      .slice(0, 3)
-      .map(toKanban),
-    doing: kanbanPool
-      .filter((o) => o.status === "IN_PRODUCTION")
-      .slice(0, 3)
-      .map(toKanban),
-    done: kanbanPool
-      .filter((o) => o.status === "READY")
-      .slice(0, 3)
-      .map(toKanban),
-  };
-
-  const deliveries = allActiveOrders
-    .filter((o) => {
-      if (isAbandonedOnlineCheckout(o)) return false;
-      if (!o.eventDate || !o.eventTime) return false;
-      if (o.eventDate < todayStart) return false;
-      return true;
-    })
-    .slice(0, 5)
-    .map((o) => ({
-      id: o.id,
-      href: `/painel/pedidos/${o.id}`,
-      time: orderTime(o),
-      customerName: o.customerName,
-      productName: firstItem(o).name,
-    }));
-
-  const lowStock = products
-    .filter((p) => p.trackStock && p.stockQty <= p.stockMin)
-    .sort((a, b) => a.stockQty - b.stockQty)
-    .slice(0, 5)
-    .map((p) => ({
-      id: p.id,
-      href: `/painel/produtos/${p.id}`,
-      name: p.name,
-      qtyLabel: `${p.stockQty} ${p.unit || "un"}.`,
-      critical: p.stockQty <= Math.max(1, Math.floor(p.stockMin / 2)),
-    }));
-
-  const todayOrders = orders.filter(
-    (o) =>
-      o.createdAt >= todayStart &&
-      o.createdAt <= todayEnd &&
-      o.status !== "CANCELLED",
-  );
-  const todaySales = todayOrders
-    .filter((o) => o.priceLabel !== "TO_CONFIRM")
-    .reduce((s, o) => s + o.totalCents, 0);
-
-  const yesterdayStart = subDays(todayStart, 1);
-  const yesterdayOrders = orders.filter(
-    (o) =>
-      o.createdAt >= yesterdayStart &&
-      o.createdAt < todayStart &&
-      o.status !== "CANCELLED" &&
-      o.priceLabel !== "TO_CONFIRM",
-  );
-  const yesterdaySales = yesterdayOrders.reduce(
-    (s, o) => s + o.totalCents,
-    0,
-  );
-
-  const ticketBase = todayOrders.filter((o) => o.priceLabel !== "TO_CONFIRM");
-  const ticketAvg =
-    ticketBase.length > 0
-      ? Math.round(
-          ticketBase.reduce((s, o) => s + o.totalCents, 0) /
-            ticketBase.length,
-        )
-      : 0;
-  const yesterdayTicket =
-    yesterdayOrders.length > 0
-      ? Math.round(
-          yesterdayOrders.reduce((s, o) => s + o.totalCents, 0) /
-            yesterdayOrders.length,
-        )
-      : 0;
-
-  const itemsSold = todayOrders.reduce(
-    (s, o) =>
-      s + o.items.reduce((n, it) => n + (it.quantity || 1), 0),
-    0,
-  );
-  const yesterdayItems = yesterdayOrders.reduce(
-    (s, o) =>
-      s + o.items.reduce((n, it) => n + (it.quantity || 1), 0),
-    0,
-  );
-
-  const salesMetrics = [
-    {
-      label: "Vendas do dia",
-      value: formatBRL(todaySales),
-      changePct:
-        todaySales > 0 ? pctChange(todaySales, yesterdaySales) : null,
-    },
-    {
-      label: "Pedidos realizados",
-      value: String(todayOrders.length),
-      changePct:
-        todayOrders.length > 0
-          ? pctChange(todayOrders.length, yesterdayOrders.length)
-          : null,
-    },
-    {
-      label: "Ticket médio",
-      value: ticketAvg > 0 ? formatBRL(ticketAvg) : "—",
-      changePct: ticketAvg > 0 ? pctChange(ticketAvg, yesterdayTicket) : null,
-    },
-    {
-      label: "Itens vendidos",
-      value: String(itemsSold),
-      changePct:
-        itemsSold > 0 ? pctChange(itemsSold, yesterdayItems) : null,
-    },
-  ];
-
-  const monthOrders = orders.filter(
-    (o) =>
-      o.createdAt >= monthStart &&
-      o.status !== "CANCELLED" &&
-      o.priceLabel !== "TO_CONFIRM",
-  );
-  const soldMap = new Map<string, { name: string; qty: number; image: string | null; productId: string | null }>();
-  for (const o of monthOrders) {
-    for (const it of o.items) {
-      const key = it.productId || it.productName;
-      const prev = soldMap.get(key);
-      const img = resolveImage(it.productId, it.referenceImage || null);
-      if (prev) {
-        prev.qty += it.quantity || 1;
-      } else {
-        soldMap.set(key, {
-          name: it.productName,
-          qty: it.quantity || 1,
-          image: img,
-          productId: it.productId || null,
-        });
-      }
-    }
-  }
-  const topProducts = [...soldMap.values()]
-    .sort((a, b) => b.qty - a.qty)
-    .slice(0, 5)
-    .map((p, i) => ({
-      id: p.productId || `top-${i}`,
-      href: p.productId ? `/painel/produtos/${p.productId}` : "/painel/produtos",
-      name: p.name,
-      imageUrl: p.image,
-      soldLabel: `${p.qty} vendido${p.qty === 1 ? "" : "s"}`,
-    }));
-
-  const productsCount = products.filter((p) => p.active).length;
-  const setupSteps = [
-    {
-      id: "logo",
-      label: "Logo adicionada",
-      done: Boolean(store.logoUrl),
-      href: "/painel/vitrine",
-    },
-    {
-      id: "info",
-      label: "Informações preenchidas",
-      done: Boolean(store.description && store.whatsapp && store.address),
-      href: "/painel/vitrine",
-    },
-    {
-      id: "product",
-      label: "Primeiro produto cadastrado",
-      done: productsCount > 0,
-      href: "/painel/produtos",
-    },
-    {
-      id: "whatsapp",
-      label: "WhatsApp conectado",
-      done: Boolean(store.whatsapp && store.whatsapp.length >= 10),
-      href: "/painel/integracoes",
-    },
-    {
-      id: "published",
-      label: "Vitrine publicada",
-      done: store.isPublished,
-      href: "/painel/vitrine",
-    },
-  ];
-  const setupComplete = setupSteps.every((s) => s.done);
+  const published = store.isPublished;
+  const hour = new Date().getHours();
 
   return (
-    <div className="space-y-4">
-      {!setupComplete && (
-        <SetupChecklist steps={setupSteps} complete={setupComplete} />
-      )}
-      <HomeDashboard
-        productionCount={productionSource.length}
-        productionRows={productionRows}
-        kanban={kanban}
-        deliveries={deliveries}
-        lowStock={lowStock}
-        salesMetrics={salesMetrics}
-        topProducts={topProducts}
+    <div className="flex w-full max-w-[1200px] gap-8 xl:mx-auto">
+      <div className="min-w-0 flex-1 space-y-6">
+        <header>
+          <h1 className="text-2xl font-semibold text-[#4A3728] sm:text-[26px]">
+            {greetingForHour(hour)}, {firstName}!
+          </h1>
+          <p className="mt-1 text-sm text-[#8C7A72]">
+            {published
+              ? "Sua vitrine está pronta para receber pedidos."
+              : "Publique a loja em Configurações → Estabelecimento para liberar o link público."}
+          </p>
+        </header>
+
+        <OverviewLinkCard publicUrl={publicUrl} displayHost={displayHost} />
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatCard
+            label="Total de produtos"
+            value={productTotal}
+            hint={
+              newProductsMonth > 0
+                ? `${newProductsMonth} novo${newProductsMonth > 1 ? "s" : ""} este mês`
+                : undefined
+            }
+          />
+          <StatCard
+            label="Estoque controlado"
+            value={trackedCount}
+            hint={
+              newTrackedMonth > 0
+                ? `${newTrackedMonth} com controle este mês`
+                : undefined
+            }
+          />
+          <StatCard
+            label="Esgotados"
+            value={outOfStockCount}
+            alert={outOfStockCount > 0}
+          />
+        </div>
+
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-[#4A3728]">
+            Ações rápidas
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <QuickAction
+              href="/painel/produtos/novo"
+              icon={PackagePlus}
+              label="Cadastrar produto"
+            />
+            <QuickAction
+              href="/painel/precificacao"
+              icon={Calculator}
+              label="Calcular precificação"
+            />
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[#4A3728]">
+              Produtos em destaque
+            </h2>
+            <Link
+              href="/painel/produtos"
+              className="text-xs font-semibold text-[#C45B7A] hover:underline"
+            >
+              Ver todos
+            </Link>
+          </div>
+          {featured.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-[#F0E6E0] bg-white px-4 py-8 text-center text-sm text-[#9A8F88]">
+              Marque produtos como destaque para exibir aqui.
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {featured.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/painel/produtos/${product.id}`}
+                  className="overflow-hidden rounded-2xl border border-[#F0E6E0] bg-white transition hover:shadow-md"
+                >
+                  {product.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={product.imageUrl}
+                      alt=""
+                      className="h-28 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-28 items-center justify-center bg-[#FFF5F0] text-[#C45B7A]">
+                      🍰
+                    </div>
+                  )}
+                  <div className="p-3">
+                    <p className="truncate text-sm font-semibold text-[#4A3728]">
+                      {product.name}
+                    </p>
+                    <p className="mt-0.5 text-sm text-[#6B5B52]">
+                      {product.priceMode === "QUOTE" || product.priceCents == null
+                        ? "Sob consulta"
+                        : formatBRL(product.priceCents)}
+                    </p>
+                    <span
+                      className={cn(
+                        "mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        product.active
+                          ? "bg-[#E4F5E8] text-[#2D7A4A]"
+                          : "bg-[#F5F0ED] text-[#8C8682]",
+                      )}
+                    >
+                      {product.active ? "Ativo" : "Inativo"}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <section className="rounded-2xl border border-[#F0E6E0] bg-gradient-to-br from-[#FFF8F5] to-white p-5">
+            <h2 className="text-sm font-semibold text-[#4A3728]">
+              Calculadora de precificação
+            </h2>
+            <p className="mt-2 text-sm text-[#8C7A72]">
+              Estime custos, margem e preço de venda com a fórmula certa para
+              docerias.
+            </p>
+            <Link
+              href="/painel/precificacao"
+              className="mt-4 inline-flex rounded-xl bg-[#4A3728] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3D2E22]"
+            >
+              Abrir calculadora
+            </Link>
+          </section>
+
+          <section className="rounded-2xl border border-[#F0E6E0] bg-white p-5">
+            <h2 className="text-sm font-semibold text-[#4A3728]">
+              Últimos cálculos
+            </h2>
+            {recentPricing.length === 0 ? (
+              <p className="mt-3 text-sm text-[#9A8F88]">
+                Nenhum cálculo salvo ainda.
+              </p>
+            ) : (
+              <ul className="mt-3 divide-y divide-[#F0E6E0]">
+                {recentPricing.map((row) => (
+                  <li
+                    key={row.id}
+                    className="flex items-center justify-between gap-2 py-2.5 text-sm"
+                  >
+                    <span className="truncate font-medium text-[#4A3728]">
+                      {row.name}
+                    </span>
+                    <span className="shrink-0 text-[#6B5B52]">
+                      {formatBRL(row.suggestedUnitPriceCents)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </div>
+
+      <PainelVitrinePreview
+        store={{
+          name: store.name,
+          slug: store.slug,
+          logoUrl: store.logoUrl,
+          coverUrl: store.coverUrl,
+          description: store.description,
+          whatsapp: store.whatsapp,
+          paymentMethods: store.paymentMethods ?? [],
+        }}
+        publicPath={publicUrl}
       />
     </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  alert,
+}: {
+  label: string;
+  value: number;
+  hint?: string;
+  alert?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border px-4 py-4",
+        alert
+          ? "border-amber-200/80 bg-amber-50/50"
+          : "border-[#F0E6E0] bg-white",
+      )}
+    >
+      <p className="text-2xl font-semibold tabular-nums text-[#4A3728]">
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-[#9A8F88]">{label}</p>
+      {hint ? (
+        <p className="mt-1 text-[11px] font-medium text-[#C45B7A]">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function QuickAction({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string;
+  icon: typeof PackagePlus;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-center gap-2 rounded-2xl border border-[#F0E6E0] bg-white px-4 py-5 text-sm font-semibold text-[#4A3728] shadow-sm transition hover:border-[#E8D4DC] hover:bg-[#FFF8F5]"
+    >
+      <Icon className="h-5 w-5 text-[#C45B7A]" aria-hidden />
+      {label}
+    </Link>
   );
 }

@@ -1,5 +1,5 @@
-import { CustomerForm } from "@/components/painel/customer-form";
+import { redirect } from "next/navigation";
 
 export default function NovoClientePage() {
-  return <CustomerForm />;
+  redirect("/painel/clientes?novo=1");
 }

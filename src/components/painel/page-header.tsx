@@ -16,6 +16,31 @@ export function PageShell({
   return <div className={cn("space-y-4", className)}>{children}</div>;
 }
 
+/** Título do painel — páginas, painéis laterais e diálogos. */
+export function PageTitle({
+  as: Tag = "h1",
+  children,
+  className,
+  id,
+}: {
+  as?: "h1" | "h2";
+  children: React.ReactNode;
+  className?: string;
+  id?: string;
+}) {
+  return (
+    <Tag
+      id={id}
+      className={cn(
+        "font-sans text-base font-bold leading-tight tracking-tight text-cocoa sm:text-xl",
+        className,
+      )}
+    >
+      {children}
+    </Tag>
+  );
+}
+
 export function PageHeader({
   title,
   description,
@@ -35,9 +60,7 @@ export function PageHeader({
       )}
     >
       <div className="min-w-0 flex-1">
-        <h1 className="font-sans text-xl font-bold leading-tight tracking-tight text-[#2D2926] sm:text-2xl">
-          {title}
-        </h1>
+        <PageTitle>{title}</PageTitle>
         {description && (
           <p className="mt-0.5 max-w-2xl text-sm leading-snug text-[#8C8682]">
             {description}
@@ -105,7 +128,7 @@ export function SectionCard({
       {(title || action) && (
         <div className="flex items-center justify-between gap-3 border-b border-[#E8E2DE] px-4 py-3">
           {title ? (
-            <h2 className="text-sm font-semibold text-[#2D2926]">{title}</h2>
+            <h2 className="text-sm font-semibold text-cocoa">{title}</h2>
           ) : (
             <span />
           )}
@@ -133,7 +156,7 @@ export function StatTile({
       <p className="text-xs font-medium uppercase tracking-wide text-[#8C8682]">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-[#2D2926]">
+      <p className="mt-2 text-2xl font-bold tabular-nums text-cocoa">
         {value}
       </p>
       {hint && <p className="mt-1 text-xs text-[#8C8682]">{hint}</p>}
@@ -209,7 +232,7 @@ export function IconAction({
   href?: string;
 }) {
   const className =
-    "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-[#2D2926]";
+    "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-cocoa";
   if (href) {
     return (
       <Link href={href} className={className} aria-label={label} title={label}>

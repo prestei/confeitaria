@@ -14,7 +14,7 @@ export function SettingsSectionHeader({
     <div className="space-y-4">
       <Link
         href="/painel/configuracoes"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#8C8682] transition hover:text-[#2D2926]"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#8C8682] transition hover:text-cocoa"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Configurações

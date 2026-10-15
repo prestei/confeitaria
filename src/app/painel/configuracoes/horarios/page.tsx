@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import { leanDoc } from "@/lib/serialize";
 import { requireStoreSession } from "@/lib/tenant";
 import { Store } from "@/models/Store";
-import { SettingsSectionHeader } from "@/components/painel/settings-section-header";
+import { SettingsPageSheet } from "@/components/painel/settings-page-sheet";
 import { HoursForm } from "@/components/painel/settings-forms";
 
 export default async function HorariosPage() {
@@ -18,12 +18,8 @@ export default async function HorariosPage() {
   if (!store) redirect("/entrar");
 
   return (
-    <div className="space-y-4">
-      <SettingsSectionHeader
-        title="Horários"
-        description="Defina o horário de funcionamento da confeitaria."
-      />
+    <SettingsPageSheet title="Horários">
       <HoursForm businessHours={store.businessHours || ""} />
-    </div>
+    </SettingsPageSheet>
   );
 }

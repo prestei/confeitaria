@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { connectDB } from "@/lib/db";
 import { leanDoc, leanList } from "@/lib/serialize";
+import { SALE_STATUSES } from "@/lib/order-status";
 import { formatBRL } from "@/lib/utils";
 import { requireStoreSession } from "@/lib/tenant";
 import { Customer } from "@/models/Customer";
 import { Order } from "@/models/Order";
 import { PageHeader, SectionCard } from "@/components/painel/page-header";
 import { OrderStatusBadge } from "@/components/ui/order-status";
-import { CustomerNotesForm } from "@/components/painel/customer-notes-form";
+import { CustomerEditButton } from "@/components/painel/customer-edit-button";
 
 export default async function CustomerDetailPage({
   params,
@@ -32,18 +33,30 @@ export default async function CustomerDetailPage({
   );
 
   const spent = orders
-    .filter((o) => o.status !== "CANCELLED" && o.priceLabel !== "TO_CONFIRM")
+    .filter((o) => SALE_STATUSES.has(o.status) && o.priceLabel !== "TO_CONFIRM")
     .reduce((s, o) => s + o.totalCents, 0);
 
   return (
     <div className="space-y-4">
       <PageHeader
         title={customer.name}
-        description={`${customer.phone}${customer.email ? ` · ${customer.email}` : ""}`}
+        description={`${customer.phone}${customer.instagram ? ` · ${customer.instagram}` : ""}${customer.email ? ` · ${customer.email}` : ""} · cliente desde ${format(customer.createdAt, "dd/MM/yyyy")}`}
         actions={
-          <Link href="/painel/clientes" className="btn-secondary !py-2.5 text-sm">
-            Voltar
-          </Link>
+          <div className="flex gap-2">
+            <CustomerEditButton
+              customer={{
+                id: customer.id,
+                name: customer.name,
+                phone: customer.phone,
+                email: customer.email,
+                instagram: customer.instagram,
+                notes: customer.notes,
+              }}
+            />
+            <Link href="/painel/clientes" className="btn-secondary !py-2.5 text-sm">
+              Voltar
+            </Link>
+          </div>
         }
       />
 
@@ -67,9 +80,9 @@ export default async function CustomerDetailPage({
       </div>
 
       <SectionCard title="Observações">
-        <div className="p-5">
-          <CustomerNotesForm customerId={customer.id} notes={customer.notes || ""} />
-        </div>
+        <p className="px-5 py-4 text-sm text-cocoa-soft/75">
+          {customer.notes?.trim() || "Nenhuma observação."}
+        </p>
       </SectionCard>
 
       <SectionCard title="Histórico de pedidos">

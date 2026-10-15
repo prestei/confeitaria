@@ -43,6 +43,15 @@ const addonSchema = new mongoose.Schema(
   { _id: true },
 );
 
+const recipeLineSchema = new mongoose.Schema(
+  {
+    _id: { type: String, default: newId },
+    stockItemId: { type: String, required: true },
+    quantity: { type: Number, required: true },
+  },
+  { _id: true },
+);
+
 const productSchema = baseSchema(
   {
     categoryId: { type: String, default: null, index: true },
@@ -70,7 +79,9 @@ const productSchema = baseSchema(
     },
     featured: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
+    showOnStorefront: { type: Boolean, default: true },
     trackStock: { type: Boolean, default: false },
+    hideWhenOutOfStock: { type: Boolean, default: false },
     stockQty: { type: Number, default: 0 },
     stockMin: { type: Number, default: 5 },
     unit: { type: String, default: "un" },
@@ -79,6 +90,11 @@ const productSchema = baseSchema(
     sortOrder: { type: Number, default: 0 },
     optionGroups: { type: [optionGroupSchema], default: [] },
     addons: { type: [addonSchema], default: [] },
+    recipe: { type: [recipeLineSchema], default: [] },
+    packagingCents: { type: Number, default: 0 },
+    laborCents: { type: Number, default: 0 },
+    otherCostsCents: { type: Number, default: 0 },
+    indirectCents: { type: Number, default: 0 },
   },
   { timestamps: true, tenant: true },
 );
@@ -112,6 +128,13 @@ export type AddonDoc = {
   maxQty: number;
 };
 
+export type RecipeLineDoc = {
+  _id: string;
+  id?: string;
+  stockItemId: string;
+  quantity: number;
+};
+
 export type ProductDoc = {
   _id: string;
   id: string;
@@ -129,7 +152,9 @@ export type ProductDoc = {
   availability: AvailabilityT;
   featured: boolean;
   active: boolean;
+  showOnStorefront: boolean;
   trackStock: boolean;
+  hideWhenOutOfStock: boolean;
   stockQty: number;
   stockMin: number;
   unit: string;
@@ -138,6 +163,11 @@ export type ProductDoc = {
   sortOrder: number;
   optionGroups: OptionGroupDoc[];
   addons: AddonDoc[];
+  recipe: RecipeLineDoc[];
+  packagingCents: number;
+  laborCents: number;
+  otherCostsCents: number;
+  indirectCents: number;
   createdAt: Date;
   updatedAt: Date;
 };

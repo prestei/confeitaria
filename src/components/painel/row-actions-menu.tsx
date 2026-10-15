@@ -56,8 +56,8 @@ export function RowActionsMenu({
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "inline-flex h-8 w-8 items-center justify-center rounded-md text-[#8C8682] transition",
-          "hover:bg-[#F0F2F5] hover:text-[#2D2926]",
-          open && "bg-[#F0F2F5] text-[#2D2926]",
+          "hover:bg-[#F0F2F5] hover:text-cocoa",
+          open && "bg-[#F0F2F5] text-cocoa",
         )}
       >
         <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
@@ -78,7 +78,7 @@ export function RowActionsMenu({
               "flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] transition",
               item.tone === "danger"
                 ? "text-[#C85A5A] hover:bg-[#FDECEC]"
-                : "text-[#2D2926] hover:bg-[#F0F2F5]",
+                : "text-cocoa hover:bg-[#F0F2F5]",
             );
 
             const content = (

@@ -17,14 +17,16 @@ export default async function EstoquePage() {
         .lean(),
     ),
     leanList(
-      await StockMovement.find({ storeId })
+      await StockMovement.find({ storeId, productId: { $ne: null } })
         .sort({ createdAt: -1 })
         .limit(40)
         .lean(),
     ),
   ]);
 
-  const productIds = [...new Set(movementsRaw.map((m) => m.productId))];
+  const productIds = [
+    ...new Set(movementsRaw.map((m) => m.productId).filter(Boolean)),
+  ] as string[];
   const named = productIds.length
     ? leanList(
         await Product.find({ _id: { $in: productIds } })
@@ -36,7 +38,9 @@ export default async function EstoquePage() {
 
   const movements = movementsRaw.map((m) => ({
     ...m,
-    product: { name: nameMap[m.productId] || "Produto" },
+    product: {
+      name: (m.productId && nameMap[m.productId]) || "Produto",
+    },
   }));
 
   return (

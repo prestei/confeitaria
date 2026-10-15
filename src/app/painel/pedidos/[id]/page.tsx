@@ -11,6 +11,7 @@ import { formatBRL, whatsappLink, ORDER_STATUS_LABELS } from "@/lib/utils";
 import { PageHeader, SectionCard } from "@/components/painel/page-header";
 import { OrderStatusBadge } from "@/components/ui/order-status";
 import { OrderStatusUpdater } from "@/components/painel/order-status-updater";
+import { OrderDepositForm } from "@/components/painel/order-deposit-form";
 
 export default async function OrderDetailPage({
   params,
@@ -35,11 +36,10 @@ export default async function OrderDetailPage({
     order.whatsappMessage ||
     `Olá ${order.customerName}! Sobre o seu pedido na ${storeName}…`;
   const wa = whatsappLink(order.customerPhone, waMessage);
-
   return (
     <div className="space-y-4">
       <PageHeader
-        title={`Pedido de ${order.customerName}`}
+        title={`Pedido #${order.id.slice(-6).toUpperCase()}`}
         description={`Recebido em ${format(order.createdAt, "dd/MM/yyyy 'às' HH:mm")}`}
         actions={
           <>
@@ -103,6 +103,14 @@ export default async function OrderDetailPage({
         </div>
 
         <div className="space-y-5">
+          <SectionCard title="Pagamento">
+            <OrderDepositForm
+              orderId={order.id}
+              totalCents={order.totalCents || 0}
+              amountPaidCents={order.amountPaidCents || 0}
+            />
+          </SectionCard>
+
           <SectionCard title="Status">
             <div className="space-y-3 p-5">
               <OrderStatusBadge status={order.status} />

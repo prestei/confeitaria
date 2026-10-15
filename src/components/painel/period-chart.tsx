@@ -81,11 +81,11 @@ export function PeriodChart({
             <TrendingUp className="h-4 w-4" strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
-            <h2 className="font-sans text-[15px] font-semibold text-[#2D2926]">
+            <h2 className="font-sans text-[15px] font-semibold text-cocoa">
               Desempenho de vendas
             </h2>
             <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <p className="text-xl font-bold tracking-tight text-[#2D2926] tabular-nums sm:text-2xl">
+              <p className="text-xl font-bold tracking-tight text-cocoa tabular-nums sm:text-2xl">
                 {formatTotal(total.cents)}
               </p>
               {total.changePct != null && (

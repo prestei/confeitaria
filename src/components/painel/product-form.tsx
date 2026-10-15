@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { PageAction, PageHeader, PageShell } from "@/components/painel/page-header";
 import { GalleryField, ImageField } from "@/components/painel/image-field";
+import {
+  ProductPricingFields,
+  productCostCents,
+  type PricingStockItem,
+  type RecipeDraft,
+} from "@/components/painel/product-pricing-fields";
+import { formatBRL } from "@/lib/utils";
 import { cn } from "@/lib/cn";
 
 type Category = { id: string; name: string };
@@ -21,14 +28,23 @@ const emptyGroup = (): GroupRow => ({
 const STEPS = [
   { id: 1, label: "Básico" },
   { id: 2, label: "Preço e estoque" },
-  { id: 3, label: "Opções" },
-  { id: 4, label: "Revisar" },
+  { id: 3, label: "Precificação" },
+  { id: 4, label: "Opções" },
+  { id: 5, label: "Revisar" },
 ] as const;
+
+function reaisToCents(value: string) {
+  const n = Number(value.replace(",", "."));
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.round(n * 100);
+}
 
 export function ProductForm({
   productId,
   initial,
+  layout = "page",
 }: {
+  layout?: "page" | "sheet";
   productId?: string;
   initial?: {
     name: string;
@@ -43,17 +59,25 @@ export function ProductForm({
     availability: string;
     featured: boolean;
     active: boolean;
+    showOnStorefront?: boolean;
     trackStock: boolean;
+    hideWhenOutOfStock?: boolean;
     stockQty: string;
     stockMin: string;
     unit: string;
     optionGroups: GroupRow[];
     addons: AddonRow[];
+    packaging?: string;
+    labor?: string;
+    otherCosts?: string;
+    indirect?: string;
+    recipe?: RecipeDraft[];
   };
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [stockItems, setStockItems] = useState<PricingStockItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -71,22 +95,37 @@ export function ProductForm({
   );
   const [unit, setUnit] = useState(initial?.unit ?? "un");
   const [trackStock, setTrackStock] = useState(initial?.trackStock ?? false);
+  const [hideWhenOutOfStock, setHideWhenOutOfStock] = useState(
+    initial?.hideWhenOutOfStock ?? false,
+  );
   const [stockQty, setStockQty] = useState(initial?.stockQty ?? "0");
   const [stockMin, setStockMin] = useState(initial?.stockMin ?? "5");
   const [featured, setFeatured] = useState(initial?.featured ?? false);
   const [active, setActive] = useState(initial?.active ?? true);
+  const [showOnStorefront, setShowOnStorefront] = useState(
+    initial?.showOnStorefront ?? true,
+  );
   const [groups, setGroups] = useState<GroupRow[]>(
     initial?.optionGroups?.length ? initial.optionGroups : [],
   );
   const [addons, setAddons] = useState<AddonRow[]>(
     initial?.addons?.length ? initial.addons : [],
   );
+  const [packaging, setPackaging] = useState(initial?.packaging ?? "");
+  const [labor, setLabor] = useState(initial?.labor ?? "");
+  const [otherCosts, setOtherCosts] = useState(initial?.otherCosts ?? "");
+  const [indirect, setIndirect] = useState(initial?.indirect ?? "");
+  const [recipe, setRecipe] = useState<RecipeDraft[]>(initial?.recipe ?? []);
 
   useEffect(() => {
     fetch("/api/categories")
       .then((r) => r.json())
       .then(setCategories)
       .catch(() => setCategories([]));
+    fetch("/api/stock-items")
+      .then((r) => r.json())
+      .then((data) => setStockItems(Array.isArray(data) ? data : []))
+      .catch(() => setStockItems([]));
   }, []);
 
   function canGoNext() {
@@ -125,7 +164,9 @@ export function ProductForm({
       availability,
       featured,
       active,
+      showOnStorefront,
       trackStock,
+      hideWhenOutOfStock: trackStock ? hideWhenOutOfStock : false,
       stockQty: Number(stockQty || 0),
       stockMin: Number(stockMin || 5),
       unit: unit || "un",
@@ -149,6 +190,16 @@ export function ProductForm({
           name: a.name,
           priceCents: Math.round(Number(a.price.replace(",", ".") || 0) * 100),
         })),
+      packagingCents: reaisToCents(packaging),
+      laborCents: reaisToCents(labor),
+      otherCostsCents: reaisToCents(otherCosts),
+      indirectCents: reaisToCents(indirect),
+      recipe: recipe
+        .map((line) => ({
+          stockItemId: line.stockItemId,
+          quantity: Number(line.quantity.replace(",", ".")),
+        }))
+        .filter((line) => line.stockItemId && line.quantity > 0),
     };
 
     const res = await fetch(
@@ -182,18 +233,10 @@ export function ProductForm({
     QUOTE: "Sob consulta",
   };
 
-  return (
-    <PageShell>
-      <PageHeader
-        title={productId ? "Editar produto" : "Novo produto"}
-        description="Cadastro completo em etapas — fotos, preços, opções e estoque."
-        actions={
-          <PageAction href="/painel/produtos" variant="secondary">
-            Voltar
-          </PageAction>
-        }
-      />
+  const shell = layout === "page";
 
+  const content = (
+    <>
       <nav aria-label="Etapas" className="overflow-x-auto">
         <ol className="flex min-w-max items-center gap-2">
           {STEPS.map((s, i) => {
@@ -241,7 +284,7 @@ export function ProductForm({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (step < 4) {
+          if (step < 5) {
             if (canGoNext()) setStep((s) => s + 1);
             return;
           }
@@ -385,6 +428,16 @@ export function ProductForm({
               />
               Controlar estoque
             </label>
+            {trackStock ? (
+              <label className="flex items-center gap-2 text-sm font-medium text-cocoa sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={hideWhenOutOfStock}
+                  onChange={(e) => setHideWhenOutOfStock(e.target.checked)}
+                />
+                Ocultar da vitrine quando esgotar (em vez de mostrar como esgotado)
+              </label>
+            ) : null}
             <div className="grid grid-cols-2 gap-3 sm:col-span-2">
               <div>
                 <label className="label">Qtd. disponível</label>
@@ -419,12 +472,39 @@ export function ProductForm({
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
               />
-              Ativo na vitrine
+              Produto ativo
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-cocoa">
+              <input
+                type="checkbox"
+                checked={showOnStorefront}
+                onChange={(e) => setShowOnStorefront(e.target.checked)}
+              />
+              Exibir na vitrine
             </label>
           </section>
         )}
 
         {step === 3 && (
+          <section className="rounded-2xl border border-cocoa/8 bg-white p-5">
+            <ProductPricingFields
+              stockItems={stockItems}
+              lines={recipe}
+              onLines={setRecipe}
+              packaging={packaging}
+              labor={labor}
+              other={otherCosts}
+              indirect={indirect}
+              onPackaging={setPackaging}
+              onLabor={setLabor}
+              onOther={setOtherCosts}
+              onIndirect={setIndirect}
+              saleCents={priceMode === "QUOTE" || !price ? 0 : reaisToCents(price)}
+            />
+          </section>
+        )}
+
+        {step === 4 && (
           <div className="space-y-5">
             <section className="rounded-2xl border border-cocoa/8 bg-white p-5">
               <div className="flex items-center justify-between gap-3">
@@ -637,7 +717,7 @@ export function ProductForm({
           </div>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <section className="space-y-4 rounded-2xl border border-cocoa/8 bg-white p-5">
             <p className="text-sm font-semibold text-cocoa">Revisão</p>
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -675,6 +755,22 @@ export function ProductForm({
                 </dd>
               </div>
               <div>
+                <dt className="text-xs text-cocoa-soft/55">Precificação</dt>
+                <dd className="font-medium text-cocoa">
+                  {recipe.filter((line) => line.stockItemId).length} insumos · custo{" "}
+                  {formatBRL(
+                    productCostCents({
+                      lines: recipe,
+                      stockItems,
+                      packaging,
+                      labor,
+                      other: otherCosts,
+                      indirect,
+                    }).costCents,
+                  )}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-xs text-cocoa-soft/55">Opções / adicionais</dt>
                 <dd className="font-medium text-cocoa">
                   {groups.filter((g) => g.name.trim()).length} grupos ·{" "}
@@ -704,7 +800,7 @@ export function ProductForm({
             <ChevronLeft className="h-4 w-4" />
             Voltar
           </button>
-          {step < 4 ? (
+          {step < 5 ? (
             <button
               type="submit"
               className="btn-primary !py-2.5 text-sm"
@@ -728,6 +824,23 @@ export function ProductForm({
           )}
         </div>
       </form>
+    </>
+  );
+
+  if (!shell) return content;
+
+  return (
+    <PageShell>
+      <PageHeader
+        title={productId ? "Editar produto" : "Novo produto"}
+        description="Cadastro completo em etapas — fotos, preço, precificação, opções e estoque."
+        actions={
+          <PageAction href="/painel/produtos" variant="secondary">
+            Voltar
+          </PageAction>
+        }
+      />
+      {content}
     </PageShell>
   );
 }

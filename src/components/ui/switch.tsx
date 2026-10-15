@@ -8,12 +8,14 @@ export function Switch({
   label,
   disabled,
   id,
+  "aria-label": ariaLabel,
 }: {
   checked: boolean;
   onCheckedChange: (v: boolean) => void;
   label?: string;
   disabled?: boolean;
   id?: string;
+  "aria-label"?: string;
 }) {
   return (
     <label
@@ -28,6 +30,7 @@ export function Switch({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => onCheckedChange(!checked)}
         className={cn(
@@ -44,7 +47,7 @@ export function Switch({
         />
       </button>
       {label && (
-        <span className="text-sm font-medium text-[#2D2926]">{label}</span>
+        <span className="text-sm font-medium text-cocoa">{label}</span>
       )}
     </label>
   );

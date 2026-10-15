@@ -25,7 +25,7 @@ export function SettingsSubnav() {
               "inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition",
               active
                 ? "bg-[#2D2926] text-white"
-                : "border border-[#CED0D4] bg-white text-[#65676B] hover:bg-[#F0F2F5] hover:text-[#2D2926]",
+                : "border border-[#CED0D4] bg-white text-[#65676B] hover:bg-[#F0F2F5] hover:text-cocoa",
             )}
           >
             <Icon className="h-3.5 w-3.5" aria-hidden />

@@ -161,7 +161,7 @@ export function StoreDesktopMenuStart({
             <Link
               href={`/${store.slug}/carrinho`}
               className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white/8 text-white/80 transition hover:bg-white/14"
-              aria-label={`Carrinho com ${count} itens`}
+              aria-label={`Carrinho com ${count} ${count === 1 ? "item" : "itens"}`}
             >
               <ShoppingBag className="h-5 w-5" />
               {count > 0 && (

@@ -15,4 +15,4 @@ export function isMediaUrl(value: string): boolean {
 export const mediaUrlSchema = z
   .string()
   .refine(isMediaUrl, { message: "URL de imagem inválida" })
-  .optional();
+  .nullish();

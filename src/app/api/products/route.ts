@@ -5,6 +5,7 @@ import { withIds } from "@/lib/serialize";
 import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
 import { mediaUrlSchema } from "@/lib/media-url";
+import { productCostSchema, resolveOwnedRecipe } from "@/lib/product-recipe";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -27,7 +28,9 @@ const schema = z.object({
   ]),
   featured: z.boolean().optional(),
   active: z.boolean().optional(),
+  showOnStorefront: z.boolean().optional(),
   trackStock: z.boolean().optional(),
+  hideWhenOutOfStock: z.boolean().optional(),
   stockQty: z.number().int().optional(),
   stockMin: z.number().int().optional(),
   unit: z.string().optional(),
@@ -55,6 +58,7 @@ const schema = z.object({
       }),
     )
     .optional(),
+  ...productCostSchema,
 });
 
 export async function GET() {
@@ -152,9 +156,21 @@ export async function POST(req: Request) {
     if (taken) slug = `${slug}-${Date.now().toString(36).slice(-3)}`;
 
     const trackStock = data.trackStock ?? false;
+    const hideWhenOutOfStock = data.hideWhenOutOfStock ?? false;
     let availability = data.availability;
     if (trackStock && (data.stockQty ?? 0) <= 0) {
       availability = "SOLD_OUT";
+    }
+
+    const recipe = await resolveOwnedRecipe(
+      session.user.storeId,
+      data.recipe ?? [],
+    );
+    if (!recipe) {
+      return NextResponse.json(
+        { error: "Insumo não encontrado nesta loja" },
+        { status: 400 },
+      );
     }
 
     const product = await Product.create({
@@ -172,7 +188,9 @@ export async function POST(req: Request) {
       availability,
       featured: data.featured ?? false,
       active: data.active ?? true,
+      showOnStorefront: data.showOnStorefront ?? true,
       trackStock,
+      hideWhenOutOfStock,
       stockQty: data.stockQty ?? 0,
       stockMin: data.stockMin ?? 5,
       unit: data.unit || "un",
@@ -192,6 +210,11 @@ export async function POST(req: Request) {
         name: a.name,
         priceCents: a.priceCents,
       })),
+      recipe,
+      packagingCents: data.packagingCents ?? 0,
+      laborCents: data.laborCents ?? 0,
+      otherCostsCents: data.otherCostsCents ?? 0,
+      indirectCents: data.indirectCents ?? 0,
     });
 
     return NextResponse.json(withIds(product.toObject()));

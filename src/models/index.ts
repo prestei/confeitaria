@@ -6,6 +6,8 @@ export { BlockedDate } from "./BlockedDate";
 export { Customer } from "./Customer";
 export { Order } from "./Order";
 export { StockMovement } from "./StockMovement";
+export { StockItem } from "./StockItem";
+export { PricingCalculation } from "./PricingCalculation";
 export { Promotion } from "./Promotion";
 export { AnalyticsEvent } from "./AnalyticsEvent";
 export { Integration } from "./Integration";

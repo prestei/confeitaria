@@ -36,12 +36,8 @@ import {
 import { cn } from "@/lib/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
-import {
-  PageAction,
-  PageHeader,
-  PageShell,
-  StatusDot,
-} from "@/components/painel/page-header";
+import { PageAction, PageHeader, PageShell } from "@/components/painel/page-header";
+import { Switch } from "@/components/ui/switch";
 import {
   RowActionsMenu,
   type RowActionItem,
@@ -168,7 +164,11 @@ export default function ProductsAdminPage({
     }));
   }
 
-  async function patch(id: string, data: Record<string, unknown>) {
+  async function patch(
+    id: string,
+    data: Record<string, unknown>,
+    options?: { silent?: boolean },
+  ) {
     const res = await fetch(`/api/products/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -176,10 +176,30 @@ export default function ProductsAdminPage({
     });
     if (!res.ok) {
       toast({ title: "Falha ao atualizar", tone: "error" });
+      return false;
+    }
+    if (!options?.silent) {
+      toast({ title: "Produto atualizado", tone: "success" });
+    }
+    return true;
+  }
+
+  async function toggleActive(id: string, active: boolean) {
+    const previous = products.find((p) => p.id === id)?.active;
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, active } : p)),
+    );
+    const ok = await patch(id, { active }, { silent: true });
+    if (!ok && previous !== undefined) {
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, active: previous } : p)),
+      );
       return;
     }
-    toast({ title: "Produto atualizado", tone: "success" });
-    load();
+    toast({
+      title: active ? "Produto ativo na vitrine" : "Produto oculto na vitrine",
+      tone: "success",
+    });
   }
 
   async function duplicate(id: string) {
@@ -352,7 +372,7 @@ export default function ProductsAdminPage({
                       )}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[#2D2926]">
+                      <p className="truncate text-sm font-semibold text-cocoa">
                         {group.name}
                       </p>
                       <p className="text-xs text-[#8C8682]">
@@ -391,6 +411,7 @@ export default function ProductsAdminPage({
                             product={p}
                             actions={productActions(p)}
                             disabled={!canReorder}
+                            onToggleActive={toggleActive}
                           />
                         ))}
                       </ul>
@@ -410,11 +431,17 @@ function SortableProductItem({
   product: p,
   actions,
   disabled = false,
+  onToggleActive,
 }: {
   product: Product;
   actions: RowActionItem[];
   disabled?: boolean;
+  onToggleActive: (id: string, active: boolean) => void;
 }) {
+  const statusLabel = !p.active
+    ? "Inativo"
+    : AVAILABILITY_LABELS[p.availability];
+
   const {
     attributes,
     listeners,
@@ -443,7 +470,7 @@ function SortableProductItem({
         type="button"
         disabled={disabled}
         className={cn(
-          "inline-flex h-8 w-8 touch-none items-center justify-center rounded-md text-[#B0AAA6] hover:bg-[#F0F2F5] hover:text-[#2D2926]",
+          "inline-flex h-8 w-8 touch-none items-center justify-center rounded-md text-[#B0AAA6] hover:bg-[#F0F2F5] hover:text-cocoa",
           disabled && "cursor-default opacity-30 hover:bg-transparent hover:text-[#B0AAA6]",
         )}
         aria-label={`Arrastar ${p.name}`}
@@ -477,18 +504,12 @@ function SortableProductItem({
       <div className="hidden text-sm text-cocoa-soft/70 md:block">
         {p.trackStock ? `${p.stockQty} ${p.unit}` : "—"}
       </div>
-      <div className="hidden md:block">
-        <StatusDot
-          tone={
-            !p.active
-              ? "neutral"
-              : p.availability === "SOLD_OUT"
-                ? "danger"
-                : "success"
-          }
-          label={
-            !p.active ? "Inativo" : AVAILABILITY_LABELS[p.availability]
-          }
+      <div className="hidden md:flex md:items-center md:gap-2">
+        <Switch
+          id={`product-active-${p.id}`}
+          checked={p.active}
+          onCheckedChange={(checked) => onToggleActive(p.id, checked)}
+          label={statusLabel}
         />
       </div>
 

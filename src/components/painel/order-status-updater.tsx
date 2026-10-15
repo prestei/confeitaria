@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { allowedStatuses } from "@/lib/order-status";
 import { useToast } from "@/components/ui/toast";
 
 export function OrderStatusUpdater({
@@ -34,11 +35,18 @@ export function OrderStatusUpdater({
     });
     setLoading(false);
     if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
       setStatus(current);
-      toast({ title: "Não foi possível atualizar", tone: "error" });
+      toast({
+        title: data.error || "Não foi possível atualizar",
+        tone: "error",
+      });
       return;
     }
-    toast({ title: "Status atualizado", tone: "success" });
+    toast({
+      title: "Status atualizado",
+      tone: "success",
+    });
     onUpdated?.(next);
     if (!onUpdated) router.refresh();
   }
@@ -50,9 +58,9 @@ export function OrderStatusUpdater({
       disabled={loading}
       onChange={(e) => save(e.target.value)}
     >
-      {Object.entries(labels).map(([value, label]) => (
+      {allowedStatuses(current).map((value) => (
         <option key={value} value={value}>
-          {label}
+          {labels[value] ?? value}
         </option>
       ))}
     </select>

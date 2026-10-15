@@ -3,6 +3,8 @@ import {
   CreditCard,
   Settings2,
   Store,
+  Truck,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,6 +26,20 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     icon: Store,
   },
   {
+    href: "/painel/configuracoes/pagamento",
+    title: "Pagamentos",
+    short: "Pagamentos",
+    description: "Pagar na entrega ou retirada; online em breve.",
+    icon: CreditCard,
+  },
+  {
+    href: "/painel/configuracoes/atendimento",
+    title: "Retirada e entrega",
+    short: "Atendimento",
+    description: "Modalidades, taxa de entrega e instruções para o cliente.",
+    icon: Truck,
+  },
+  {
     href: "/painel/configuracoes/horarios",
     title: "Horários",
     short: "Horários",
@@ -31,11 +47,11 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     icon: Clock3,
   },
   {
-    href: "/painel/configuracoes/pagamento",
-    title: "Pagamento",
-    short: "Pagamento",
-    description: "Mercado Pago online, Pix e sinal 50% pelo WhatsApp.",
-    icon: CreditCard,
+    href: "/painel/configuracoes/agendamento",
+    title: "Agendamento",
+    short: "Agenda",
+    description: "Data e horário desejados no pedido pelo WhatsApp.",
+    icon: CalendarClock,
   },
   {
     href: "/painel/configuracoes/geral",

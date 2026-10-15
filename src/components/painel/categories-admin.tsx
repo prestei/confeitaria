@@ -42,7 +42,6 @@ import { cn } from "@/lib/cn";
 import {
   ALL_CATEGORY_DAYS,
   CATEGORY_DAY_LABELS,
-  formatDisplayDaysShort,
   type CategoryDayKey,
 } from "@/lib/category";
 
@@ -148,10 +147,6 @@ export function CategoriesAdmin({
           : [...prev.displayDays, day],
       };
     });
-  }
-
-  function setAllDays() {
-    setForm((prev) => ({ ...prev, displayDays: [...ALL_CATEGORY_DAYS] }));
   }
 
   async function save(e: FormEvent) {
@@ -280,7 +275,6 @@ export function CategoriesAdmin({
         <SheetContent size="md">
           <SheetHeader
             title={isEditing ? "Editar categoria" : "Nova categoria"}
-            description="Controla como a categoria aparece e o preço dos produtos."
           />
           <SheetForm onSubmit={save}>
             <SheetBody className="space-y-5">
@@ -347,16 +341,7 @@ export function CategoriesAdmin({
               </div>
 
               <div>
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <label className="label mb-0">Dias de exibição</label>
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-[#8C8682] transition hover:text-[#483129]"
-                    onClick={setAllDays}
-                  >
-                    Todos os dias
-                  </button>
-                </div>
+                <label className="label">Dias de exibição</label>
                 <div className="flex flex-wrap gap-1.5">
                   {CATEGORY_DAY_LABELS.map(({ key, short }) => {
                     const selected = form.displayDays.includes(key);
@@ -366,7 +351,7 @@ export function CategoriesAdmin({
                         type="button"
                         onClick={() => toggleDay(key)}
                         className={cn(
-                          "min-w-[2.75rem] rounded border px-2.5 py-1.5 text-xs font-semibold transition",
+                          "inline-flex size-10 shrink-0 items-center justify-center rounded-full border p-0 text-xs font-semibold transition",
                           selected
                             ? "border-[#483129] bg-[#483129] text-white"
                             : "border-[#CED0D4] bg-white text-[#5C5652] hover:border-[#B0AAA6] hover:bg-[#F7F8FA]",
@@ -382,7 +367,7 @@ export function CategoriesAdmin({
 
               <div className="flex items-center justify-between gap-4 rounded border border-[#E8E2DE] bg-[#FBF7F2] px-3.5 py-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[#2D2926]">
+                  <p className="text-sm font-semibold text-cocoa">
                     Categoria ativa na vitrine
                   </p>
                   <p className="mt-0.5 text-xs text-[#8C8682]">
@@ -493,7 +478,7 @@ function SortableCategoryRow({
     >
       <button
         type="button"
-        className="inline-flex h-9 w-9 shrink-0 touch-none items-center justify-center rounded-md text-[#B0AAA6] hover:bg-[#F0F2F5] hover:text-[#2D2926]"
+        className="inline-flex h-9 w-9 shrink-0 touch-none items-center justify-center rounded-md text-[#B0AAA6] hover:bg-[#F0F2F5] hover:text-cocoa"
         aria-label={`Arrastar ${category.name}`}
         {...attributes}
         {...listeners}
@@ -511,7 +496,7 @@ function SortableCategoryRow({
         </span>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate font-semibold text-[#2D2926]">
+            <p className="truncate font-semibold text-cocoa">
               {category.name}
             </p>
             <span className="hidden text-[11px] tabular-nums text-[#B0AAA6] sm:inline">
@@ -548,14 +533,20 @@ function SortableCategoryRow({
                 +{surcharge}%
               </span>
             )}
-            <span className="hidden sm:inline">
-              {formatDisplayDaysShort(category.displayDays)}
-            </span>
           </div>
         </div>
       </button>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-2">
+        <Switch
+          checked={category.active}
+          onCheckedChange={onToggle}
+          aria-label={
+            category.active
+              ? `Desativar ${category.name}`
+              : `Ativar ${category.name}`
+          }
+        />
         <RowActionsMenu
           label={`Ações de ${category.name}`}
           items={[

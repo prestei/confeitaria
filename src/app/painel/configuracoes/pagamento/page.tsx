@@ -5,7 +5,7 @@ import { leanDoc } from "@/lib/serialize";
 import { requireStoreSession } from "@/lib/tenant";
 import { Store } from "@/models/Store";
 import { SettingsSectionHeader } from "@/components/painel/settings-section-header";
-import { PaymentForm } from "@/components/painel/settings-forms";
+import { PaymentAdmin } from "@/components/painel/payment-admin";
 
 export default async function PagamentoPage() {
   const session = await requireStoreSession();
@@ -15,15 +15,11 @@ export default async function PagamentoPage() {
     await Store.findOne({ _id: session.storeId })
       .select({
         paymentMethods: 1,
-        pickupEnabled: 1,
-        deliveryEnabled: 1,
-        minAdvanceDays: 1,
-        productionNote: 1,
+        cardBrands: 1,
         mpPublicKey: 1,
         mpAccessToken: 1,
         mpWebhookSecret: 1,
         mpEnabled: 1,
-        autoDeductStock: 1,
       })
       .lean(),
   );
@@ -32,16 +28,13 @@ export default async function PagamentoPage() {
   return (
     <div className="space-y-6">
       <SettingsSectionHeader
-        title="Pagamento"
-        description="Mercado Pago no checkout; Pix e sinal (50%) pelo WhatsApp."
+        title="Pagamentos"
+        description="Defina como o cliente paga: na entrega ou retirada hoje; pagamento online em breve."
       />
-      <PaymentForm
+      <PaymentAdmin
         store={{
           paymentMethods: store.paymentMethods,
-          pickupEnabled: store.pickupEnabled,
-          deliveryEnabled: store.deliveryEnabled,
-          minAdvanceDays: store.minAdvanceDays,
-          productionNote: store.productionNote || "",
+          cardBrands: store.cardBrands ?? [],
           mpEnabled: store.mpEnabled,
           mpPublicKey: store.mpPublicKey || "",
           mpAccessTokenMasked: maskSecret(store.mpAccessToken),
@@ -51,7 +44,6 @@ export default async function PagamentoPage() {
             mpPublicKey: store.mpPublicKey,
             mpAccessToken: store.mpAccessToken,
           }),
-          autoDeductStock: store.autoDeductStock !== false,
         }}
       />
     </div>

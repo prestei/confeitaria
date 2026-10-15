@@ -52,7 +52,7 @@ type DiscountType = "PERCENT" | "FIXED";
 const fieldLabel =
   "mb-1.5 block text-[13px] font-semibold text-[#5C5652]";
 const fieldInput =
-  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-[#2D2926] outline-none transition placeholder:text-[#B0AAA6] focus:border-[#2D2926]/40 focus:ring-2 focus:ring-[#2D2926]/10";
+  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[#2D2926]/40 focus:ring-2 focus:ring-[#2D2926]/10";
 
 function generateCouponCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -169,10 +169,7 @@ export function PromocoesAdmin({
         }}
       >
         <SheetContent size="md">
-          <SheetHeader
-            title="Nova promoção"
-            description="Crie um cupom ou desconto para sua loja."
-          />
+          <SheetHeader title="Nova promoção" />
           <SheetForm onSubmit={create}>
             <SheetBody className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -233,8 +230,8 @@ export function PromocoesAdmin({
                       className={cn(
                         "flex-1 rounded-md px-2 text-[12px] font-semibold transition sm:text-[13px]",
                         discountType === opt.value
-                          ? "bg-[#EEF2F7] text-[#2D2926]"
-                          : "text-[#8C8682] hover:text-[#2D2926]",
+                          ? "bg-[#EEF2F7] text-cocoa"
+                          : "text-[#8C8682] hover:text-cocoa",
                       )}
                     >
                       {opt.label}
@@ -382,7 +379,7 @@ export function PromocoesAdmin({
               className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
             >
               <div>
-                <p className="font-medium text-[#2D2926]">{p.name}</p>
+                <p className="font-medium text-cocoa">{p.name}</p>
                 <p className="mt-1 text-xs text-[#8C8682]">
                   {label(p)}
                   {p.code ? ` · Código ${p.code}` : ""}

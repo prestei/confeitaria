@@ -31,7 +31,7 @@ export function StoreCartBar({ storeSlug }: { storeSlug: string }) {
           <Link
             href={`/${storeSlug}/carrinho`}
             className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-rosewood/30 bg-rosewood px-4 py-3.5 text-white shadow-[0_16px_40px_rgba(185,111,125,0.4)] transition hover:bg-rosewood-deep md:min-w-[17rem]"
-            aria-label={`Sacola com ${count} itens`}
+            aria-label={`Sacola com ${count} ${count === 1 ? "item" : "itens"}`}
           >
             <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
               <ShoppingBag className="h-5 w-5" aria-hidden />

@@ -1,19 +1,20 @@
-import { Plus, Users } from "lucide-react";
 import { connectDB } from "@/lib/db";
 import { leanList } from "@/lib/serialize";
 import { requireStoreSession } from "@/lib/tenant";
 import { Customer } from "@/models/Customer";
 import { Order } from "@/models/Order";
 import { OrderStatus } from "@/lib/enums";
-import { PageAction, PageHeader } from "@/components/painel/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
-import {
-  CustomersTable,
-  type CustomerRow,
-} from "@/components/painel/customers-table";
+import { SALE_STATUSES } from "@/lib/order-status";
+import { CustomersAdmin } from "@/components/painel/customers-admin";
+import type { CustomerRow } from "@/components/painel/customers-table";
 
-export default async function ClientesPage() {
+export default async function ClientesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ novo?: string }>;
+}) {
   const session = await requireStoreSession();
+  const { novo } = await searchParams;
   const storeId = session.storeId;
   await connectDB();
 
@@ -45,7 +46,7 @@ export default async function ClientesPage() {
   let rows: CustomerRow[] = customers.map((c) => {
     const orders = ordersByCustomer.get(c.id) || [];
     const spent = orders
-      .filter((o) => o.priceLabel !== "TO_CONFIRM")
+      .filter((o) => SALE_STATUSES.has(String(o.status)) && o.priceLabel !== "TO_CONFIRM")
       .reduce((s, o) => s + o.totalCents, 0);
     return {
       id: c.id,
@@ -56,6 +57,9 @@ export default async function ClientesPage() {
       spent,
       lastOrder: (orders[0]?.createdAt || c.createdAt).toISOString(),
       href: `/painel/clientes/${c.id}`,
+      instagram: c.instagram,
+      notes: c.notes,
+      editable: true,
     };
   });
 
@@ -67,7 +71,7 @@ export default async function ClientesPage() {
     for (const o of orders) {
       const existing = map.get(o.customerPhone);
       const add =
-        o.status !== "CANCELLED" && o.priceLabel !== "TO_CONFIRM"
+        SALE_STATUSES.has(o.status) && o.priceLabel !== "TO_CONFIRM"
           ? o.totalCents
           : 0;
       if (!existing) {
@@ -94,29 +98,5 @@ export default async function ClientesPage() {
     rows = [...map.values()];
   }
 
-  return (
-    <div className="space-y-4">
-      <PageHeader
-        title="Clientes"
-        description="CRM simples: quem pediu, quanto gastou e quando voltou."
-        actions={
-          <PageAction href="/painel/clientes/novo">
-            <Plus className="h-4 w-4" />
-            Novo cliente
-          </PageAction>
-        }
-      />
-
-      {rows.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="Nenhum cliente ainda"
-          description="Cadastre um contato ou aguarde os pedidos da vitrine."
-          action={{ label: "Novo cliente", href: "/painel/clientes/novo" }}
-        />
-      ) : (
-        <CustomersTable rows={rows} />
-      )}
-    </div>
-  );
+  return <CustomersAdmin rows={rows} startOpen={novo === "1"} />;
 }

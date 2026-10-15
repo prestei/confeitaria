@@ -21,13 +21,8 @@ import {
   PageShell,
 } from "@/components/painel/page-header";
 import {
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeader,
+  ColumnsTable,
   DataTablePagination,
-  DataTableRow,
   TableAvatar,
 } from "@/components/painel/data-table";
 import { RowActionsMenu } from "@/components/painel/row-actions-menu";
@@ -195,7 +190,7 @@ export function OrdersHistory({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por cliente, produto ou nº…"
-            className="h-9 w-full rounded border border-[#E8E2DE] bg-white py-2 pl-9 pr-3 text-sm text-[#2D2926] outline-none transition placeholder:text-[#B0AAA6] focus:border-[#D4C9C2] focus:ring-2 focus:ring-[#D6715A]/15"
+            className="h-9 w-full rounded border border-[#E8E2DE] bg-white py-2 pl-9 pr-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[#D4C9C2] focus:ring-2 focus:ring-[#D6715A]/15"
           />
         </label>
       </div>
@@ -215,8 +210,11 @@ export function OrdersHistory({
         />
       ) : (
         <div>
-          <DataTable
+          <ColumnsTable
             minWidth="860px"
+            rows={pageRows}
+            rowKey={(order) => order.id}
+            onRowClick={(order) => setSelectedId(order.id)}
             footer={
               <DataTablePagination
                 page={safePage}
@@ -225,53 +223,36 @@ export function OrdersHistory({
                 summary={`Mostrando ${pageRows.length} de ${filtered.length} pedido${filtered.length === 1 ? "" : "s"}`}
               />
             }
-          >
-            <DataTableHeader>
-              <tr>
-                <DataTableHead>Cliente</DataTableHead>
-                <DataTableHead>Itens</DataTableHead>
-                <DataTableHead>Status</DataTableHead>
-                <DataTableHead>Data</DataTableHead>
-                <DataTableHead align="right">Total</DataTableHead>
-                <DataTableHead align="center" className="w-14">
-                  Ações
-                </DataTableHead>
-              </tr>
-            </DataTableHeader>
-            <DataTableBody>
-              {pageRows.map((o) => {
-                const items = itemsSummary(o.items);
-                const wa = whatsappLink(
-                  o.customerPhone,
-                  o.whatsappMessage ||
-                    `Olá ${o.customerName}! Sobre o seu pedido…`,
-                );
-
-                return (
-                  <DataTableRow
-                    key={o.id}
-                    onClick={() => setSelectedId(o.id)}
-                  >
-                    <DataTableCell>
-                      <div className="flex min-w-0 items-center gap-3">
-                        <TableAvatar name={o.customerName} />
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-[#2D2926]">
-                            {o.customerName}
-                          </p>
-                          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-[#8C8682]">
-                            <MessageCircle
-                              className="h-3 w-3 shrink-0 text-[#25D366]"
-                              strokeWidth={2}
-                            />
-                            {o.customerPhone}
-                          </p>
-                        </div>
-                      </div>
-                    </DataTableCell>
-
-                    <DataTableCell>
-                      <p className="max-w-[220px] truncate font-medium text-[#2D2926]">
+            columns={[
+              {
+                id: "customer",
+                header: "Cliente",
+                render: (order) => (
+                  <div className="flex min-w-0 items-center gap-3">
+                    <TableAvatar name={order.customerName} />
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-cocoa">
+                        {order.customerName}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-[#8C8682]">
+                        <MessageCircle
+                          className="h-3 w-3 shrink-0 text-[#25D366]"
+                          strokeWidth={2}
+                        />
+                        {order.customerPhone}
+                      </p>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                id: "items",
+                header: "Itens",
+                render: (order) => {
+                  const items = itemsSummary(order.items);
+                  return (
+                    <>
+                      <p className="max-w-[220px] truncate font-medium text-cocoa">
                         {items.title}
                       </p>
                       {items.detail ? (
@@ -279,63 +260,85 @@ export function OrdersHistory({
                           {items.detail}
                         </p>
                       ) : null}
-                    </DataTableCell>
-
-                    <DataTableCell>
-                      <OrderStatusBadge status={o.status} />
-                    </DataTableCell>
-
-                    <DataTableCell>
-                      <p className="flex items-center gap-1.5 whitespace-nowrap text-xs text-[#5C656F]">
-                        <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#B0AAA6]" />
-                        {format(new Date(o.createdAt), "dd/MM/yyyy HH:mm")}
+                    </>
+                  );
+                },
+              },
+              {
+                id: "status",
+                header: "Status",
+                render: (order) => <OrderStatusBadge status={order.status} />,
+              },
+              {
+                id: "date",
+                header: "Data",
+                render: (order) => (
+                  <>
+                    <p className="flex items-center gap-1.5 whitespace-nowrap text-xs text-[#5C656F]">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#B0AAA6]" />
+                      {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
+                    </p>
+                    {order.eventDate ? (
+                      <p className="mt-1 flex items-center gap-1.5 whitespace-nowrap text-xs text-[#8C8682]">
+                        <Truck className="h-3.5 w-3.5 shrink-0 text-[#B0AAA6]" />
+                        {order.fulfillment === "DELIVERY" ? "Entrega" : "Retirada"}{" "}
+                        {format(new Date(order.eventDate), "dd/MM")}
+                        {order.eventTime ? ` · ${order.eventTime}` : ""}
                       </p>
-                      {o.eventDate ? (
-                        <p className="mt-1 flex items-center gap-1.5 whitespace-nowrap text-xs text-[#8C8682]">
-                          <Truck className="h-3.5 w-3.5 shrink-0 text-[#B0AAA6]" />
-                          {o.fulfillment === "DELIVERY" ? "Entrega" : "Retirada"}{" "}
-                          {format(new Date(o.eventDate), "dd/MM")}
-                          {o.eventTime ? ` · ${o.eventTime}` : ""}
-                        </p>
-                      ) : null}
-                    </DataTableCell>
-
-                    <DataTableCell align="right">
-                      <span className="font-semibold tabular-nums text-[#2D2926]">
-                        {o.priceLabel === "TO_CONFIRM"
-                          ? "A confirmar"
-                          : formatBRL(o.totalCents)}
-                      </span>
-                    </DataTableCell>
-
-                    <DataTableCell align="center" className="relative z-[1]">
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                      >
-                        <RowActionsMenu
-                          label={`Ações do pedido de ${o.customerName}`}
-                          items={[
-                            {
-                              label: "Ver detalhes",
-                              icon: Eye,
-                              onClick: () => setSelectedId(o.id),
-                            },
-                            {
-                              label: "WhatsApp",
-                              icon: MessageCircle,
-                              onClick: () =>
-                                window.open(wa, "_blank", "noopener,noreferrer"),
-                            },
-                          ]}
-                        />
-                      </div>
-                    </DataTableCell>
-                  </DataTableRow>
-                );
-              })}
-            </DataTableBody>
-          </DataTable>
+                    ) : null}
+                  </>
+                ),
+              },
+              {
+                id: "total",
+                header: "Total",
+                align: "right",
+                tone: "strong",
+                numeric: true,
+                render: (order) =>
+                  order.priceLabel === "TO_CONFIRM"
+                    ? "A confirmar"
+                    : formatBRL(order.totalCents),
+              },
+              {
+                id: "actions",
+                header: "Ações",
+                align: "center",
+                headerClassName: "w-14",
+                className: "relative z-[1]",
+                render: (order) => {
+                  const wa = whatsappLink(
+                    order.customerPhone,
+                    order.whatsappMessage ||
+                      `Olá ${order.customerName}! Sobre o seu pedido…`,
+                  );
+                  return (
+                    <div
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      <RowActionsMenu
+                        label={`Ações do pedido de ${order.customerName}`}
+                        items={[
+                          {
+                            label: "Ver detalhes",
+                            icon: Eye,
+                            onClick: () => setSelectedId(order.id),
+                          },
+                          {
+                            label: "WhatsApp",
+                            icon: MessageCircle,
+                            onClick: () =>
+                              window.open(wa, "_blank", "noopener,noreferrer"),
+                          },
+                        ]}
+                      />
+                    </div>
+                  );
+                },
+              },
+            ]}
+          />
         </div>
       )}
 

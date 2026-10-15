@@ -39,7 +39,7 @@ export async function GET() {
     products: withIds(products),
     movements: movementsWithId.map((m) => ({
       ...m,
-      product: { name: nameMap.get(m.productId) ?? "" },
+      product: { name: nameMap.get(m.productId || "") ?? "" },
     })),
   });
 }

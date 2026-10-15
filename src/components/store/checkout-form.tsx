@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
@@ -100,6 +100,7 @@ export function CheckoutForm({
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
   const [mpOnlineEnabled, setMpOnlineEnabled] = useState(store.mpOnlineEnabled);
   const [mpPublicKey, setMpPublicKey] = useState<string | null>(null);
   const [payOrder, setPayOrder] = useState<{
@@ -237,6 +238,8 @@ export function CheckoutForm({
       setError("Adicione produtos ao pedido");
       return;
     }
+    if (submitting.current) return;
+    submitting.current = true;
     setLoading(true);
     setError("");
 
@@ -270,6 +273,7 @@ export function CheckoutForm({
     const json = await res.json();
     setLoading(false);
     if (!res.ok) {
+      submitting.current = false;
       setError(json.error || "Não foi possível enviar o pedido");
       return;
     }

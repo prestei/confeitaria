@@ -67,7 +67,7 @@ export function StoreAmbientScene() {
         { geo: new THREE.SphereGeometry(0.4, 24, 24), mat: mats[2], pos: [0.2, 0.9, -1.4] as const },
       ].map((s) => {
         const mesh = new THREE.Mesh(s.geo, s.mat);
-        mesh.position.set(...s.pos);
+        mesh.position.set(s.pos[0], s.pos[1], s.pos[2]);
         scene.add(mesh);
         return mesh;
       });

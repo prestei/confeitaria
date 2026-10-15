@@ -12,12 +12,12 @@ export type ButtonSize = "sm" | "md" | "lg" | "icon";
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-[#483129] text-white hover:bg-[#5E4335]",
   secondary:
-    "border border-[#CED0D4] bg-white text-[#2D2926] hover:bg-[#F0F2F5]",
+    "border border-[#CED0D4] bg-white text-cocoa hover:bg-[#F0F2F5]",
   accent: "bg-[#483129] text-white hover:bg-[#5E4335]",
   /** Alias de accent — mesma cor primária do menu lateral. */
   berry: "bg-[#483129] text-white hover:bg-[#5E4335]",
   ghost:
-    "bg-transparent text-[#8C8682] hover:bg-[#F0F2F5] hover:text-[#2D2926]",
+    "bg-transparent text-[#8C8682] hover:bg-[#F0F2F5] hover:text-cocoa",
   danger: "bg-[#C85A5A] text-white hover:bg-[#B34A4A]",
 };
 

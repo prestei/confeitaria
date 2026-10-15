@@ -23,7 +23,7 @@ export default async function OrderSentPage({
           <p className="mt-2 text-xs text-cocoa-soft/55">Ref: {id.slice(0, 8)}</p>
         )}
         <Link href={`/${slug}`} className="btn-primary mt-6 inline-flex">
-          Voltar ao cardápio
+          Voltar à vitrine
         </Link>
       </div>
     </main>

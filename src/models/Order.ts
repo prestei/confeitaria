@@ -69,12 +69,31 @@ const orderSchema = baseSchema(
     paidAt: { type: Date, default: null },
     stockDeducted: { type: Boolean, default: false },
     whatsappMessage: { type: String, default: null },
+    amountPaidCents: { type: Number, default: 0 },
+    deliveryAddress: { type: String, default: null },
+    checkoutKey: { type: String },
+    recipeDeductions: {
+      type: [
+        {
+          stockItemId: { type: String, required: true },
+          name: { type: String, required: true },
+          unit: { type: String, default: "un" },
+          needed: { type: Number, required: true },
+          deducted: { type: Number, required: true },
+        },
+      ],
+      default: [],
+    },
     items: { type: [orderItemSchema], default: [] },
   },
   { timestamps: true, tenant: true },
 );
 
 orderSchema.index({ storeId: 1, status: 1 });
+orderSchema.index(
+  { storeId: 1, checkoutKey: 1 },
+  { unique: true, sparse: true },
+);
 
 export type OrderItemDoc = {
   _id: string;
@@ -117,6 +136,16 @@ export type OrderDoc = {
   paidAt: Date | null;
   stockDeducted: boolean;
   whatsappMessage: string | null;
+  amountPaidCents: number;
+  deliveryAddress: string | null;
+  checkoutKey?: string | null;
+  recipeDeductions?: {
+    stockItemId: string;
+    name: string;
+    unit: string;
+    needed: number;
+    deducted: number;
+  }[];
   items: OrderItemDoc[];
   createdAt: Date;
   updatedAt: Date;

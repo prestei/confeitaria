@@ -16,6 +16,7 @@ import { cn } from "@/lib/cn";
 import { motionPresets } from "@/lib/animations/presets";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { Button } from "@/components/ui/button";
+import { PageTitle } from "@/components/painel/page-header";
 
 type DialogCtx = {
   open: boolean;
@@ -108,7 +109,7 @@ export function DialogContent({
               type="button"
               onClick={close}
               className={cn(
-                "absolute right-4 top-4 rounded-md p-1.5 text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-[#2D2926]",
+                "absolute right-4 top-4 rounded-md p-1.5 text-[#8C8682] transition hover:bg-[#F0F2F5] hover:text-cocoa",
                 closeClassName,
               )}
               aria-label="Fechar diálogo"
@@ -133,12 +134,9 @@ export function DialogHeader({
   const { titleId } = useDialog();
   return (
     <div className="px-6 pb-1 pt-6 pr-12">
-      <h2
-        id={titleId}
-        className="font-sans text-xl font-bold leading-tight tracking-tight text-[#2D2926]"
-      >
+      <PageTitle as="h2" id={titleId}>
         {title}
-      </h2>
+      </PageTitle>
       {description && (
         <p className="mt-1 text-sm leading-snug text-[#8C8682]">{description}</p>
       )}

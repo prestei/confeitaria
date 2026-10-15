@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
@@ -83,6 +83,7 @@ export function CustomOrderWizard({
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
 
   const typeLabel = useMemo(
     () => PRODUCT_TYPES.find((t) => t.value === form.productType)?.label ?? form.productType,
@@ -127,6 +128,8 @@ export function CustomOrderWizard({
       setError(err);
       return;
     }
+    if (submitting.current) return;
+    submitting.current = true;
     setLoading(true);
     setError("");
 
@@ -170,6 +173,7 @@ export function CustomOrderWizard({
     const json = await res.json();
     setLoading(false);
     if (!res.ok) {
+      submitting.current = false;
       setError(json.error || "Não foi possível enviar a encomenda");
       return;
     }

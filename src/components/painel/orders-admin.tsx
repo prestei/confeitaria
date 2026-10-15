@@ -35,6 +35,7 @@ import {
   Truck,
   X,
 } from "lucide-react";
+import { canTransitionStatus } from "@/lib/order-status";
 import {
   formatBRL,
   isOnlinePaymentOutstanding,
@@ -301,13 +302,13 @@ function OrderCardContent({
 
       <div className="relative z-[1] pointer-events-none">
         <div className="flex items-start justify-between gap-2">
-          <p className="min-w-0 truncate text-[13px] font-bold text-[#2D2926]">
+          <p className="min-w-0 truncate text-[13px] font-bold text-cocoa">
             {order.customerName}{" "}
             <span className="font-semibold text-[#8C8682]">
               #{orderCode(order.id)}
             </span>
           </p>
-          <p className="shrink-0 text-[13px] font-bold tabular-nums text-[#2D2926]">
+          <p className="shrink-0 text-[13px] font-bold tabular-nums text-cocoa">
             {order.priceLabel === "TO_CONFIRM"
               ? "A confirmar"
               : formatBRL(order.totalCents)}
@@ -848,10 +849,14 @@ export function OrdersAdmin({
     });
     setBusyId(null);
     if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: previous } : o)),
       );
-      toast({ title: "Não foi possível atualizar o status", tone: "error" });
+      toast({
+        title: data.error || "Não foi possível atualizar o status",
+        tone: "error",
+      });
       return;
     }
     toast({
@@ -863,6 +868,13 @@ export function OrdersAdmin({
   function moveOrder(orderId: string, nextStatus: OrderStatus) {
     const order = orders.find((o) => o.id === orderId);
     if (!order || order.status === nextStatus) return;
+    if (!canTransitionStatus(order.status, nextStatus)) {
+      toast({
+        title: "Essa mudança de status não é permitida.",
+        tone: "error",
+      });
+      return;
+    }
     const previous = order.status;
     setOrders((prev) =>
       prev.map((o) =>
@@ -934,7 +946,10 @@ export function OrdersAdmin({
           icon={ShoppingBag}
           title="Nenhum pedido"
           description="Quando a vitrine receber pedidos, eles aparecem aqui no quadro por status."
-          action={{ label: "Ver vitrine", href: "/painel/vitrine" }}
+          action={{
+            label: "Configurar loja",
+            href: "/painel/configuracoes/estabelecimento",
+          }}
         />
       ) : (
         <DndContext

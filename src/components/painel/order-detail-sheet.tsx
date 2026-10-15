@@ -2,8 +2,13 @@
 
 import { format } from "date-fns";
 import { MessageCircle } from "lucide-react";
-import { Drawer } from "@/components/ui/drawer";
 import { buttonClassName } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+} from "@/components/ui/sheet";
 import { OrderStatusBadge } from "@/components/ui/order-status";
 import { OrderStatusUpdater } from "@/components/painel/order-status-updater";
 import {
@@ -62,16 +67,18 @@ export function OrderDetailSheet({
   const visible = open && order != null;
 
   return (
-    <Drawer
-      open={visible}
-      onClose={onClose}
-      title={order ? `Pedido de ${order.customerName}` : "Pedido"}
-      className="max-w-lg"
-    >
-      {order ? (
-        <OrderDetailBody order={order} onStatusChange={onStatusChange} />
-      ) : null}
-    </Drawer>
+    <Sheet open={visible} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent size="lg" side="right">
+        <SheetHeader
+          title={order ? `Pedido de ${order.customerName}` : "Pedido"}
+        />
+        <SheetBody>
+          {order ? (
+            <OrderDetailBody order={order} onStatusChange={onStatusChange} />
+          ) : null}
+        </SheetBody>
+      </SheetContent>
+    </Sheet>
   );
 }
 

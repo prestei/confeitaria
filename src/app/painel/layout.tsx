@@ -9,6 +9,9 @@ import { OrderStatus } from "@/lib/enums";
 import { isAbandonedOnlineCheckout } from "@/lib/utils";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { PainelTopbar } from "@/components/painel/painel-topbar";
+import { PainelTopbarShell } from "@/components/painel/painel-topbar-shell";
+import { SessionGuard } from "@/components/painel/session-guard";
+import { logoutFromPainel } from "@/app/painel/logout-action";
 
 export default async function PainelLayout({
   children,
@@ -54,23 +57,27 @@ export default async function PainelLayout({
         : "Starter";
 
   return (
-    <div className="painel-shell flex min-h-screen flex-col bg-[#F0F2F5] font-sans md:h-screen md:flex-row md:overflow-hidden">
+    <div className="painel-shell flex min-h-screen flex-col bg-[#FAF7F4] font-sans md:h-screen md:flex-row md:overflow-hidden">
       <PainelSidebar
         storeName={store?.name || session.user.name || "Sua confeitaria"}
-        userName={session.user.name || "Confeiteira"}
+        storeLogoUrl={store?.logoUrl || null}
         storeSlug={store?.slug || null}
         plan={planLabel}
-        badges={{ orders: newOrders, stock: lowStock }}
+        badges={{ stock: lowStock }}
+        onLogout={logoutFromPainel}
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <PainelTopbar
-          storeName={store?.name || session.user.name || "Loja"}
-          storeLogoUrl={store?.logoUrl || null}
-          storeSlug={store?.slug || null}
-          userName={session.user.name || "Confeiteira"}
-          notificationCount={newOrders}
-        />
-        <main className="flex w-full min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-6 pt-4 sm:px-6 sm:pb-8 lg:px-8 xl:px-10">
+        <PainelTopbarShell>
+          <PainelTopbar
+            storeName={store?.name || session.user.name || "Loja"}
+            storeLogoUrl={store?.logoUrl || null}
+            storeSlug={store?.slug || null}
+            userName={session.user.name || "Confeiteira"}
+            notificationCount={newOrders}
+          />
+        </PainelTopbarShell>
+        <main className="flex w-full min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-24 pt-5 sm:px-6 md:pb-8 lg:px-8 xl:px-10">
+          <SessionGuard />
           {children}
         </main>
       </div>

@@ -21,7 +21,7 @@
   --sage: #a8b2a0;
 
   /* Text */
-  --cocoa: #332522;
+  --cocoa: #483129;
   --cocoa-soft: #756761;
   --ink-muted: #8a7f79;
 
@@ -55,7 +55,8 @@
   --hairline: color-mix(in oklab, var(--cocoa) 10%, transparent);
 }
 
-@theme inline {
+@theme {
+  --font-sans: var(--font-sora), system-ui, sans-serif;
   --radius: 0.625rem;
   --radius-xs: 0.625rem;
   --radius-sm: 0.625rem;
@@ -66,6 +67,125 @@
   --radius-3xl: 0.625rem;
   --radius-4xl: 0.625rem;
   --default-border-radius: 0.625rem;
+
+  --color-surface-dim: #e4d9ce;
+  --color-surface-bright: var(--ivory);
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: var(--ivory);
+  --color-surface-container: var(--sand);
+  --color-surface-container-high: var(--butter);
+  --color-surface-container-highest: var(--stone);
+  --color-on-surface: var(--cocoa);
+  --color-on-surface-variant: var(--cocoa-soft);
+  --color-inverse-surface: #483129;
+  --color-inverse-on-surface: var(--ivory);
+  --color-outline: var(--cocoa-soft);
+  --color-outline-variant: var(--stone);
+  --color-surface-tint: var(--rosewood);
+  --color-primary: #483129;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #483129;
+  --color-primary-hover: #5e4335;
+  --color-on-primary-container: #e8d5cc;
+  --color-inverse-primary: var(--rose);
+  --color-secondary: var(--rosewood-deep);
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: var(--terracotta);
+  --color-on-secondary-container: var(--cocoa);
+  --color-tertiary: #3a2822;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #5e4335;
+  --color-on-tertiary-container: #e8d5cc;
+  --color-error: var(--danger);
+  --color-on-error: #ffffff;
+  --color-error-container: var(--blush);
+  --color-on-error-container: var(--danger);
+  --color-primary-fixed: var(--blush);
+  --color-primary-fixed-dim: #e8d5cc;
+  --color-on-primary-fixed: var(--cocoa);
+  --color-on-primary-fixed-variant: #5e4335;
+  --color-secondary-fixed: var(--blush);
+  --color-secondary-fixed-dim: var(--rose);
+  --color-on-secondary-fixed: var(--cocoa);
+  --color-on-secondary-fixed-variant: var(--rosewood-deep);
+  --color-tertiary-fixed: var(--sand);
+  --color-tertiary-fixed-dim: var(--stone);
+  --color-on-tertiary-fixed: var(--cocoa);
+  --color-on-tertiary-fixed-variant: #5e4335;
+  --color-on-background: var(--cocoa);
+  --color-surface-variant: var(--stone);
+  --color-surface-canvas: var(--ivory);
+  --color-surface-card: var(--surface);
+  --color-surface-subtle: var(--sand);
+  --color-border-subtle: #e8e2de;
+  --color-border-strong: #cfc3ba;
+  --color-status-settled: var(--success);
+  --color-status-pending: var(--warning);
+  --color-status-critical: var(--danger);
+  --color-gold-subtle: var(--blush);
+  --color-brass: var(--rosewood);
+  --color-brass-hover: var(--rosewood-deep);
+  --color-overlay: rgb(51 37 34 / 40%);
+
+  --text-headline-xl: 32px;
+  --text-headline-xl--line-height: 40px;
+  --text-headline-xl--font-weight: 700;
+  --text-headline-xl--letter-spacing: -0.02em;
+  --text-headline-xl-mobile: 26px;
+  --text-headline-xl-mobile--line-height: 32px;
+  --text-headline-xl-mobile--font-weight: 700;
+  --text-headline-xl-mobile--letter-spacing: -0.01em;
+  --text-headline-lg: 24px;
+  --text-headline-lg--line-height: 32px;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-sm: 18px;
+  --text-headline-sm--line-height: 24px;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--font-weight: 400;
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 18px;
+  --text-body-sm--font-weight: 400;
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 20px;
+  --text-label-lg--font-weight: 600;
+  --text-label-lg--letter-spacing: 0.01em;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--font-weight: 600;
+  --text-label-md--letter-spacing: 0.02em;
+  --text-metric: 1.75rem;
+  --text-metric--line-height: 1;
+  --text-metric--font-weight: 700;
+  --text-metric--letter-spacing: -0.02em;
+  --text-label-sm: 11px;
+  --text-label-sm--line-height: 14px;
+  --text-label-sm--font-weight: 700;
+  --text-label-sm--letter-spacing: 0.04em;
+
+  --spacing-gutter: 1rem;
+  --spacing-gutter-lg: 1.5rem;
+  --spacing-margin: 1rem;
+  --spacing-margin-md: 1.5rem;
+  --spacing-margin-lg: 2.5rem;
+  --spacing-control-sm: 2rem;
+  --spacing-control: 2.25rem;
+  --spacing-control-lg: 2.75rem;
+  --spacing-input: 2rem;
+
+  --shadow-button: 0 4px 12px rgb(72 49 41 / 22%);
+  --shadow-button-hover: 0 6px 16px rgb(185 111 125 / 35%);
+  --shadow-card: 0 1px 3px rgb(51 37 34 / 6%);
+  --shadow-popover: 0 4px 12px rgb(51 37 34 / 8%);
+  --shadow-modal: 0 12px 32px rgb(51 37 34 / 16%);
+}
+
+@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-ivory: var(--ivory);
@@ -95,9 +215,52 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
-  --font-display: var(--font-cormorant);
-  --font-sans: var(--font-manrope);
+  --font-display: var(--font-sora);
 }
+
+/*
+  Espaçamento nomeado (xs–xl) sem ocupar as chaves do tema:
+  sm/md/lg/xl também geram max-w-* e mudariam a largura das telas.
+*/
+:root {
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2.5rem;
+}
+
+@utility gap-xs { gap: var(--spacing-xs); }
+@utility gap-sm { gap: var(--spacing-sm); }
+@utility gap-md { gap: var(--spacing-md); }
+@utility gap-lg { gap: var(--spacing-lg); }
+@utility gap-xl { gap: var(--spacing-xl); }
+@utility p-sm { padding: var(--spacing-sm); }
+@utility p-md { padding: var(--spacing-md); }
+@utility p-lg { padding: var(--spacing-lg); }
+@utility px-xs { padding-inline: var(--spacing-xs); }
+@utility px-sm { padding-inline: var(--spacing-sm); }
+@utility px-md { padding-inline: var(--spacing-md); }
+@utility px-lg { padding-inline: var(--spacing-lg); }
+@utility py-xs { padding-block: var(--spacing-xs); }
+@utility py-sm { padding-block: var(--spacing-sm); }
+@utility py-md { padding-block: var(--spacing-md); }
+@utility py-lg { padding-block: var(--spacing-lg); }
+@utility pt-xs { padding-top: var(--spacing-xs); }
+@utility pt-sm { padding-top: var(--spacing-sm); }
+@utility pt-md { padding-top: var(--spacing-md); }
+@utility pt-lg { padding-top: var(--spacing-lg); }
+@utility pb-xs { padding-bottom: var(--spacing-xs); }
+@utility pb-sm { padding-bottom: var(--spacing-sm); }
+@utility pb-md { padding-bottom: var(--spacing-md); }
+@utility pb-lg { padding-bottom: var(--spacing-lg); }
+@utility mt-xs { margin-top: var(--spacing-xs); }
+@utility mt-sm { margin-top: var(--spacing-sm); }
+@utility mt-md { margin-top: var(--spacing-md); }
+@utility mb-sm { margin-bottom: var(--spacing-sm); }
+@utility bottom-md { bottom: var(--spacing-md); }
+@utility right-md { right: var(--spacing-md); }
+@utility h-xs { height: var(--spacing-xs); }
 
 * {
   box-sizing: border-box;
@@ -124,37 +287,30 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-manrope), system-ui, sans-serif;
-  font-feature-settings: "ss01" on, "cv11" on;
+  font-family: var(--font-sora), system-ui, sans-serif;
 }
 
 h1,
 h2,
 h3,
 .font-display {
-  font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
-  font-optical-sizing: auto;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-}
-
-.painel-shell {
-  font-family: var(--font-sora), system-ui, sans-serif;
-  background: #f0f2f5;
-}
-
-.painel-shell h1,
-.painel-shell h2,
-.painel-shell h3 {
   font-family: var(--font-sora), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.painel-brand {
-  font-family: var(--font-brand), cursive;
-  font-weight: 400;
-  letter-spacing: 0;
+.painel-shell {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  background: #faf7f4;
+}
+
+.painel-shell h1,
+.painel-shell h2,
+.painel-shell h3,
+.painel-shell .font-display {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 ::selection {
@@ -315,7 +471,7 @@ h3,
 .painel-shell .btn-secondary {
   border-color: #ced0d4;
   background: white;
-  color: #2d2926;
+  color: var(--cocoa);
 }
 
 .painel-shell .btn-secondary:hover {
@@ -337,7 +493,7 @@ h3,
 }
 
 .painel-shell .btn-ghost:hover {
-  color: #2d2926;
+  color: var(--cocoa);
   background: #f0f2f5;
 }
 

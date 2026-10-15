@@ -52,7 +52,7 @@ const ICON_TONE: Record<string, string> = {
   "/painel/configuracoes/estabelecimento": "bg-[#EEF2FF] text-[#4338CA]",
   "/painel/configuracoes/horarios": "bg-[#ECFDF5] text-[#047857]",
   "/painel/configuracoes/pagamento": "bg-[#FFF7ED] text-[#C2410C]",
-  "/painel/configuracoes/geral": "bg-[#F0F2F5] text-[#2D2926]",
+  "/painel/configuracoes/geral": "bg-[#F0F2F5] text-cocoa",
 };
 
 function StatusPill({
@@ -81,7 +81,7 @@ export function SettingsHub({ status }: { status: SettingsHubStatus }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#E8E2DE] bg-white px-4 py-3.5">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-[#2D2926]">{status.storeName}</p>
+          <p className="text-sm font-semibold text-cocoa">{status.storeName}</p>
           <p className="mt-0.5 text-xs text-[#8C8682]">
             {status.isPublished ? "Vitrine publicada" : "Vitrine oculta"} · Plano{" "}
             {status.planLabel}
@@ -92,7 +92,7 @@ export function SettingsHub({ status }: { status: SettingsHubStatus }) {
             href={`/${status.storeSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[#CED0D4] bg-white px-3 py-1.5 text-xs font-semibold text-[#2D2926] transition hover:bg-[#F0F2F5]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#CED0D4] bg-white px-3 py-1.5 text-xs font-semibold text-cocoa transition hover:bg-[#F0F2F5]"
           >
             Ver vitrine
             <ExternalLink className="h-3.5 w-3.5" aria-hidden />
@@ -143,7 +143,7 @@ function SettingsCard({
       <div
         className={cn(
           "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
-          iconClass || "bg-[#F0F2F5] text-[#2D2926]",
+          iconClass || "bg-[#F0F2F5] text-cocoa",
         )}
       >
         <Icon className="h-5 w-5" aria-hidden />
@@ -151,7 +151,7 @@ function SettingsCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-[#2D2926]">{title}</h2>
+            <h2 className="text-sm font-semibold text-cocoa">{title}</h2>
             {hint ? (
               <div className="mt-1">
                 <StatusPill label={hint.label} tone={hint.tone} />
@@ -159,7 +159,7 @@ function SettingsCard({
             ) : null}
           </div>
           <ChevronRight
-            className="mt-0.5 h-4 w-4 shrink-0 text-[#8C8682] transition group-hover:translate-x-0.5 group-hover:text-[#2D2926]"
+            className="mt-0.5 h-4 w-4 shrink-0 text-[#8C8682] transition group-hover:translate-x-0.5 group-hover:text-cocoa"
             aria-hidden
           />
         </div>

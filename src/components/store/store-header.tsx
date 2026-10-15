@@ -138,7 +138,7 @@ export function StoreHeader({
                       <Link
                         href={`/${store.slug}/carrinho`}
                         className={`relative ${iconBtn}`}
-                        aria-label={`Pedido com ${count} itens`}
+                        aria-label={`Pedido com ${count} ${count === 1 ? "item" : "itens"}`}
                       >
                         <ShoppingBag className="h-[1.125rem] w-[1.125rem]" aria-hidden />
                         {count > 0 && (
@@ -245,7 +245,7 @@ export function StoreHeader({
                 <Link
                   href={`/${store.slug}/carrinho`}
                   className={`relative hidden sm:inline-flex ${iconBtn}`}
-                  aria-label={`Pedido com ${count} itens`}
+                  aria-label={`Pedido com ${count} ${count === 1 ? "item" : "itens"}`}
                 >
                   <ShoppingBag className="h-5 w-5" aria-hidden />
                   {count > 0 && (

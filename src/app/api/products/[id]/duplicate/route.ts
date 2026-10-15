@@ -70,6 +70,14 @@ export async function POST(
       priceCents: a.priceCents,
       maxQty: a.maxQty,
     })),
+    recipe: (product.recipe ?? []).map((line) => ({
+      stockItemId: line.stockItemId,
+      quantity: line.quantity,
+    })),
+    packagingCents: product.packagingCents ?? 0,
+    laborCents: product.laborCents ?? 0,
+    otherCostsCents: product.otherCostsCents ?? 0,
+    indirectCents: product.indirectCents ?? 0,
   });
 
   return NextResponse.json(withIds(copy.toObject()));

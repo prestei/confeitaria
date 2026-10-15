@@ -2,26 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  Menu,
+  MoreHorizontal,
+  Package,
+  Settings,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { NAV_SECTIONS, isNavActive } from "@/lib/painel-nav";
-import { DocePedidoMark } from "@/components/painel/docepedido-mark";
+import { DoceLinkMark } from "@/components/painel/doce-link-mark";
 
-/** Mesma altura do PainelTopbar: py-3 + linha interna h-9. */
-const BRAND_ROW =
-  "flex shrink-0 items-center border-b border-white/10 px-4 py-3";
+const SIDEBAR_BG = "bg-[#2A2522]";
+const SIDEBAR_BORDER = "border-[#3D3632]";
+const BRAND_ROW = cn(
+  "flex shrink-0 items-center border-b px-4 py-4",
+  SIDEBAR_BORDER,
+);
 
 export function PainelSidebar({
   storeName,
   badges = {},
 }: {
   storeName: string;
-  userName: string;
+  storeLogoUrl?: string | null;
   storeSlug?: string | null;
   plan?: string;
   badges?: { orders?: number; stock?: number };
+  onLogout?: () => Promise<void>;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -32,102 +43,88 @@ export function PainelSidebar({
         href="/painel"
         onClick={() => setOpen(false)}
         className="flex h-9 min-w-0 items-center gap-2.5"
-        aria-label="DocePedido — início do painel"
+        aria-label="Doce Link — início do painel"
       >
-        <DocePedidoMark className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg" />
-        <span className="truncate text-[15px] font-semibold tracking-tight text-white">
-          DocePedido
+        <DoceLinkMark className="h-9 w-9" />
+        <span className="truncate text-[17px] font-semibold tracking-tight text-[#F5EDE8]">
+          Doce Link
         </span>
       </Link>
     </div>
   );
 
-  const Nav = ({ onDark = true }: { onDark?: boolean }) => (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-4">
-      <nav className="flex flex-col gap-3.5" aria-label="Painel">
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.id}>
-            {section.label ? (
-              <p
+  const Nav = () => (
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3">
+      <nav className="flex flex-col gap-0.5" aria-label="Painel">
+        {NAV_SECTIONS.flatMap((section) =>
+          section.items.map((l) => {
+            const active = isNavActive(pathname, l.href);
+            const Icon = l.icon;
+            const badge =
+              l.badgeKey === "stock" ? badges.stock : undefined;
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
                 className={cn(
-                  "mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.14em]",
-                  onDark ? "text-white/40" : "text-[#9AA0A6]",
+                  "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition",
+                  active
+                    ? "bg-[#C45B7A]/20 text-[#FCE4EC] ring-1 ring-[#C45B7A]/35"
+                    : "text-[#B8AEA8] hover:bg-white/5 hover:text-[#F5EDE8]",
                 )}
               >
-                {section.label}
-              </p>
-            ) : null}
-            <div className="flex flex-col gap-0.5">
-              {section.items.map((l) => {
-                const active = isNavActive(pathname, l.href);
-                const Icon = l.icon;
-                const badge =
-                  l.badgeKey === "orders"
-                    ? badges.orders
-                    : l.badgeKey === "stock"
-                      ? badges.stock
-                      : undefined;
-                return (
-                  <Link
-                    key={`${section.id}-${l.href}-${l.label}`}
-                    href={l.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition",
-                      onDark
-                        ? active
-                          ? "bg-[#5E4335] text-white shadow-sm"
-                          : "text-white/75 hover:bg-white/[0.08] hover:text-white"
-                        : active
-                          ? "bg-[#483129] text-white"
-                          : "text-[#5C656F] hover:bg-[#F3F4F6] hover:text-[#2D2926]",
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "h-[18px] w-[18px] shrink-0",
-                        active ? "opacity-100" : "opacity-70",
-                      )}
-                      strokeWidth={1.75}
-                      aria-hidden
-                    />
-                    <span className="flex-1 truncate">{l.label}</span>
-                    {badge != null && badge > 0 && (
-                      <span
-                        className={cn(
-                          "flex h-5 min-w-5 items-center justify-center rounded px-1.5 text-[10px] font-bold",
-                          l.badgeKey === "stock"
-                            ? "bg-[#F5E8C8] text-[#8A6A2A]"
-                            : "bg-[#E8A0A0] text-[#5C2A2A]",
-                        )}
-                      >
-                        {badge > 99 ? "99+" : badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+                <Icon
+                  className={cn(
+                    "h-[18px] w-[18px] shrink-0",
+                    active ? "text-[#F4A9BC]" : "opacity-80",
+                  )}
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
+                <span className="flex-1 truncate">{l.label}</span>
+                {badge != null && badge > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#8A6A2A]/90 px-1.5 text-[10px] font-bold text-[#F5E8C8]">
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
+              </Link>
+            );
+          }),
+        )}
       </nav>
     </div>
   );
 
   return (
     <>
-      <aside className="hidden h-screen w-[15.5rem] shrink-0 flex-col overflow-hidden bg-[#483129] md:flex">
+      <aside
+        className={cn(
+          "hidden h-screen w-[15.75rem] shrink-0 flex-col overflow-hidden border-r md:flex",
+          SIDEBAR_BG,
+          SIDEBAR_BORDER,
+        )}
+      >
         <Brand />
-        <Nav onDark />
+        <Nav />
       </aside>
 
-      <div className="flex items-center justify-between border-b border-[#E4E6EB] bg-white px-4 py-3 md:hidden">
-        <p className="min-w-0 truncate text-sm font-semibold text-[#483129]">
-          {storeName}
-        </p>
+      <div
+        className={cn(
+          "flex items-center justify-between border-b px-4 py-3 md:hidden",
+          SIDEBAR_BG,
+          SIDEBAR_BORDER,
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <DoceLinkMark className="h-8 w-8" />
+          <p className="min-w-0 truncate text-sm font-semibold text-[#F5EDE8]">
+            {storeName}
+          </p>
+        </div>
         <button
           type="button"
-          className="rounded-xl border border-[#E8E2DE] bg-white p-2"
+          className="rounded-xl border border-[#4A4340] bg-[#332E2B] p-2 text-[#F5EDE8]"
           onClick={() => setOpen(true)}
           aria-label="Abrir menu"
         >
@@ -145,7 +142,7 @@ export function PainelSidebar({
           >
             <button
               type="button"
-              className="absolute inset-0 bg-[#2D2926]/40"
+              className="absolute inset-0 bg-[#1A1715]/60"
               aria-label="Fechar"
               onClick={() => setOpen(false)}
             />
@@ -154,34 +151,98 @@ export function PainelSidebar({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="absolute inset-y-0 left-0 flex w-[min(100%,17rem)] flex-col overflow-hidden bg-[#483129] shadow-xl"
+              className={cn(
+                "absolute inset-y-0 left-0 flex w-[min(100%,18rem)] flex-col overflow-hidden border-r shadow-xl",
+                SIDEBAR_BG,
+                SIDEBAR_BORDER,
+              )}
             >
               <div className={cn(BRAND_ROW, "justify-between gap-2")}>
                 <Link
                   href="/painel"
                   onClick={() => setOpen(false)}
                   className="flex h-9 min-w-0 items-center gap-2.5"
-                  aria-label="DocePedido — início do painel"
                 >
-                  <DocePedidoMark className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg" />
-                  <span className="truncate text-[15px] font-semibold tracking-tight text-white">
-                    DocePedido
+                  <DoceLinkMark className="h-9 w-9" />
+                  <span className="truncate text-[17px] font-semibold text-[#F5EDE8]">
+                    Doce Link
                   </span>
                 </Link>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl p-2 text-white/70 hover:bg-white/10"
+                  className="rounded-xl p-2 text-[#B8AEA8] hover:bg-white/5"
                   aria-label="Fechar"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <Nav onDark />
+              <Nav />
             </motion.aside>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <nav
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t pb-[env(safe-area-inset-bottom)] md:hidden",
+          SIDEBAR_BG,
+          SIDEBAR_BORDER,
+        )}
+      >
+        <MobileTab
+          href="/painel"
+          label="Início"
+          icon={LayoutDashboard}
+          pathname={pathname}
+        />
+        <MobileTab
+          href="/painel/produtos"
+          label="Produtos"
+          icon={Package}
+          pathname={pathname}
+        />
+        <MobileTab
+          href="/painel/configuracoes"
+          label="Config."
+          icon={Settings}
+          pathname={pathname}
+        />
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex flex-col items-center gap-1 py-2 text-[11px] font-medium text-[#B8AEA8]"
+        >
+          <MoreHorizontal className="h-5 w-5" />
+          Mais
+        </button>
+      </nav>
     </>
+  );
+}
+
+function MobileTab({
+  href,
+  label,
+  icon: Icon,
+  pathname,
+}: {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  pathname: string;
+}) {
+  const active = isNavActive(pathname, href);
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex flex-col items-center gap-1 py-2 text-[11px] font-medium",
+        active ? "text-[#F4A9BC]" : "text-[#B8AEA8]",
+      )}
+    >
+      <Icon className="h-5 w-5" />
+      {label}
+    </Link>
   );
 }

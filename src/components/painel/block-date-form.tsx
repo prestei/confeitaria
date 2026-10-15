@@ -4,14 +4,15 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import {
-  Dialog,
-  DialogBody,
-  DialogCancel,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogPrimary,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetBody,
+  SheetCancel,
+  SheetContent,
+  SheetFooter,
+  SheetForm,
+  SheetHeader,
+  SheetPrimary,
+} from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 
 export function BlockDateForm() {
@@ -54,14 +55,11 @@ export function BlockDateForm() {
         Bloquear data
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent size="sm">
-          <DialogHeader
-            title="Bloquear data"
-            description="Impede novas encomendas neste dia."
-          />
-          <form onSubmit={onSubmit}>
-            <DialogBody className="space-y-4">
+      <Sheet open={open} onOpenChange={(next) => !saving && setOpen(next)}>
+        <SheetContent size="sm" side="right">
+          <SheetHeader title="Bloquear data" />
+          <SheetForm onSubmit={onSubmit}>
+            <SheetBody className="space-y-4">
               <div>
                 <label className="label">Data</label>
                 <input
@@ -82,16 +80,16 @@ export function BlockDateForm() {
                   onChange={(e) => setReason(e.target.value)}
                 />
               </div>
-            </DialogBody>
-            <DialogFooter>
-              <DialogCancel />
-              <DialogPrimary disabled={saving}>
+            </SheetBody>
+            <SheetFooter>
+              <SheetCancel />
+              <SheetPrimary disabled={saving}>
                 {saving ? "Bloqueando…" : "Bloquear"}
-              </DialogPrimary>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              </SheetPrimary>
+            </SheetFooter>
+          </SheetForm>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

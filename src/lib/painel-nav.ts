@@ -1,15 +1,14 @@
 import {
   LayoutDashboard,
   Package,
-  ShoppingBag,
-  Users,
-  CalendarDays,
   Layers,
-  Wallet,
-  Percent,
-  Store,
   Settings,
   Tags,
+  Calculator,
+  Clock3,
+  CreditCard,
+  Truck,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -17,7 +16,7 @@ export type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  badgeKey?: "orders" | "stock";
+  badgeKey?: "stock";
 };
 
 export type NavSection = {
@@ -26,74 +25,60 @@ export type NavSection = {
   items: NavItem[];
 };
 
+/** Menu plano como no layout Doce Link. */
 export const NAV_SECTIONS: NavSection[] = [
   {
-    id: "inicio",
+    id: "main",
     label: null,
-    items: [{ href: "/painel", label: "Início", icon: LayoutDashboard }],
-  },
-  {
-    id: "confeitaria",
-    label: "Minha confeitaria",
     items: [
+      { href: "/painel", label: "Visão geral", icon: LayoutDashboard },
       { href: "/painel/produtos", label: "Produtos", icon: Package },
       { href: "/painel/categorias", label: "Categorias", icon: Tags },
-      {
-        href: "/painel/pedidos",
-        label: "Encomendas",
-        icon: ShoppingBag,
-        badgeKey: "orders",
-      },
-      { href: "/painel/clientes", label: "Clientes", icon: Users },
-    ],
-  },
-  {
-    id: "operacao",
-    label: "Operação",
-    items: [
-      { href: "/painel/agenda", label: "Agenda", icon: CalendarDays },
+      { href: "/painel/precificacao", label: "Precificação", icon: Calculator },
       {
         href: "/painel/estoque",
         label: "Estoque",
         icon: Layers,
         badgeKey: "stock",
       },
-    ],
-  },
-  {
-    id: "vendas",
-    label: "Vendas",
-    items: [
-      { href: "/painel/analytics", label: "Financeiro", icon: Wallet },
-      { href: "/painel/promocoes", label: "Promoções", icon: Percent },
-    ],
-  },
-  {
-    id: "config",
-    label: "Configurações",
-    items: [
-      { href: "/painel/vitrine", label: "Perfil da loja", icon: Store },
+      {
+        href: "/painel/configuracoes/pagamento",
+        label: "Pagamentos",
+        icon: CreditCard,
+      },
+      {
+        href: "/painel/configuracoes/atendimento",
+        label: "Retirada e entrega",
+        icon: Truck,
+      },
+      {
+        href: "/painel/configuracoes/horarios",
+        label: "Horário de funcionamento",
+        icon: Clock3,
+      },
+      {
+        href: "/painel/configuracoes/agendamento",
+        label: "Agendamento",
+        icon: CalendarClock,
+      },
       {
         href: "/painel/configuracoes",
-        label: "Preferências",
+        label: "Configurações",
         icon: Settings,
       },
     ],
   },
 ];
 
-/** Lista plana para busca e atalhos. */
 export const MAIN_NAV: NavItem[] = NAV_SECTIONS.flatMap((s) => s.items);
 
 export function isNavActive(pathname: string, href: string) {
   if (href === "/painel") return pathname === "/painel";
-  if (href === "/painel/pedidos") {
-    if (pathname === "/painel/pedidos") return true;
-    if (!pathname.startsWith("/painel/pedidos/")) return false;
-    return !pathname.startsWith("/painel/pedidos/historico");
-  }
   if (href === "/painel/configuracoes") {
-    return pathname.startsWith("/painel/configuracoes");
+    return pathname === "/painel/configuracoes";
+  }
+  if (href.startsWith("/painel/configuracoes/")) {
+    return pathname === href || pathname.startsWith(`${href}/`);
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

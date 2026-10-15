@@ -195,6 +195,86 @@ export function DataTablePagination({
   );
 }
 
+export type TableAlign = "left" | "right" | "center";
+
+export type TableColumn<Row> = {
+  id: string;
+  header: ReactNode;
+  align?: TableAlign;
+  headerClassName?: string;
+  className?: string;
+  /** strong = nome, body = valor, muted = secundário, soft = texto de apoio. */
+  tone?: "strong" | "body" | "muted" | "soft";
+  numeric?: boolean;
+  render: (row: Row) => ReactNode;
+};
+
+function columnClassName<Row>(column: TableColumn<Row>) {
+  return cn(
+    column.tone === "strong" && "font-semibold text-cocoa",
+    column.tone === "body" && "text-cocoa",
+    column.tone === "muted" && "text-[#8C8682]",
+    column.tone === "soft" && "text-[#65676B]",
+    column.numeric && "tabular-nums",
+    column.className,
+  );
+}
+
+/** Tabela do painel: colunas + linhas, sem remontar cabeçalho e células. */
+export function ColumnsTable<Row>({
+  columns,
+  rows,
+  rowKey,
+  minWidth,
+  footer,
+  onRowClick,
+  className,
+}: {
+  columns: TableColumn<Row>[];
+  rows: Row[];
+  rowKey: (row: Row) => string;
+  minWidth?: string;
+  footer?: ReactNode;
+  onRowClick?: (row: Row) => void;
+  className?: string;
+}) {
+  return (
+    <DataTable minWidth={minWidth} footer={footer} className={className}>
+      <DataTableHeader>
+        <tr>
+          {columns.map((column) => (
+            <DataTableHead
+              key={column.id}
+              align={column.align}
+              className={column.headerClassName}
+            >
+              {column.header}
+            </DataTableHead>
+          ))}
+        </tr>
+      </DataTableHeader>
+      <DataTableBody>
+        {rows.map((row) => (
+          <DataTableRow
+            key={rowKey(row)}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
+          >
+            {columns.map((column) => (
+              <DataTableCell
+                key={column.id}
+                align={column.align}
+                className={columnClassName(column)}
+              >
+                {column.render(row)}
+              </DataTableCell>
+            ))}
+          </DataTableRow>
+        ))}
+      </DataTableBody>
+    </DataTable>
+  );
+}
+
 /** Avatar circular com iniciais — padrão de coluna de pessoa. */
 export function TableAvatar({
   name,

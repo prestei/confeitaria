@@ -7,7 +7,8 @@ import {
 
 const stockMovementSchema = baseSchema(
   {
-    productId: { type: String, required: true, index: true },
+    productId: { type: String, default: null, index: true },
+    stockItemId: { type: String, default: null, index: true },
     type: {
       type: String,
       enum: Object.values(StockMovementType),
@@ -23,7 +24,8 @@ export type StockMovementDoc = {
   _id: string;
   id: string;
   storeId: string;
-  productId: string;
+  productId: string | null;
+  stockItemId: string | null;
   type: StockMovementTypeT;
   quantity: number;
   note: string | null;
