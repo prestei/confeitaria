@@ -121,7 +121,7 @@ export function SectionCard({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-[#E8E2DE] bg-white",
+        "rounded-lg border border-[#E8E2DE] bg-white",
         className,
       )}
     >

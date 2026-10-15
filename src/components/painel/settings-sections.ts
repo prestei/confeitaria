@@ -1,6 +1,5 @@
 import {
   Clock3,
-  CreditCard,
   Settings2,
   Store,
   Truck,
@@ -24,13 +23,6 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     short: "Loja",
     description: "Nome, WhatsApp, endereço, logo e dados da loja.",
     icon: Store,
-  },
-  {
-    href: "/painel/configuracoes/pagamento",
-    title: "Pagamentos",
-    short: "Pagamentos",
-    description: "Pagar na entrega ou retirada; online em breve.",
-    icon: CreditCard,
   },
   {
     href: "/painel/configuracoes/atendimento",

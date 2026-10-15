@@ -9,6 +9,9 @@ import {
   encryptSecretIfNeeded,
 } from "@/lib/crypto-secrets";
 
+/** Checkout online e configuração no painel — ligar quando a integração estiver pronta. */
+export const MERCADO_PAGO_ONLINE_ENABLED = false;
+
 export function createMercadoPagoClient(accessToken: string) {
   return new MercadoPagoConfig({
     accessToken,
@@ -71,6 +74,7 @@ export function storeHasMercadoPago(store: {
   mpPublicKey: string | null;
   mpAccessToken: string | null;
 }) {
+  if (!MERCADO_PAGO_ONLINE_ENABLED) return false;
   const token = resolveMpAccessToken(store);
   return Boolean(
     store.mpEnabled && store.mpPublicKey?.trim() && token?.trim(),

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
-import { storeHasMercadoPago } from "@/lib/mercadopago";
 import { leanDoc } from "@/lib/serialize";
 import { requireStoreSession } from "@/lib/tenant";
 import { Store } from "@/models/Store";
@@ -20,10 +19,6 @@ export default async function ConfiguracoesPage() {
         isPublished: 1,
         businessHours: 1,
         address: 1,
-        paymentMethods: 1,
-        mpEnabled: 1,
-        mpPublicKey: 1,
-        mpAccessToken: 1,
       })
       .lean(),
   );
@@ -40,7 +35,7 @@ export default async function ConfiguracoesPage() {
     <div className="space-y-4">
       <PageHeader
         title="Configurações"
-        description="Organize horários, dados da loja, pagamento e preferências da conta."
+        description="Horários, dados da loja, atendimento e preferências da conta."
       />
       <SettingsHub
         status={{
@@ -49,12 +44,6 @@ export default async function ConfiguracoesPage() {
           isPublished: store.isPublished,
           hasHours: Boolean(store.businessHours?.trim()),
           hasAddress: Boolean(store.address?.trim()),
-          paymentCount: store.paymentMethods.length,
-          mpConfigured: storeHasMercadoPago({
-            mpEnabled: store.mpEnabled,
-            mpPublicKey: store.mpPublicKey,
-            mpAccessToken: store.mpAccessToken,
-          }),
           storeSlug: store.slug,
         }}
       />

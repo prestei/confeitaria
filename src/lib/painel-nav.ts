@@ -42,7 +42,7 @@ export const NAV_SECTIONS: NavSection[] = [
         badgeKey: "stock",
       },
       {
-        href: "/painel/configuracoes/pagamento",
+        href: "/painel/pagamentos",
         label: "Pagamentos",
         icon: CreditCard,
       },

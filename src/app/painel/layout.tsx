@@ -77,7 +77,7 @@ export default async function PainelLayout({
           />
         </PainelTopbarShell>
         <main className="flex w-full min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-24 sm:px-6 md:pb-8 lg:px-8 xl:px-10">
-          <div className="flex min-h-0 flex-1 flex-col pt-5">
+          <div className="w-full max-w-none flex flex-col pt-5">
             <SessionGuard />
             {children}
           </div>
