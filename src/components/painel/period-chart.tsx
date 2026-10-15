@@ -143,7 +143,7 @@ export function PeriodChart({
                 y1={y}
                 x2="100"
                 y2={y}
-                stroke="#E8E2DE"
+                stroke="var(--painel-border)"
                 strokeWidth="0.4"
                 vectorEffect="non-scaling-stroke"
               />
@@ -190,7 +190,7 @@ export function PeriodChart({
         </div>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between border-t border-[#F0EBE7] pt-2">
+      <div className="mt-2.5 flex items-center justify-between border-t border-[var(--painel-border)] pt-2">
         <span className="inline-flex items-center gap-1.5 text-xs text-[#5C5652]">
           <span className="h-2 w-2 rounded-full bg-[#C85A5A]" />
           {valueKind === "money" ? "Vendas realizadas" : "Eventos"}

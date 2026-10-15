@@ -103,7 +103,7 @@ const QUICK_ACTIONS = [
     href: "/painel/produtos/novo",
     label: "Adicionar produto",
     icon: PackagePlus,
-    tone: "bg-[#EFE6DC] text-[#8B6B4A]",
+    tone: "bg-[#E4F0EF] text-[#1e6b5c]",
   },
   {
     href: "/painel/estoque",
@@ -133,7 +133,7 @@ function ProductThumb({
     return (
       <span
         className={cn(
-          "inline-flex shrink-0 items-center justify-center rounded-full bg-[#F3EEEA] text-[10px] font-semibold text-[#8C8682]",
+          "inline-flex shrink-0 items-center justify-center rounded-full bg-[var(--painel-subtle,#eff3f6)] text-[10px] font-semibold text-[#8C8682]",
           dim,
         )}
       >
@@ -206,7 +206,7 @@ export function HomeDashboard({
               <h2 className="text-[15px] font-semibold text-[#3D2B1F]">
                 Produção de hoje
               </h2>
-              <span className="rounded-full bg-[#F3EEEA] px-2 py-0.5 text-[11px] font-semibold text-[#8B6B4A]">
+              <span className="rounded-full bg-[var(--painel-subtle,#eff3f6)] px-2 py-0.5 text-[11px] font-semibold text-[#1e6b5c]">
                 {productionCount} encomenda{productionCount === 1 ? "" : "s"}
               </span>
             </div>
@@ -299,7 +299,7 @@ export function HomeDashboard({
                 </p>
                 <div className="flex flex-col gap-2">
                   {col.items.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[#E8E2DE] px-2 py-4 text-center text-[10px] text-[#A09A96]">
+                    <div className="rounded-xl border border-dashed border-[var(--painel-border)] px-2 py-4 text-center text-[10px] text-[#A09A96]">
                       —
                     </div>
                   ) : (
@@ -307,7 +307,7 @@ export function HomeDashboard({
                       <Link
                         key={card.id}
                         href={card.href}
-                        className="rounded-xl bg-[#FBF7F2] p-2 transition hover:bg-[#F3EEEA]"
+                        className="rounded-xl bg-[var(--painel-subtle,#eff3f6)] p-2 transition hover:bg-[var(--painel-subtle-hover,#e5ebef)]"
                       >
                         <div className="flex items-start gap-2">
                           <ProductThumb
@@ -423,7 +423,7 @@ export function HomeDashboard({
             {salesMetrics.map((m) => (
               <div
                 key={m.label}
-                className="rounded-xl bg-[#FBF7F2] px-3.5 py-3"
+                className="rounded-xl bg-[var(--painel-subtle,#eff3f6)] px-3.5 py-3"
               >
                 <p className="text-[11px] font-medium text-[#8C8682]">
                   {m.label}

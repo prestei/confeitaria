@@ -60,7 +60,7 @@ import {
 const fieldLabel =
   "mb-1.5 block text-[13px] font-semibold text-[#5C5652]";
 const fieldInput =
-  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[#2D2926]/40 focus:ring-2 focus:ring-[#2D2926]/10";
+  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[var(--painel-brand)]/40 focus:ring-2 focus:ring-[var(--painel-brand)]/10";
 
 function CategoryFormSection({
   icon: Icon,
@@ -76,11 +76,11 @@ function CategoryFormSection({
   action?: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-[#E8E2DE] bg-white p-4">
+    <section className="rounded-xl border border-[var(--painel-border)] bg-white p-4">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex min-w-0 gap-3">
           {Icon ? (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3EEE8] text-[#483129]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--painel-subtle,#eff3f6)] text-[var(--painel-brand,#0f352e)]">
               <Icon className="h-4 w-4" aria-hidden />
             </span>
           ) : null}
@@ -378,7 +378,7 @@ export function CategoriesAdmin({
                             className={cn(
                               "flex aspect-square items-center justify-center rounded-full text-xl transition",
                               selected
-                                ? "bg-[#483129] shadow-sm ring-2 ring-[#483129]/25"
+                                ? "bg-[var(--painel-brand)] shadow-sm ring-2 ring-[var(--painel-brand)]/25"
                                 : "bg-[#F7F8FA] hover:bg-[#F0F2F5]",
                             )}
                           >
@@ -455,7 +455,7 @@ export function CategoriesAdmin({
                         displayDays: [...ALL_CATEGORY_DAYS],
                       }))
                     }
-                    className="shrink-0 text-xs font-semibold text-[#483129] underline-offset-2 transition hover:underline"
+                    className="shrink-0 text-xs font-semibold text-[var(--painel-brand)] underline-offset-2 transition hover:underline"
                   >
                     Marcar todos os dias
                   </button>
@@ -484,7 +484,7 @@ export function CategoriesAdmin({
                 </div>
               </CategoryFormSection>
 
-              <div className="flex items-center justify-between gap-4 rounded-xl border border-[#E8E2DE] bg-[#FBF7F2] px-4 py-3.5">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--painel-border)] bg-[var(--painel-subtle,#eff3f6)] px-4 py-3.5">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-cocoa">
                     Publicada na vitrine
@@ -535,7 +535,7 @@ export function CategoriesAdmin({
           onDragEnd={onDragEnd}
         >
           <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-            <ul className="overflow-hidden rounded-lg border border-[#E8E2DE] bg-white">
+            <ul className="overflow-hidden rounded-lg border border-[var(--painel-border)] bg-white">
               {categories.map((c, index) => (
                 <SortableCategoryRow
                   key={c.id}
@@ -550,7 +550,7 @@ export function CategoriesAdmin({
           </SortableContext>
         </DndContext>
       ) : (
-        <ul className="overflow-hidden rounded-lg border border-[#E8E2DE] bg-white">
+        <ul className="overflow-hidden rounded-lg border border-[var(--painel-border)] bg-white">
           {categories.map((c, index) => (
             <CategoryRow
               key={c.id}
@@ -638,7 +638,7 @@ function CategoryRow({
       ref={sortable?.setNodeRef}
       style={sortable?.style}
       className={cn(
-        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#E8E2DE] px-3 py-3 last:border-b-0 sm:gap-4 sm:px-4",
+        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--painel-border)] px-3 py-3 last:border-b-0 sm:gap-4 sm:px-4",
         sortable?.isDragging &&
           "relative z-10 bg-[#F7F8FA] shadow-md ring-1 ring-[#CED0D4]",
         !category.active && "opacity-70",
@@ -662,7 +662,7 @@ function CategoryRow({
         className="flex min-w-0 items-center gap-3 text-left"
         onClick={onEdit}
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#F3EEE8] text-lg text-[#483129]">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[var(--painel-subtle,#eff3f6)] text-lg text-[var(--painel-brand,#0f352e)]">
           {category.emoji ? (
             <span aria-hidden>{category.emoji}</span>
           ) : (

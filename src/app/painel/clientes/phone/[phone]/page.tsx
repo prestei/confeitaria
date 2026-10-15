@@ -76,7 +76,7 @@ export default async function CustomerByPhonePage({
             <li key={o.id}>
               <Link
                 href={`/painel/pedidos/${o.id}`}
-                className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-fog/40"
+                className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-[var(--painel-subtle,#eff3f6)]"
               >
                 <div>
                   <p className="text-sm font-medium text-cocoa">

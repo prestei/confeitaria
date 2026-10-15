@@ -174,7 +174,7 @@ export function CustomersTable({
           {customer.editable && onEdit && (
             <button
               type="button"
-              className="rounded-md p-1 text-[#8C8682] hover:bg-[#F7F4F1] hover:text-cocoa"
+              className="rounded-md p-1 text-[#8C8682] hover:bg-[var(--painel-subtle,#eff3f6)] hover:text-cocoa"
               aria-label={`Editar ${customer.name}`}
               onClick={() => onEdit(customer)}
             >
@@ -201,7 +201,7 @@ export function CustomersTable({
         {sorted.map((c) => (
           <div
             key={c.id}
-            className="flex items-center gap-3 rounded-2xl border border-[#E8E2DE] bg-white p-4"
+            className="flex items-center gap-3 rounded-2xl border border-[var(--painel-border)] bg-white p-4"
           >
             <Link href={c.href} className="flex min-w-0 flex-1 items-center gap-3">
               <TableAvatar name={c.name} />
@@ -216,7 +216,7 @@ export function CustomersTable({
             {c.editable && onEdit && (
               <button
                 type="button"
-                className="rounded-md p-2 text-[#8C8682] hover:bg-[#F7F4F1] hover:text-cocoa"
+                className="rounded-md p-2 text-[#8C8682] hover:bg-[var(--painel-subtle,#eff3f6)] hover:text-cocoa"
                 aria-label={`Editar ${c.name}`}
                 onClick={() => onEdit(c)}
               >

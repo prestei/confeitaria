@@ -138,24 +138,25 @@ export function ProductPricingFields({
       <div className="min-w-0 space-y-4">
         <section
           className={cn(
-            sheet && "rounded-xl border border-[#E8E2DE] bg-white p-4",
+            sheet && "rounded-xl border border-[var(--painel-border)] bg-white p-4",
           )}
         >
           <div className={cn(sheet ? "mb-4" : "mb-0")}>
             <h3 className="text-sm font-semibold text-cocoa">Receita</h3>
             <p className="mt-0.5 text-xs leading-relaxed text-[#8C8682]">
-              Insumos e quantidades usadas neste produto.
+              Escolha os insumos e as quantidades. O custo é calculado
+              automaticamente.
             </p>
           </div>
 
           <div className={cn(sheet && "space-y-4")}>
         {stockItems.length === 0 ? (
           <p className="text-sm text-cocoa-soft/70">
-            Nenhum insumo cadastrado.{" "}
+            Nenhum insumo ainda.{" "}
             <Link href="/painel/insumos" className="font-medium text-rosewood">
-              Cadastre os insumos
+              Cadastre em Insumos
             </Link>{" "}
-            e volte para montar a receita.
+            (menu ao lado) e volte aqui.
           </p>
         ) : lines.length === 0 ? (
           <p className="rounded-xl border border-dashed border-cocoa/12 bg-[#FAFAF8] px-4 py-6 text-center text-sm text-cocoa-soft/70">
@@ -238,7 +239,7 @@ export function ProductPricingFields({
               return (
                 <li
                   key={index}
-                  className="min-w-0 overflow-hidden rounded-xl border border-[#E8E2DE] bg-white p-3"
+                  className="min-w-0 overflow-hidden rounded-xl border border-[var(--painel-border)] bg-white p-3"
                 >
                   <div
                     className="grid min-w-0 grid-cols-[minmax(0,1fr)_4.5rem_minmax(4.25rem,auto)_2.25rem] items-center gap-2"
@@ -338,7 +339,7 @@ export function ProductPricingFields({
           </div>
         </section>
 
-        <section className="rounded-xl border border-[#E8E2DE] bg-white p-4">
+        <section className="rounded-xl border border-[var(--painel-border)] bg-white p-4">
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-cocoa">Outros custos</h3>
             <p className="mt-0.5 text-xs leading-relaxed text-[#8C8682]">

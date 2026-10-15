@@ -10,6 +10,7 @@ const patchSchema = z.object({
   name: z.string().min(2).optional(),
   unit: z.string().min(1).optional(),
   unitCostCents: z.number().int().nonnegative().nullable().optional(),
+  minQuantity: z.number().min(0).optional(),
 });
 
 export async function PATCH(
@@ -38,6 +39,9 @@ export async function PATCH(
         ...(data.unit != null ? { unit: data.unit.trim() } : {}),
         ...(data.unitCostCents !== undefined
           ? { unitCostCents: data.unitCostCents }
+          : {}),
+        ...(data.minQuantity !== undefined
+          ? { minQuantity: data.minQuantity }
           : {}),
       },
     },

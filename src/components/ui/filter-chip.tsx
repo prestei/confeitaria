@@ -19,7 +19,7 @@ export function FilterChip({
   className?: string;
 }) {
   const styles = cn(
-    "box-border inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-full px-4 text-sm font-semibold leading-none transition",
+    "box-border inline-flex h-8 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold leading-none transition sm:h-9 sm:px-4 sm:text-sm",
     active
       ? "bg-[var(--filter-chip-active-bg,#0f352e)] text-white"
       : [
@@ -60,7 +60,8 @@ export function FilterChipGroup({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-wrap items-center gap-2",
+        "flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain",
+        "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}
       role="group"

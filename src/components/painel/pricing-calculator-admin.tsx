@@ -22,7 +22,7 @@ import { cn } from "@/lib/cn";
 const fieldLabel =
   "mb-1.5 block text-[13px] font-semibold text-[#5C5652]";
 const fieldInput =
-  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[#2D2926]/40 focus:ring-2 focus:ring-[#2D2926]/10";
+  "h-10 w-full rounded-lg border border-[#CED0D4] bg-white px-3 text-sm text-cocoa outline-none transition placeholder:text-[#B0AAA6] focus:border-[var(--painel-brand)]/40 focus:ring-2 focus:ring-[var(--painel-brand)]/10";
 
 function CalcFormSection({
   icon: Icon,
@@ -36,10 +36,10 @@ function CalcFormSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-[#E8E2DE] bg-white p-4">
+    <section className="rounded-xl border border-[var(--painel-border)] bg-white p-4">
       <div className="mb-4 flex min-w-0 items-start gap-3">
         {Icon ? (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3EEE8] text-[#483129]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--painel-subtle,#eff3f6)] text-[var(--painel-brand,#0f352e)]">
             <Icon className="h-4 w-4" aria-hidden />
           </span>
         ) : null}
@@ -191,7 +191,7 @@ export function PricingCalculatorAdmin({
       return [row, ...next].slice(0, 50);
     });
     toast({
-      title: editingId ? "Cálculo atualizado" : "Cálculo salvo",
+      title: editingId ? "Preço atualizado" : "Preço salvo",
       tone: "success",
     });
     if (!editingId) resetForm();
@@ -199,7 +199,7 @@ export function PricingCalculatorAdmin({
   }
 
   async function remove(id: string) {
-    if (!confirm("Excluir este cálculo?")) return;
+    if (!confirm("Excluir este preço salvo?")) return;
     const res = await fetch(`/api/pricing-calculations/${id}`, {
       method: "DELETE",
     });
@@ -213,32 +213,58 @@ export function PricingCalculatorAdmin({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[#8C8682]">
-          Salve cálculos para reutilizar e abra um item para editar.
+      <div
+        className="rounded-xl border border-[#D4E8E4] bg-[#EEF6F4] px-4 py-3 text-sm leading-relaxed text-[#3D4A47]"
+        role="note"
+      >
+        <p className="font-semibold text-cocoa">
+          Esta página não é cadastro de produto
         </p>
+        <p className="mt-1.5 text-xs sm:text-sm">
+          Use quando quiser descobrir um preço na calculadora (ex.: “quanto
+          cobrar no bolo de chocolate?”). Para vender de verdade na vitrine,
+          cadastre em{" "}
+          <Link
+            href="/painel/produtos"
+            className="font-semibold text-[var(--painel-brand,#0f352e)] hover:underline"
+          >
+            Produtos
+          </Link>
+          . Para listar farinha e ovos, use{" "}
+          <Link
+            href="/painel/insumos"
+            className="font-semibold text-[var(--painel-brand,#0f352e)] hover:underline"
+          >
+            Insumos
+          </Link>
+          .
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           className="btn-primary !py-2 text-sm"
           onClick={openNew}
         >
           <Plus className="h-4 w-4" />
-          Novo cálculo
+          Nova simulação
         </button>
       </div>
 
       <SectionCard
-        title="Cálculos recentes"
+        title="Simulações salvas"
         action={
           <Calculator className="h-4 w-4 text-[#8C8682]" aria-hidden />
         }
       >
         {history.length === 0 ? (
           <p className="p-5 text-sm text-[#8C8682]">
-            Nenhum cálculo salvo ainda.
+            Nada salvo ainda. Clique em &quot;Nova simulação&quot;, preencha os
+            custos e opcionalmente salve — isso não cria produto na loja.
           </p>
         ) : (
-          <ul className="divide-y divide-[#E8E2DE]">
+          <ul className="divide-y divide-[var(--painel-border)]">
             {history.map((row) => (
               <li key={row.id} className="flex items-start gap-2 px-4 py-3">
                 <button
@@ -273,12 +299,14 @@ export function PricingCalculatorAdmin({
         onOpenChange={(next) => !saving && setFormOpen(next)}
       >
         <SheetContent size="lg" side="right">
-          <SheetHeader title={editingId ? "Editar cálculo" : "Novo cálculo"} />
+          <SheetHeader
+            title={editingId ? "Editar simulação" : "Nova simulação de preço"}
+          />
           <SheetForm onSubmit={onSubmit}>
             <SheetBody className="space-y-5">
               <CalcFormSection
-                title="Produto"
-                description="Nome para identificar este cálculo na lista."
+                title="Nome"
+                description="Como você quer chamar este produto na lista."
               >
                 <div>
                   <label className={fieldLabel} htmlFor="calc-name">
@@ -297,13 +325,13 @@ export function PricingCalculatorAdmin({
 
               <CalcFormSection
                 icon={Wallet}
-                title="Custos do lote"
-                description="Valores totais da receita antes de dividir por unidade."
+                title="Quanto custa fazer?"
+                description="Valores em reais do lote inteiro (antes de dividir por unidade)."
               >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className={fieldLabel} htmlFor="calc-ingredients">
-                      Custo dos ingredientes (R$)
+                      Ingredientes (total R$)
                     </label>
                     <input
                       id="calc-ingredients"
@@ -313,6 +341,16 @@ export function PricingCalculatorAdmin({
                       onChange={(e) => setIngredients(e.target.value)}
                       placeholder="0,00"
                     />
+                    <p className="mt-1.5 text-xs text-[#8C8682]">
+                      Some tudo da receita. Item a item? Use{" "}
+                      <Link
+                        href="/painel/insumos"
+                        className="font-medium text-[var(--painel-brand,#0f352e)] hover:underline"
+                      >
+                        Insumos
+                      </Link>{" "}
+                      no cadastro do produto.
+                    </p>
                   </div>
                   <div>
                     <label className={fieldLabel} htmlFor="calc-packaging">
@@ -329,7 +367,7 @@ export function PricingCalculatorAdmin({
                   </div>
                   <div>
                     <label className={fieldLabel} htmlFor="calc-labor">
-                      Mão de obra (R$)
+                      Seu trabalho (R$)
                     </label>
                     <input
                       id="calc-labor"
@@ -342,7 +380,7 @@ export function PricingCalculatorAdmin({
                   </div>
                   <div>
                     <label className={fieldLabel} htmlFor="calc-other">
-                      Outras despesas (R$)
+                      Outros gastos (R$)
                     </label>
                     <input
                       id="calc-other"
@@ -358,13 +396,13 @@ export function PricingCalculatorAdmin({
 
               <CalcFormSection
                 icon={Percent}
-                title="Preço e margem"
-                description="Taxas, margem sobre o preço de venda e quantidade do lote."
+                title="Quanto quer ganhar?"
+                description="Taxa do cartão ou app, lucro e quantas unidades você fez."
               >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className={fieldLabel} htmlFor="calc-fees">
-                      Taxas sobre a venda (%)
+                      Taxas — cartão, app (%)
                     </label>
                     <input
                       id="calc-fees"
@@ -376,7 +414,7 @@ export function PricingCalculatorAdmin({
                   </div>
                   <div>
                     <label className={fieldLabel} htmlFor="calc-margin">
-                      Margem de lucro desejada (%)
+                      Lucro desejado (%)
                     </label>
                     <input
                       id="calc-margin"
@@ -386,12 +424,12 @@ export function PricingCalculatorAdmin({
                       onChange={(e) => setMargin(e.target.value)}
                     />
                     <p className="mt-1.5 text-xs text-[#8C8682]">
-                      Margem sobre o preço de venda, não sobre o custo.
+                      Percentual em cima do preço que o cliente paga.
                     </p>
                   </div>
                   <div className="sm:col-span-2">
                     <label className={fieldLabel} htmlFor="calc-batch">
-                      Quantidade produzida
+                      Quantas unidades saíram deste lote?
                     </label>
                     <input
                       id="calc-batch"
@@ -406,7 +444,7 @@ export function PricingCalculatorAdmin({
               </CalcFormSection>
 
               {preview.ok ? (
-                <section className="rounded-xl border border-[#E8E2DE] bg-[#F7F4F1] p-4">
+                <section className="rounded-xl border border-[var(--painel-border)] bg-[#F7F4F1] p-4">
                   <h3 className="text-sm font-semibold text-cocoa">Resultado</h3>
                   <dl className="mt-4 grid gap-4 sm:grid-cols-2">
                     <div>
@@ -425,7 +463,7 @@ export function PricingCalculatorAdmin({
                     </div>
                     <div>
                       <dt className="text-xs text-[#8C8682]">
-                        Preço de venda sugerido
+                        Preço sugerido (por unidade)
                       </dt>
                       <dd className="mt-0.5 font-display text-xl tabular-nums text-cocoa">
                         {formatBRL(preview.suggestedUnitPriceCents)}
@@ -446,7 +484,7 @@ export function PricingCalculatorAdmin({
                       className="mt-4 inline-block text-sm font-semibold text-[var(--painel-brand,#0f352e)] hover:underline"
                       onClick={() => setFormOpen(false)}
                     >
-                      Usar preço no cadastro de produto
+                      Criar produto com este preço
                     </Link>
                   ) : null}
                 </section>
@@ -465,13 +503,13 @@ export function PricingCalculatorAdmin({
                     resetForm();
                   }}
                 >
-                  Novo cálculo
+                  Novo preço
                 </button>
               ) : (
                 <SheetCancel />
               )}
               <SheetPrimary disabled={saving}>
-                {saving ? "Salvando…" : editingId ? "Atualizar" : "Salvar cálculo"}
+                {saving ? "Salvando…" : editingId ? "Atualizar" : "Salvar"}
               </SheetPrimary>
             </SheetFooter>
           </SheetForm>

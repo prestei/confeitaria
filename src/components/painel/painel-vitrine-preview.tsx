@@ -72,7 +72,7 @@ export function PainelVitrinePreview({
                   {payments.map((m) => (
                     <span
                       key={m}
-                      className="rounded-full bg-white px-2 py-0.5 text-[9px] font-medium text-[#6B5B52] ring-1 ring-[#E8E2DE]"
+                      className="rounded-full bg-white px-2 py-0.5 text-[9px] font-medium text-[#6B5B52] ring-1 ring-[var(--painel-border)]"
                     >
                       {m}
                     </span>

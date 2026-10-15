@@ -4,11 +4,9 @@ import {
   Layers,
   Settings,
   Tags,
-  Calculator,
-  Clock3,
-  CreditCard,
-  Truck,
-  CalendarClock,
+  Wheat,
+  ShoppingBag,
+  CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,36 +29,18 @@ export const NAV_SECTIONS: NavSection[] = [
     id: "main",
     label: null,
     items: [
-      { href: "/painel", label: "Visão geral", icon: LayoutDashboard },
+      { href: "/painel", label: "Início", icon: LayoutDashboard },
       { href: "/painel/produtos", label: "Produtos", icon: Package },
       { href: "/painel/categorias", label: "Categorias", icon: Tags },
-      { href: "/painel/precificacao", label: "Precificação", icon: Calculator },
+      { href: "/painel/insumos", label: "Insumos", icon: Wheat },
       {
         href: "/painel/estoque",
         label: "Estoque",
         icon: Layers,
         badgeKey: "stock",
       },
-      {
-        href: "/painel/configuracoes/pagamento",
-        label: "Pagamentos",
-        icon: CreditCard,
-      },
-      {
-        href: "/painel/configuracoes/atendimento",
-        label: "Retirada e entrega",
-        icon: Truck,
-      },
-      {
-        href: "/painel/configuracoes/horarios",
-        label: "Horário de funcionamento",
-        icon: Clock3,
-      },
-      {
-        href: "/painel/configuracoes/agendamento",
-        label: "Agendamento",
-        icon: CalendarClock,
-      },
+      { href: "/painel/pedidos", label: "Pedidos", icon: ShoppingBag },
+      { href: "/painel/agenda", label: "Agendamentos", icon: CalendarDays },
       {
         href: "/painel/configuracoes",
         label: "Configurações",

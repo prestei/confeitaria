@@ -59,9 +59,11 @@
   --filter-search-icon: #9ca3af;
   --filter-search-placeholder: #9ca3af;
   --filter-chip-active-bg: #0f352e;
-  --filter-chip-inactive-bg: #eff3f6;
+  --painel-subtle: #eff3f6;
+  --painel-subtle-hover: #e5ebef;
+  --filter-chip-inactive-bg: var(--painel-subtle);
   --filter-chip-inactive-text: #4a6375;
-  --filter-chip-inactive-hover: #e5ebef;
+  --filter-chip-inactive-hover: var(--painel-subtle-hover);
 }
 
 @theme {
@@ -251,6 +253,10 @@
 @utility px-sm { padding-inline: var(--spacing-sm); }
 @utility px-md { padding-inline: var(--spacing-md); }
 @utility px-lg { padding-inline: var(--spacing-lg); }
+@utility ps-sm { padding-inline-start: var(--spacing-sm); }
+@utility ps-md { padding-inline-start: var(--spacing-md); }
+@utility pe-sm { padding-inline-end: var(--spacing-sm); }
+@utility pe-md { padding-inline-end: var(--spacing-md); }
 @utility py-xs { padding-block: var(--spacing-xs); }
 @utility py-sm { padding-block: var(--spacing-sm); }
 @utility py-md { padding-block: var(--spacing-md); }
@@ -310,15 +316,21 @@ h3,
 
 .painel-shell {
   /* Paleta do painel (referência Doce Link) */
+  --painel-divide: rgb(15 23 42 / 0.05);
   --painel-brand: #0f352e;
   --painel-brand-mid: #1e4d45;
   --painel-brand-hover: #164a40;
   --painel-canvas: #f9fafb;
-  --painel-border: #e5e7eb;
+  --painel-subtle: #eff3f6;
+  --painel-subtle-hover: #e5ebef;
+  --painel-border: rgb(15 23 42 / 0.06);
   --painel-muted: #6b7280;
   --painel-sidebar-muted: #b8c4c1;
   --painel-accent: #1e6b5c;
+  --warning: #d97706;
   --filter-chip-active-bg: var(--painel-brand);
+  --filter-chip-inactive-bg: var(--painel-subtle);
+  --filter-chip-inactive-hover: var(--painel-subtle-hover);
 
   font-family: var(--font-sora), system-ui, sans-serif;
   background: var(--painel-canvas);
@@ -336,13 +348,19 @@ h3,
 
 /* Sheets do painel são portaled — repetir tokens para botões/etapas. */
 .painel-fields {
+  --painel-divide: rgb(15 23 42 / 0.05);
   --painel-brand: #0f352e;
   --painel-brand-mid: #1e4d45;
   --painel-brand-hover: #164a40;
   --painel-canvas: #f9fafb;
-  --painel-border: #e5e7eb;
+  --painel-subtle: #eff3f6;
+  --painel-subtle-hover: #e5ebef;
+  --painel-border: rgb(15 23 42 / 0.06);
   --painel-muted: #6b7280;
   --painel-accent: #1e6b5c;
+  --warning: #d97706;
+  --filter-chip-inactive-bg: var(--painel-subtle);
+  --filter-chip-inactive-hover: var(--painel-subtle-hover);
 }
 
 .painel-fields .btn-primary {
@@ -563,7 +581,7 @@ h3,
 
 .painel-shell .input:focus,
 .painel-fields .input:focus {
-  border-color: color-mix(in oklab, var(--painel-brand) 35%, #d4c9c2);
+  border-color: color-mix(in oklab, var(--painel-brand) 35%, var(--painel-border));
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--painel-brand) 14%, transparent);
 }
 

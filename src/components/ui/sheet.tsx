@@ -178,7 +178,7 @@ export function SheetHeader({
   return (
     <div
       className={cn(
-        "shrink-0 border-b border-[#E8E2DE] px-6 pb-4 pt-6 pr-14",
+        "shrink-0 border-b border-[var(--painel-border)] px-6 pb-4 pt-6 pr-14",
         className,
       )}
     >
@@ -223,7 +223,7 @@ export function SheetFooter({
   return (
     <div
       className={cn(
-        "flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[#E8E2DE] bg-white px-6 py-4",
+        "flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--painel-border)] bg-white px-6 py-4",
         className,
       )}
     >

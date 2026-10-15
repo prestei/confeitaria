@@ -95,7 +95,7 @@ export function ImageField({
               ? "border-[#CED0D4] bg-[#FAFAFA]"
               : dragOver
                 ? "border-cocoa/40 bg-[#F7F5F3]"
-                : "border-[#E8E2DE] bg-[#FAFAFA] hover:border-[#CED0D4]",
+                : "border-[var(--painel-border)] bg-[#FAFAFA] hover:border-[#CED0D4]",
           )}
         >
           {value ? (
@@ -166,7 +166,7 @@ export function ImageField({
       </div>
 
       <div className="flex flex-wrap items-start gap-3">
-        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#E8E2DE] bg-[#F7F5F3]">
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--painel-border)] bg-[#F7F5F3]">
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt="" className="h-full w-full object-cover" />
@@ -303,7 +303,7 @@ export function GalleryField({
           {urls.map((url) => (
             <li
               key={url}
-              className="group relative h-20 w-20 overflow-hidden rounded-lg border border-[#E8E2DE] bg-[#F7F5F3]"
+              className="group relative h-20 w-20 overflow-hidden rounded-lg border border-[var(--painel-border)] bg-[#F7F5F3]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={url} alt="" className="h-full w-full object-cover" />

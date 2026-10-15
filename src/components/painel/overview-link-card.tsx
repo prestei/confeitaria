@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, ExternalLink, Share2 } from "lucide-react";
+import { Copy, Eye, Heart, Link2, Share2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 export function OverviewLinkCard({
@@ -22,48 +22,62 @@ export function OverviewLinkCard({
   }
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-[#F0D4DC] bg-gradient-to-br from-[#FDF2F5] via-[#FCE8EE] to-[#F9E4D0] p-5 sm:p-6">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#9A6B7A]">
+    <section className="rounded-xl border border-[var(--painel-border)] bg-white p-4 sm:p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9A8F88]">
         Link da vitrine
       </p>
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-2 flex flex-col gap-3 xl:flex-row xl:items-center">
         <button
           type="button"
           onClick={copy}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-white/80 px-4 py-3 text-left shadow-sm ring-1 ring-[#F0D4DC]/60 transition hover:bg-white"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2.5 text-left transition hover:border-[#D1D5DB] hover:bg-white"
         >
-          <span className="truncate text-sm font-medium text-[#4A3728]">
+          <Link2
+            className="h-4 w-4 shrink-0 text-[#9CA3AF]"
+            strokeWidth={1.75}
+            aria-hidden
+          />
+          <span className="truncate text-sm font-medium text-[var(--painel-brand,#0f352e)]">
             {displayHost}
           </span>
-          <Copy className="ml-auto h-4 w-4 shrink-0 text-[#9A6B7A]" aria-hidden />
+          <Copy
+            className="ml-auto h-4 w-4 shrink-0 text-[#9CA3AF]"
+            aria-hidden
+          />
         </button>
-        <div className="flex shrink-0 gap-2">
+
+        <div className="flex shrink-0 flex-wrap gap-2">
           <a
             href={publicUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#4A3728] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#3D2E22]"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--painel-brand,#0f352e)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--painel-brand-hover,#164a40)]"
           >
-            <ExternalLink className="h-4 w-4" aria-hidden />
+            <Eye className="h-4 w-4" aria-hidden />
             Visualizar
           </a>
           <a
             href={`https://wa.me/?text=${encodeURIComponent(`Confira nossa vitrine: ${publicUrl}`)}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#4A3728]/20 bg-white px-4 py-2.5 text-sm font-semibold text-[#4A3728] hover:bg-white/90"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--painel-brand,#0f352e)] transition hover:bg-[#F9FAFB]"
           >
             <Share2 className="h-4 w-4" aria-hidden />
             Compartilhar
           </a>
         </div>
+
+        <p
+          className="flex shrink-0 items-center justify-center gap-1.5 text-center text-sm text-[#6B6560] xl:max-w-[240px] xl:justify-end xl:text-right"
+          style={{ fontFamily: "var(--font-display), cursive" }}
+        >
+          <Heart
+            className="h-4 w-4 shrink-0 fill-[#E05A5A] text-[#E05A5A]"
+            aria-hidden
+          />
+          Compartilhe seu link e conquiste mais clientes!
+        </p>
       </div>
-      <p
-        className="mt-4 text-right text-sm text-[var(--painel-accent)] sm:text-base"
-        style={{ fontFamily: "var(--font-display), cursive" }}
-      >
-        Compartilhe seu link e conquiste mais clientes!
-      </p>
     </section>
   );
 }

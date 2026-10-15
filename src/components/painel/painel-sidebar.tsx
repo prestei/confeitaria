@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ChevronRight,
   LayoutDashboard,
   Menu,
   MoreHorizontal,
@@ -25,9 +26,11 @@ const BRAND_ROW = cn(
 
 export function PainelSidebar({
   storeName,
+  userName,
   badges = {},
 }: {
   storeName: string;
+  userName?: string;
   storeLogoUrl?: string | null;
   storeSlug?: string | null;
   plan?: string;
@@ -36,6 +39,15 @@ export function PainelSidebar({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  const displayUser = (userName || storeName || "Confeiteira").trim();
+  const userInitials = displayUser
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
 
   const Brand = () => (
     <div className={BRAND_ROW}>
@@ -49,6 +61,30 @@ export function PainelSidebar({
         <span className="truncate text-[17px] font-semibold tracking-tight text-white">
           Doce Link
         </span>
+      </Link>
+    </div>
+  );
+
+  const UserFooter = () => (
+    <div className="shrink-0 border-t border-white/10 p-3">
+      <Link
+        href="/painel/configuracoes"
+        onClick={() => setOpen(false)}
+        className="flex items-center gap-2.5 rounded-xl px-2 py-2 transition hover:bg-white/8"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/12 text-xs font-bold text-white">
+          {userInitials}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white">{displayUser}</p>
+          <p className="truncate text-xs text-[var(--painel-sidebar-muted)]">
+            {storeName}
+          </p>
+        </div>
+        <ChevronRight
+          className="h-4 w-4 shrink-0 text-[var(--painel-sidebar-muted)]"
+          aria-hidden
+        />
       </Link>
     </div>
   );
@@ -107,6 +143,7 @@ export function PainelSidebar({
       >
         <Brand />
         <Nav />
+        <UserFooter />
       </aside>
 
       <div
@@ -147,12 +184,12 @@ export function PainelSidebar({
               onClick={() => setOpen(false)}
             />
             <motion.aside
-              initial={{ x: "-100%" }}
+              initial={{ x: "100%" }}
               animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
+              exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
               className={cn(
-                "absolute inset-y-0 left-0 flex w-[min(100%,18rem)] flex-col overflow-hidden border-r shadow-xl",
+                "absolute inset-y-0 right-0 flex w-[min(100%,18rem)] flex-col overflow-hidden border-l shadow-xl",
                 SIDEBAR_BG,
                 SIDEBAR_BORDER,
               )}
@@ -178,6 +215,7 @@ export function PainelSidebar({
                 </button>
               </div>
               <Nav />
+              <UserFooter />
             </motion.aside>
           </motion.div>
         )}

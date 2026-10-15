@@ -312,7 +312,7 @@ export function PromocoesAdmin({
                 <button
                   type="button"
                   onClick={() => setRulesOpen((v) => !v)}
-                  className="flex w-full items-center gap-2.5 rounded-lg border border-[#E8E2DE] bg-[#FAFAF9] px-3.5 py-3 text-left transition hover:bg-[#F5F4F2]"
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-[var(--painel-border)] bg-[#FAFAF9] px-3.5 py-3 text-left transition hover:bg-[#F5F4F2]"
                   aria-expanded={rulesOpen}
                 >
                   <SlidersHorizontal className="h-4 w-4 shrink-0 text-[#8C8682]" />
@@ -327,7 +327,7 @@ export function PromocoesAdmin({
                   />
                 </button>
                 {rulesOpen && (
-                  <div className="mt-3 grid gap-4 rounded-lg border border-[#E8E2DE] bg-white p-4 sm:grid-cols-2">
+                  <div className="mt-3 grid gap-4 rounded-lg border border-[var(--painel-border)] bg-white p-4 sm:grid-cols-2">
                     <div>
                       <label className={fieldLabel} htmlFor="promo-min">
                         Pedido mínimo (R$)
@@ -372,7 +372,7 @@ export function PromocoesAdmin({
           action={{ label: "Nova promoção", onClick: () => setOpen(true) }}
         />
       ) : (
-        <ul className="divide-y divide-[#E8E2DE] overflow-hidden rounded-lg border border-[#E8E2DE] bg-white">
+        <ul className="divide-y divide-[var(--painel-border)] overflow-hidden rounded-lg border border-[var(--painel-border)] bg-white">
           {items.map((p) => (
             <li
               key={p.id}

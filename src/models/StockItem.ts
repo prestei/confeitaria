@@ -5,7 +5,6 @@ const stockItemSchema = baseSchema(
   {
     name: { type: String, required: true },
     unit: { type: String, default: "un" },
-    /** Legado — insumos não têm estoque; só precificação. */
     quantity: { type: Number, default: 0 },
     minQuantity: { type: Number, default: 0 },
     unitCostCents: { type: Number, default: null },

@@ -16,7 +16,7 @@ export function DataTable({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded border border-[#E8E2DE] bg-white shadow-[0_1px_2px_rgba(45,41,38,0.04)]",
+        "overflow-hidden rounded border border-[var(--painel-border)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
         className,
       )}
     >
@@ -32,7 +32,7 @@ export function DataTable({
 
 export function DataTableHeader({ children }: { children: ReactNode }) {
   return (
-    <thead className="border-b border-[#E8E2DE] bg-[#FBF7F2] text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8C8682]">
+    <thead className="border-b border-[var(--painel-border)] bg-[var(--painel-subtle,#eff3f6)] text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--painel-muted)]">
       {children}
     </thead>
   );
@@ -62,7 +62,7 @@ export function DataTableHead({
 }
 
 export function DataTableBody({ children }: { children: ReactNode }) {
-  return <tbody className="divide-y divide-[#F0EBE7]">{children}</tbody>;
+  return <tbody className="divide-y divide-[var(--painel-border)]">{children}</tbody>;
 }
 
 export function DataTableRow({
@@ -80,7 +80,7 @@ export function DataTableRow({
       className={cn(
         "bg-white transition",
         onClick && "cursor-pointer",
-        "hover:bg-[#FDF8F5]",
+        "hover:bg-[var(--painel-subtle,#eff3f6)]",
         className,
       )}
     >
@@ -122,7 +122,7 @@ export function DataTableFooter({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 border-t border-[#F0EBE7] bg-white px-4 py-3 text-sm text-[#8C8682]",
+        "flex flex-wrap items-center justify-between gap-3 border-t border-[var(--painel-border)] bg-white px-4 py-3 text-sm text-[var(--painel-muted)]",
         className,
       )}
     >
@@ -160,7 +160,7 @@ export function DataTablePagination({
             type="button"
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded text-[#8C8682] transition hover:bg-[#F5F0ED] disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded text-[#8C8682] transition hover:bg-[var(--painel-subtle-hover,#e5ebef)] disabled:opacity-40"
             aria-label="Página anterior"
           >
             ‹
@@ -174,7 +174,7 @@ export function DataTablePagination({
                 "inline-flex h-8 w-8 items-center justify-center rounded text-[13px] font-semibold transition",
                 p === page
                   ? "bg-[#E8F0EE] text-[var(--painel-brand)]"
-                  : "text-[#8C8682] hover:bg-[#F5F0ED]",
+                  : "text-[#8C8682] hover:bg-[var(--painel-subtle-hover,#e5ebef)]",
               )}
             >
               {p}
@@ -184,7 +184,7 @@ export function DataTablePagination({
             type="button"
             disabled={page >= pageCount}
             onClick={() => onPageChange(page + 1)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded text-[#8C8682] transition hover:bg-[#F5F0ED] disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded text-[#8C8682] transition hover:bg-[var(--painel-subtle-hover,#e5ebef)] disabled:opacity-40"
             aria-label="Próxima página"
           >
             ›
@@ -211,9 +211,9 @@ export type TableColumn<Row> = {
 
 function columnClassName<Row>(column: TableColumn<Row>) {
   return cn(
-    column.tone === "strong" && "font-semibold text-cocoa",
-    column.tone === "body" && "text-cocoa",
-    column.tone === "muted" && "text-[#8C8682]",
+    column.tone === "strong" && "font-semibold text-[#111827]",
+    column.tone === "body" && "text-[#374151]",
+    column.tone === "muted" && "text-[var(--painel-muted)]",
     column.tone === "soft" && "text-[#65676B]",
     column.numeric && "tabular-nums",
     column.className,

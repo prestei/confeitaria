@@ -68,7 +68,7 @@ export function RowActionsMenu({
           id={menuId}
           role="menu"
           className={cn(
-            "absolute z-30 mt-1 min-w-[11.5rem] overflow-hidden rounded-md border border-[#E8E2DE] bg-white py-1 shadow-[0_8px_24px_rgba(45,41,38,0.12)]",
+            "absolute z-30 mt-1 min-w-[11.5rem] overflow-hidden rounded-md border border-[var(--painel-border)] bg-white py-1 shadow-[0_8px_24px_rgba(45,41,38,0.12)]",
             align === "end" ? "right-0" : "left-0",
           )}
         >
@@ -93,7 +93,7 @@ export function RowActionsMenu({
             return (
               <div key={`${item.label}-${i}`}>
                 {item.separator ? (
-                  <div className="my-1 border-t border-[#F0EBE7]" />
+                  <div className="my-1 border-t border-[var(--painel-border)]" />
                 ) : null}
                 {item.href ? (
                   <Link

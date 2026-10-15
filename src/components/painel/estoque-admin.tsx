@@ -225,8 +225,8 @@ export function EstoqueAdmin({
             ]}
           />
 
-          <div className="overflow-hidden rounded-2xl border border-[#E8E2DE] bg-white shadow-[0_1px_2px_rgba(45,41,38,0.04)]">
-            <div className="border-b border-[#E8E2DE] bg-[#FBF7F2] px-4 py-3.5">
+          <div className="overflow-hidden rounded-2xl border border-[var(--painel-border)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="border-b border-[var(--painel-border)] bg-[var(--painel-subtle,#eff3f6)] px-4 py-3.5">
               <h2 className="text-sm font-semibold text-cocoa">
                 Histórico de movimentações
               </h2>
@@ -236,7 +236,7 @@ export function EstoqueAdmin({
                 Nenhuma movimentação ainda.
               </p>
             ) : (
-              <ul className="divide-y divide-[#F0EBE7]">
+              <ul className="divide-y divide-[var(--painel-border)]">
                 {movements.map((m) => (
                   <li
                     key={m.id}

@@ -159,7 +159,7 @@ export function PaymentAdmin({
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2 border-t border-[#E8E2DE] pt-4">
+          <div className="flex flex-wrap gap-2 border-t border-[var(--painel-border)] pt-4">
             <input
               className="input max-w-xs flex-1 !py-2 text-sm"
               value={customMethod}
@@ -182,7 +182,7 @@ export function PaymentAdmin({
           </div>
 
           {acceptsCardBrands(methods) ? (
-            <div className="rounded-xl border border-[#E8E2DE] bg-[#FBF7F2] p-4">
+            <div className="rounded-xl border border-[var(--painel-border)] bg-[var(--painel-subtle,#eff3f6)] p-4">
               <p className="text-sm font-semibold text-cocoa">
                 Bandeiras de cartão
               </p>
@@ -248,7 +248,7 @@ export function PaymentAdmin({
         </div>
       </SectionCard>
 
-      <div className="sticky bottom-0 z-10 -mx-4 border-t border-[#E8E2DE] bg-[var(--painel-canvas)]/95 px-4 py-4 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-5">
+      <div className="sticky bottom-0 z-10 -mx-4 border-t border-[var(--painel-border)] bg-[var(--painel-canvas)]/95 px-4 py-4 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-[#8C8682]">
             {methods.length} forma{methods.length === 1 ? "" : "s"} na entrega
@@ -299,7 +299,7 @@ function ModeCard({
         "relative flex flex-col rounded-2xl border p-5 transition",
         active
           ? "border-[var(--painel-brand)]/30 bg-white shadow-sm ring-1 ring-[var(--painel-brand)]/15"
-          : "border-[#E8E2DE] bg-[#F7F8FA]",
+          : "border-[var(--painel-border)] bg-[#F7F8FA]",
         disabled && "opacity-85",
       )}
     >
@@ -307,7 +307,7 @@ function ModeCard({
         <span
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-xl",
-            active ? "bg-[#E8F0EE] text-[var(--painel-brand)]" : "bg-[#E8E2DE] text-[#8C8682]",
+            active ? "bg-[#E8F0EE] text-[var(--painel-brand)]" : "bg-[var(--painel-border)] text-[#8C8682]",
           )}
         >
           <Icon className="h-5 w-5" aria-hidden />
@@ -350,7 +350,7 @@ function MethodChip({
         "flex items-start gap-2 rounded-xl border px-3.5 py-3 text-left transition",
         active
           ? "border-[var(--painel-brand)] bg-[var(--painel-brand)] text-white"
-          : "border-[#E8E2DE] bg-white text-[#65676B] hover:border-[#CED0D4]",
+          : "border-[var(--painel-border)] bg-white text-[#65676B] hover:border-[#CED0D4]",
       )}
     >
       <span

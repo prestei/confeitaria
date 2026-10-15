@@ -99,7 +99,7 @@ export function DialogContent({
             aria-modal="true"
             aria-labelledby={titleId}
             className={cn(
-          "relative z-10 w-full overflow-hidden rounded bg-white shadow-2xl shadow-[#2D2926]/20",
+          "relative z-10 w-full overflow-hidden rounded bg-white shadow-2xl shadow-black/15",
               sizes[size],
               className,
             )}

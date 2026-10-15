@@ -79,7 +79,7 @@ function StatusPill({
 export function SettingsHub({ status }: { status: SettingsHubStatus }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#E8E2DE] bg-white px-4 py-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--painel-border)] bg-white px-4 py-3.5">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-cocoa">{status.storeName}</p>
           <p className="mt-0.5 text-xs text-[#8C8682]">
@@ -138,7 +138,7 @@ function SettingsCard({
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3.5 rounded-lg border border-[#E8E2DE] bg-white p-4 transition hover:border-[#CED0D4] hover:bg-[#FAFAF9]"
+      className="group flex items-start gap-3.5 rounded-lg border border-[var(--painel-border)] bg-white p-4 transition hover:border-[#CED0D4] hover:bg-[#FAFAF9]"
     >
       <div
         className={cn(

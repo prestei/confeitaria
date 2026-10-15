@@ -31,7 +31,7 @@ type AddonRow = { name: string; price: string };
 const STEPS = [
   { id: 1, label: "Básico" },
   { id: 2, label: "Preço e estoque" },
-  { id: 3, label: "Precificação" },
+  { id: 3, label: "Receita e custo" },
   { id: 4, label: "Revisar" },
 ] as const;
 
@@ -244,7 +244,7 @@ export function ProductForm({
   const stepperNav = sheet ? (
     <nav
       aria-label="Etapas"
-      className="shrink-0 overflow-x-hidden border-b border-[#E8E2DE]"
+      className="shrink-0 overflow-x-hidden border-b border-[var(--painel-border)]"
     >
       <ol className="flex px-1 sm:px-2">
         {STEPS.map((s) => {
@@ -558,7 +558,7 @@ export function ProductForm({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-cocoa-soft/55">Precificação</dt>
+                <dt className="text-xs text-cocoa-soft/55">Receita e custo</dt>
                 <dd className="font-medium text-cocoa">
                   {recipe.filter((line) => line.stockItemId).length} insumos · custo{" "}
                   {formatBRL(
@@ -590,7 +590,7 @@ export function ProductForm({
 
   const formFooter = sheet ? (
     <div
-      className="sticky bottom-0 z-10 mt-auto flex shrink-0 items-center justify-between gap-2 border-t border-[#E8E2DE] bg-white px-4 py-3 shadow-[0_-6px_16px_-6px_rgba(45,41,38,0.08)] sm:gap-3 sm:px-6 sm:py-4"
+      className="sticky bottom-0 z-10 mt-auto flex shrink-0 items-center justify-between gap-2 border-t border-[var(--painel-border)] bg-white px-4 py-3 shadow-[0_-6px_16px_-6px_rgba(45,41,38,0.08)] sm:gap-3 sm:px-6 sm:py-4"
     >
       {step === 1 ? (
         <button
@@ -709,7 +709,7 @@ export function ProductForm({
     <PageShell>
       <PageHeader
         title={productId ? "Editar produto" : "Novo produto"}
-        description="Cadastro completo em etapas — fotos, preço, precificação, opções e estoque."
+        description="Passo a passo: fotos, preço, receita com insumos e estoque."
         actions={
           <PageAction href="/painel/produtos" variant="secondary">
             Voltar

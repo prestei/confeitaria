@@ -281,7 +281,7 @@ function OrderCardContent({
   return (
     <div
       className={cn(
-        "relative rounded-xl border border-[#E8E2DE] bg-white p-3.5 shadow-[0_1px_3px_rgba(45,41,38,0.06)]",
+        "relative rounded-xl border border-[var(--painel-border)] bg-white p-3.5 shadow-[0_1px_3px_rgba(45,41,38,0.06)]",
         order.status === "IN_PRODUCTION" && `border-l-[3px] ${theme.accent}`,
         isNew && paidLooksReady && !awaitingOnlinePay && "border-[#F5D9A8]",
         awaitingOnlinePay && "border-[#F5D9A8]/80",
@@ -446,7 +446,7 @@ function OrderCardContent({
                       stopDrag(e);
                       onCancel();
                     }}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#E8E2DE] bg-white text-[#8C8682] transition hover:bg-[#FDF2F2] hover:text-[#C85A5A] disabled:opacity-60"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--painel-border)] bg-white text-[#8C8682] transition hover:bg-[#FDF2F2] hover:text-[#C85A5A] disabled:opacity-60"
                     aria-label="Recusar"
                   >
                     <X className="h-4 w-4" />

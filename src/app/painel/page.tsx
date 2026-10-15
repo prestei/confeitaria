@@ -1,16 +1,26 @@
-import Link from "next/link";
-import { startOfMonth } from "date-fns";
-import { Calculator, PackagePlus } from "lucide-react";
+import { format, startOfDay, subDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { connectDB } from "@/lib/db";
 import { requireStoreSession } from "@/lib/tenant";
-import { Store } from "@/models/Store";
+import { Order } from "@/models/Order";
 import { Product } from "@/models/Product";
-import { PricingCalculation } from "@/models/PricingCalculation";
-import { leanDoc, leanList } from "@/lib/serialize";
-import { cn } from "@/lib/cn";
-import { formatBRL } from "@/lib/utils";
-import { OverviewLinkCard } from "@/components/painel/overview-link-card";
-import { PainelVitrinePreview } from "@/components/painel/painel-vitrine-preview";
+import { StockItem } from "@/models/StockItem";
+import { StockMovement } from "@/models/StockMovement";
+import { Category } from "@/models/Category";
+import { OrderStatus, StockMovementType } from "@/lib/enums";
+import { leanList } from "@/lib/serialize";
+import { isAbandonedOnlineCheckout } from "@/lib/utils";
+import {
+  buildLast7DaySales,
+  categoryColor,
+  formatPainelHomeDate,
+  formatQtyWithUnit,
+  insumoStockLevel,
+  isSameCalendarDay,
+  pctChange,
+} from "@/lib/painel-home-metrics";
+import { PainelHome } from "@/components/painel/painel-home";
+import type { PainelHomeMovement } from "@/components/painel/painel-home";
 
 function greetingForHour(hour: number) {
   if (hour < 12) return "Bom dia";
@@ -18,294 +28,320 @@ function greetingForHour(hour: number) {
   return "Boa noite";
 }
 
+function insumoEmoji(name: string) {
+  const n = name.toLowerCase();
+  if (n.includes("leite")) return "🥛";
+  if (n.includes("farinha")) return "🌾";
+  if (n.includes("açúcar") || n.includes("acucar")) return "🍬";
+  if (n.includes("ovo")) return "🥚";
+  if (n.includes("manteiga")) return "🧈";
+  if (n.includes("chocolate")) return "🍫";
+  return "📦";
+}
+
+function userInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+}
+
+type OrderLean = {
+  id: string;
+  createdAt: Date;
+  totalCents: number;
+  customerPhone: string;
+  customerId: string | null;
+  status: string;
+  paymentMethod: string | null;
+  paymentStatus: string | null;
+  mpPaymentId: string | null;
+  items: {
+    productId: string | null;
+    productName: string;
+    quantity: number;
+    lineTotalCents: number;
+  }[];
+};
+
 export default async function PainelPage() {
   const session = await requireStoreSession();
   await connectDB();
   const storeId = session.storeId;
-  const firstName =
-    (session.name || "").split(" ").filter(Boolean)[0] || "Confeiteira";
-
-  const store = leanDoc(await Store.findOne({ _id: storeId }).lean());
-  if (!store) return null;
-
-  const origin = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const base = origin.replace(/\/$/, "");
-  const publicUrl = `${base}/${store.slug}`;
-  const displayHost = publicUrl.replace(/^https?:\/\//, "");
-
-  const monthStart = startOfMonth(new Date());
+  const fullName = session.name || "Confeiteira";
+  const firstName = fullName.split(" ").filter(Boolean)[0] || "Confeiteira";
+  const hour = new Date().getHours();
+  const today = startOfDay(new Date());
+  const yesterday = subDays(today, 1);
+  const salesSince = subDays(today, 29);
 
   const [
-    productTotal,
-    trackedCount,
-    outOfStockCount,
-    newProductsMonth,
-    newTrackedMonth,
-    featured,
-    recentPricing,
+    ordersRaw,
+    stockItems,
+    products,
+    categories,
+    movementsRaw,
+    freshOrders,
+    featuredProduct,
   ] = await Promise.all([
-    Product.countDocuments({ storeId, active: true }),
-    Product.countDocuments({ storeId, trackStock: true, active: true }),
-    Product.countDocuments({
-      storeId,
-      active: true,
-      trackStock: true,
-      stockQty: { $lte: 0 },
-    }),
-    Product.countDocuments({ storeId, createdAt: { $gte: monthStart } }),
-    Product.countDocuments({
-      storeId,
-      trackStock: true,
-      createdAt: { $gte: monthStart },
-    }),
     leanList(
-      await Product.find({ storeId, active: true, featured: true })
-        .sort({ sortOrder: 1, name: 1 })
-        .limit(4)
+      await Order.find({
+        storeId,
+        createdAt: { $gte: salesSince },
+        status: { $ne: OrderStatus.CANCELLED },
+      })
+        .select({
+          totalCents: 1,
+          createdAt: 1,
+          customerPhone: 1,
+          customerId: 1,
+          items: 1,
+          paymentMethod: 1,
+          paymentStatus: 1,
+          mpPaymentId: 1,
+          status: 1,
+        })
         .lean(),
     ),
+    leanList(await StockItem.find({ storeId }).lean()),
     leanList(
-      await PricingCalculation.find({ storeId })
-        .sort({ updatedAt: -1 })
-        .limit(4)
+      await Product.find({ storeId })
+        .select({
+          name: 1,
+          categoryId: 1,
+          imageUrl: 1,
+          productType: 1,
+        })
         .lean(),
     ),
+    leanList(await Category.find({ storeId }).select({ name: 1 }).lean()),
+    leanList(
+      await StockMovement.find({ storeId })
+        .sort({ createdAt: -1 })
+        .limit(24)
+        .lean(),
+    ),
+    Order.find({
+      storeId,
+      status: OrderStatus.NEW,
+    })
+      .select({ paymentMethod: 1, paymentStatus: 1, mpPaymentId: 1 })
+      .lean(),
+    Product.findOne({ storeId, active: true, imageUrl: { $ne: null } })
+      .sort({ featured: -1, sortOrder: 1 })
+      .select({ imageUrl: 1 })
+      .lean(),
   ]);
 
-  const published = store.isPublished;
-  const hour = new Date().getHours();
-
-  return (
-    <div className="flex w-full max-w-[1200px] gap-8 xl:mx-auto">
-      <div className="min-w-0 flex-1 space-y-6">
-        <header>
-          <h1 className="text-2xl font-semibold text-[#4A3728] sm:text-[26px]">
-            {greetingForHour(hour)}, {firstName}!
-          </h1>
-          <p className="mt-1 text-sm text-[#8C7A72]">
-            {published
-              ? "Sua vitrine está pronta para receber pedidos."
-              : "Publique a loja em Configurações → Estabelecimento para liberar o link público."}
-          </p>
-        </header>
-
-        <OverviewLinkCard publicUrl={publicUrl} displayHost={displayHost} />
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <StatCard
-            label="Total de produtos"
-            value={productTotal}
-            hint={
-              newProductsMonth > 0
-                ? `${newProductsMonth} novo${newProductsMonth > 1 ? "s" : ""} este mês`
-                : undefined
-            }
-          />
-          <StatCard
-            label="Estoque controlado"
-            value={trackedCount}
-            hint={
-              newTrackedMonth > 0
-                ? `${newTrackedMonth} com controle este mês`
-                : undefined
-            }
-          />
-          <StatCard
-            label="Esgotados"
-            value={outOfStockCount}
-            alert={outOfStockCount > 0}
-          />
-        </div>
-
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-[#4A3728]">
-            Ações rápidas
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <QuickAction
-              href="/painel/produtos/novo"
-              icon={PackagePlus}
-              label="Cadastrar produto"
-            />
-            <QuickAction
-              href="/painel/precificacao"
-              icon={Calculator}
-              label="Calcular precificação"
-            />
-          </div>
-        </section>
-
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[#4A3728]">
-              Produtos em destaque
-            </h2>
-            <Link
-              href="/painel/produtos"
-              className="text-xs font-semibold text-[var(--painel-accent)] hover:underline"
-            >
-              Ver todos
-            </Link>
-          </div>
-          {featured.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-[#F0E6E0] bg-white px-4 py-8 text-center text-sm text-[#9A8F88]">
-              Marque produtos como destaque para exibir aqui.
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {featured.map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/painel/produtos/${product.id}`}
-                  className="overflow-hidden rounded-2xl border border-[#F0E6E0] bg-white transition hover:shadow-md"
-                >
-                  {product.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={product.imageUrl}
-                      alt=""
-                      className="h-28 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-28 items-center justify-center bg-[#E8F0EE] text-[var(--painel-brand)]">
-                      🍰
-                    </div>
-                  )}
-                  <div className="p-3">
-                    <p className="truncate text-sm font-semibold text-[#4A3728]">
-                      {product.name}
-                    </p>
-                    <p className="mt-0.5 text-sm text-[#6B5B52]">
-                      {product.priceMode === "QUOTE" || product.priceCents == null
-                        ? "Sob consulta"
-                        : formatBRL(product.priceCents)}
-                    </p>
-                    <span
-                      className={cn(
-                        "mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                        product.active
-                          ? "bg-[#E4F5E8] text-[#2D7A4A]"
-                          : "bg-[#F5F0ED] text-[#8C8682]",
-                      )}
-                    >
-                      {product.active ? "Ativo" : "Inativo"}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-2xl border border-[#F0E6E0] bg-gradient-to-br from-[#FFF8F5] to-white p-5">
-            <h2 className="text-sm font-semibold text-[#4A3728]">
-              Calculadora de precificação
-            </h2>
-            <p className="mt-2 text-sm text-[#8C7A72]">
-              Estime custos, margem e preço de venda com a fórmula certa para
-              docerias.
-            </p>
-            <Link
-              href="/painel/precificacao"
-              className="mt-4 inline-flex rounded-xl bg-[#4A3728] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3D2E22]"
-            >
-              Abrir calculadora
-            </Link>
-          </section>
-
-          <section className="rounded-2xl border border-[#F0E6E0] bg-white p-5">
-            <h2 className="text-sm font-semibold text-[#4A3728]">
-              Últimos cálculos
-            </h2>
-            {recentPricing.length === 0 ? (
-              <p className="mt-3 text-sm text-[#9A8F88]">
-                Nenhum cálculo salvo ainda.
-              </p>
-            ) : (
-              <ul className="mt-3 divide-y divide-[#F0E6E0]">
-                {recentPricing.map((row) => (
-                  <li
-                    key={row.id}
-                    className="flex items-center justify-between gap-2 py-2.5 text-sm"
-                  >
-                    <span className="truncate font-medium text-[#4A3728]">
-                      {row.name}
-                    </span>
-                    <span className="shrink-0 text-[#6B5B52]">
-                      {formatBRL(row.suggestedUnitPriceCents)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </div>
-      </div>
-
-      <PainelVitrinePreview
-        store={{
-          name: store.name,
-          slug: store.slug,
-          logoUrl: store.logoUrl,
-          coverUrl: store.coverUrl,
-          description: store.description,
-          whatsapp: store.whatsapp,
-          paymentMethods: store.paymentMethods ?? [],
-        }}
-        publicPath={publicUrl}
-      />
-    </div>
+  const orders = (ordersRaw as OrderLean[]).filter(
+    (o) => !isAbandonedOnlineCheckout(o),
   );
-}
 
-function StatCard({
-  label,
-  value,
-  hint,
-  alert,
-}: {
-  label: string;
-  value: number;
-  hint?: string;
-  alert?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-2xl border px-4 py-4",
-        alert
-          ? "border-amber-200/80 bg-amber-50/50"
-          : "border-[#F0E6E0] bg-white",
-      )}
-    >
-      <p className="text-2xl font-semibold tabular-nums text-[#4A3728]">
-        {value}
-      </p>
-      <p className="mt-1 text-xs text-[#9A8F88]">{label}</p>
-      {hint ? (
-        <p className="mt-1 text-[11px] font-medium text-[var(--painel-accent)]">{hint}</p>
-      ) : null}
-    </div>
+  const ordersToday = orders.filter((o) =>
+    isSameCalendarDay(today, new Date(o.createdAt)),
   );
-}
+  const ordersYesterday = orders.filter((o) =>
+    isSameCalendarDay(yesterday, new Date(o.createdAt)),
+  );
 
-function QuickAction({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string;
-  icon: typeof PackagePlus;
-  label: string;
-}) {
+  const salesTodayCents = ordersToday.reduce(
+    (s, o) => s + (o.totalCents || 0),
+    0,
+  );
+  const salesYesterdayCents = ordersYesterday.reduce(
+    (s, o) => s + (o.totalCents || 0),
+    0,
+  );
+
+  const customersToday = new Set(
+    ordersToday.map((o) => o.customerId || o.customerPhone),
+  ).size;
+  const customersYesterday = new Set(
+    ordersYesterday.map((o) => o.customerId || o.customerPhone),
+  ).size;
+
+  const lowStockInsumos = stockItems
+    .filter(
+      (item) => item.minQuantity > 0 && item.quantity <= item.minQuantity,
+    )
+    .sort((a, b) => a.quantity / a.minQuantity - b.quantity / b.minQuantity)
+    .slice(0, 5)
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantityLabel: formatQtyWithUnit(item.quantity, item.unit),
+      minLabel: `Min. ${formatQtyWithUnit(item.minQuantity, item.unit)}`,
+      level: insumoStockLevel(item.quantity, item.minQuantity),
+      emoji: insumoEmoji(item.name),
+    }));
+
+  const lowStockCount = stockItems.filter(
+    (item) => item.minQuantity > 0 && item.quantity <= item.minQuantity,
+  ).length;
+
+  const productById = Object.fromEntries(products.map((p) => [p.id, p]));
+  const categoryNameById = Object.fromEntries(
+    categories.map((c) => [c.id, c.name]),
+  );
+
+  const categoryTotals = new Map<string, number>();
+  const soldByProduct = new Map<string, number>();
+  const periodStart = subDays(today, 29);
+
+  for (const order of orders) {
+    if (new Date(order.createdAt) < periodStart) continue;
+    for (const line of order.items || []) {
+      const cents = line.lineTotalCents || 0;
+      const pid = line.productId;
+      if (pid) {
+        soldByProduct.set(pid, (soldByProduct.get(pid) || 0) + line.quantity);
+        const catId = productById[pid]?.categoryId;
+        const catKey = catId
+          ? categoryNameById[catId] || "Outros"
+          : "Outros";
+        categoryTotals.set(catKey, (categoryTotals.get(catKey) || 0) + cents);
+      } else {
+        categoryTotals.set("Outros", (categoryTotals.get("Outros") || 0) + cents);
+      }
+    }
+  }
+
+  const categoryTotalCents = [...categoryTotals.values()].reduce(
+    (s, v) => s + v,
+    0,
+  );
+  const categorySlices = [...categoryTotals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, cents], index) => ({
+      name,
+      cents,
+      pct:
+        categoryTotalCents > 0
+          ? Math.round((cents / categoryTotalCents) * 100)
+          : 0,
+      color: categoryColor(index),
+    }));
+
+  const topProducts = [...soldByProduct.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([id, qty]) => {
+      const product = productById[id];
+      const unit = product?.productType === "PARTY_KIT" ? "kits" : "un";
+      return {
+        id,
+        href: `/painel/produtos/${id}`,
+        name: product?.name || "Produto",
+        imageUrl: product?.imageUrl || null,
+        soldLabel: `${qty} ${unit}`,
+      };
+    });
+
+  const movementProductIds = movementsRaw
+    .map((m) => m.productId)
+    .filter(Boolean) as string[];
+  const movementStockIds = movementsRaw
+    .map((m) => m.stockItemId)
+    .filter(Boolean) as string[];
+
+  const [movementProducts, movementStockItems] = await Promise.all([
+    movementProductIds.length
+      ? leanList(
+          await Product.find({ _id: { $in: movementProductIds } })
+            .select({ name: 1, unit: 1 })
+            .lean(),
+        )
+      : [],
+    movementStockIds.length
+      ? leanList(
+          await StockItem.find({ _id: { $in: movementStockIds } })
+            .select({ name: 1, unit: 1 })
+            .lean(),
+        )
+      : [],
+  ]);
+
+  const movementProductMap = Object.fromEntries(
+    movementProducts.map((p) => [p.id, p]),
+  );
+  const movementStockMap = Object.fromEntries(
+    movementStockItems.map((i) => [i.id, i]),
+  );
+
+  const movements: PainelHomeMovement[] = movementsRaw.slice(0, 8).map((m) => {
+    const product = m.productId ? movementProductMap[m.productId] : null;
+    const stock = m.stockItemId ? movementStockMap[m.stockItemId] : null;
+    const labelName = product?.name || stock?.name || "Movimentação";
+    const unit = product?.unit || stock?.unit || "un";
+    const prefix =
+      m.type === StockMovementType.IN
+        ? "+"
+        : m.type === StockMovementType.OUT
+          ? "−"
+          : "";
+    const description =
+      m.note?.trim() ||
+      (m.type === StockMovementType.ADJUST
+        ? `Ajuste de ${labelName}`
+        : `${labelName}`);
+    return {
+      id: m.id,
+      dateLabel: format(new Date(m.createdAt), "dd/MM/yyyy", { locale: ptBR }),
+      type: m.type,
+      description,
+      quantityLabel: `${prefix}${formatQtyWithUnit(m.quantity, unit)}`,
+      userName: firstName,
+    };
+  });
+
+  const notificationCount = freshOrders.filter(
+    (o) => !isAbandonedOnlineCheckout(o),
+  ).length;
+
+  const sales7d = buildLast7DaySales(
+    orders.map((o) => ({
+      createdAt: new Date(o.createdAt),
+      totalCents: o.totalCents || 0,
+    })),
+  );
+
   return (
-    <Link
-      href={href}
-      className="flex items-center justify-center gap-2 rounded-2xl border border-[#F0E6E0] bg-white px-4 py-5 text-sm font-semibold text-[#4A3728] shadow-sm transition hover:border-[#E8D4DC] hover:bg-[#FFF8F5]"
-    >
-      <Icon className="h-5 w-5 text-[var(--painel-accent)]" aria-hidden />
-      {label}
-    </Link>
+    <PainelHome
+      greeting={greetingForHour(hour)}
+      firstName={firstName}
+      notificationCount={notificationCount}
+      userName={fullName}
+      userInitials={userInitials(fullName)}
+      dateLabel={formatPainelHomeDate(new Date())}
+      kpis={{
+        salesTodayCents,
+        salesChangePct:
+          salesTodayCents === 0
+            ? null
+            : pctChange(salesTodayCents, salesYesterdayCents),
+        ordersToday: ordersToday.length,
+        ordersChangePct:
+          ordersToday.length === 0
+            ? null
+            : pctChange(ordersToday.length, ordersYesterday.length),
+        lowStockCount,
+        customersToday,
+        customersChangePct:
+          customersToday === 0
+            ? null
+            : pctChange(customersToday, customersYesterday),
+      }}
+      sales7d={sales7d}
+      lowStockInsumos={lowStockInsumos}
+      categorySlices={categorySlices}
+      categoryTotalCents={categoryTotalCents}
+      topProducts={topProducts}
+      movements={movements}
+      productionImageUrl={featuredProduct?.imageUrl || null}
+    />
   );
 }

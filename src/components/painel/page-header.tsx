@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { PainelMetricCard } from "@/components/painel/metric-card";
 import {
   buttonClassName,
   type ButtonVariant,
@@ -13,7 +15,7 @@ export function PageShell({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn("space-y-4", className)}>{children}</div>;
+  return <div className={cn("space-y-3 sm:space-y-4", className)}>{children}</div>;
 }
 
 /** Título do painel — páginas, painéis laterais e diálogos. */
@@ -32,7 +34,7 @@ export function PageTitle({
     <Tag
       id={id}
       className={cn(
-        "font-sans text-base font-bold leading-tight tracking-tight text-cocoa sm:text-xl",
+        "font-sans text-base font-bold leading-tight tracking-tight text-[var(--painel-brand,#0f352e)] sm:text-xl",
         className,
       )}
     >
@@ -48,28 +50,29 @@ export function PageHeader({
   className,
 }: {
   title: string;
-  description?: string;
-  actions?: React.ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
   className?: string;
 }) {
   return (
-    <header
-      className={cn(
-        "flex flex-wrap items-center justify-between gap-3",
-        className,
-      )}
-    >
-      <div className="min-w-0 flex-1">
-        <PageTitle>{title}</PageTitle>
-        {description && (
-          <p className="mt-0.5 max-w-2xl text-sm leading-snug text-[var(--painel-muted,#6b7280)]">
-            {description}
-          </p>
-        )}
+    <header className={className}>
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <PageTitle>{title}</PageTitle>
+          {description ? (
+            <p
+              className="mt-1 max-w-2xl text-pretty text-[13px] leading-snug text-[var(--painel-muted,#6b7280)] sm:mt-1.5 sm:text-sm sm:leading-normal"
+            >
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-2 pt-0.5">
+            {actions}
+          </div>
+        ) : null}
       </div>
-      {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
-      ) : null}
     </header>
   );
 }
@@ -82,6 +85,7 @@ export function PageAction({
   type = "button",
   variant = "primary",
   className,
+  "aria-label": ariaLabel,
 }: {
   children: React.ReactNode;
   href?: string;
@@ -89,19 +93,25 @@ export function PageAction({
   type?: "button" | "submit";
   variant?: Extract<ButtonVariant, "primary" | "secondary" | "accent" | "ghost">;
   className?: string;
+  "aria-label"?: string;
 }) {
   const styles = buttonClassName({ variant, className });
 
   if (href) {
     return (
-      <Link href={href} className={styles}>
+      <Link href={href} className={styles} aria-label={ariaLabel}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button type={type} onClick={onClick} className={styles}>
+    <button
+      type={type}
+      onClick={onClick}
+      className={styles}
+      aria-label={ariaLabel}
+    >
       {children}
     </button>
   );
@@ -121,12 +131,12 @@ export function SectionCard({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-[#E8E2DE] bg-white",
+        "overflow-hidden rounded-lg border border-[var(--painel-border)] bg-white",
         className,
       )}
     >
       {(title || action) && (
-        <div className="flex items-center justify-between gap-3 border-b border-[#E8E2DE] px-4 py-3">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--painel-border)] px-4 py-3">
           {title ? (
             <h2 className="text-sm font-semibold text-cocoa">{title}</h2>
           ) : (
@@ -145,39 +155,22 @@ export function StatTile({
   value,
   hint,
   href,
+  icon,
 }: {
   label: string;
   value: string | number;
   hint?: string;
   href?: string;
+  icon?: LucideIcon;
 }) {
-  const content = (
-    <>
-      <p className="text-xs font-medium uppercase tracking-wide text-[#8C8682]">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-cocoa">
-        {value}
-      </p>
-      {hint && <p className="mt-1 text-xs text-[#8C8682]">{hint}</p>}
-    </>
-  );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className="block rounded-lg border border-[#E8E2DE] bg-white px-4 py-3.5 transition hover:border-[#CED0D4]"
-      >
-        {content}
-      </Link>
-    );
-  }
-
   return (
-    <div className="rounded-lg border border-[#E8E2DE] bg-white px-4 py-3.5">
-      {content}
-    </div>
+    <PainelMetricCard
+      label={label}
+      value={value}
+      hint={hint}
+      href={href}
+      icon={icon}
+    />
   );
 }
 

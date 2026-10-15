@@ -27,14 +27,17 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  AlertTriangle,
   ChevronDown,
   Copy,
   GripVertical,
+  PauseCircle,
   Pencil,
   Plus,
   Star,
   Trash2,
   Package,
+  PackageCheck,
 } from "lucide-react";
 import {
   formatBRL,
@@ -45,6 +48,11 @@ import { cn } from "@/lib/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ListFilterBar } from "@/components/ui/list-filter-bar";
 import { PageAction, PageHeader, PageShell } from "@/components/painel/page-header";
+import {
+  PainelMetricCard,
+  PainelMetricRow,
+  PainelMetricSlide,
+} from "@/components/painel/metric-card";
 import { Switch } from "@/components/ui/switch";
 import {
   RowActionsMenu,
@@ -134,6 +142,16 @@ export default function ProductsAdminPage({
   );
 
   const openCreate = useCallback(() => setCreateOpen(true), []);
+
+  const stats = useMemo(() => {
+    const total = products.length;
+    const active = products.filter((p) => p.active).length;
+    const paused = products.filter((p) => !p.active).length;
+    const lowStock = products.filter(
+      (p) => p.trackStock && p.stockQty <= p.stockMin,
+    ).length;
+    return { total, active, paused, lowStock };
+  }, [products]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -329,11 +347,24 @@ export default function ProductsAdminPage({
     <PageShell>
       <PageHeader
         title="Produtos"
-        description="Agrupe por categoria e arraste para ordenar na vitrine."
+        description={
+          <>
+            <span className="sm:hidden">
+              Arraste os produtos para ordenar a vitrine.
+            </span>
+            <span className="hidden sm:inline">
+              Agrupe por categoria e arraste para ordenar na vitrine.
+            </span>
+          </>
+        }
         actions={
-          <PageAction onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Novo produto
+          <PageAction
+            onClick={openCreate}
+            aria-label="Novo produto"
+            className="max-sm:h-9 max-sm:w-9 max-sm:gap-0 max-sm:px-0"
+          >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="hidden sm:inline">Novo produto</span>
           </PageAction>
         }
       />
@@ -357,6 +388,49 @@ export default function ProductsAdminPage({
         }}
       />
 
+      <PainelMetricRow>
+        {loading ? (
+          [1, 2, 3, 4].map((i) => (
+            <PainelMetricSlide key={i}>
+              <div
+                className="h-[4.25rem] animate-pulse rounded-xl border border-[var(--painel-border)] bg-white sm:h-[5.5rem]"
+              />
+            </PainelMetricSlide>
+          ))
+        ) : (
+          <>
+            <PainelMetricSlide>
+              <PainelMetricCard
+                icon={Package}
+                label="Total de produtos"
+                value={stats.total}
+              />
+            </PainelMetricSlide>
+            <PainelMetricSlide>
+              <PainelMetricCard
+                icon={PackageCheck}
+                label="Ativos"
+                value={stats.active}
+              />
+            </PainelMetricSlide>
+            <PainelMetricSlide>
+              <PainelMetricCard
+                icon={PauseCircle}
+                label="Pausados"
+                value={stats.paused}
+              />
+            </PainelMetricSlide>
+            <PainelMetricSlide>
+              <PainelMetricCard
+                icon={AlertTriangle}
+                label="Estoque baixo"
+                value={stats.lowStock}
+              />
+            </PainelMetricSlide>
+          </>
+        )}
+      </PainelMetricRow>
+
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
@@ -379,13 +453,13 @@ export default function ProductsAdminPage({
             return (
               <div
                 key={group.key}
-                className="rounded-lg border border-[#E8E2DE] bg-white"
+                className="rounded-lg border border-[var(--painel-border)] bg-white"
               >
-                <div className="sticky top-0 z-20 rounded-t-lg border-b border-[#E8E2DE] bg-[#F0F2F5] shadow-[0_1px_0_rgba(45,41,38,0.04)]">
+                <div className="sticky top-0 z-20 rounded-t-lg border-b border-[var(--painel-border)] bg-[#F0F2F5] shadow-[0_1px_0_rgba(45,41,38,0.04)]">
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.key)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#E8E2DE]/60"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--painel-border)]/60"
                     aria-expanded={open}
                   >
                     <ChevronDown
@@ -406,7 +480,7 @@ export default function ProductsAdminPage({
                   </button>
 
                   {open && (
-                    <div className="hidden border-t border-[#E8E2DE] bg-white px-2 py-2.5 text-xs text-[#8C8682] md:grid md:grid-cols-[2.5rem_minmax(0,1.8fr)_1fr_0.8fr_1.1fr_3rem] md:gap-2 md:px-4">
+                    <div className="hidden border-t border-[var(--painel-border)] bg-white px-4 py-2.5 text-xs text-[#8C8682] md:grid md:grid-cols-[2.5rem_minmax(0,1.8fr)_1fr_0.8fr_1.1fr_3rem] md:gap-2">
                       <span />
                       <span className="font-semibold">Produto</span>
                       <span className="font-semibold">Preço</span>
@@ -428,7 +502,7 @@ export default function ProductsAdminPage({
                         items={ids}
                         strategy={verticalListSortingStrategy}
                       >
-                        <ul className="divide-y divide-[#E8E2DE]">
+                        <ul className="divide-y divide-[var(--painel-border)]">
                           {group.products.map((p) => (
                             <SortableProductItem
                               key={p.id}
@@ -442,7 +516,7 @@ export default function ProductsAdminPage({
                       </SortableContext>
                     </DndContext>
                   ) : (
-                    <ul className="divide-y divide-[#E8E2DE]">
+                    <ul className="divide-y divide-[var(--painel-border)]">
                       {group.products.map((p) => (
                         <ProductRow
                           key={p.id}
@@ -538,8 +612,8 @@ function ProductRow({
       ref={sortable?.setNodeRef}
       style={sortable?.style}
       className={cn(
-        "grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-2 px-2 py-3 md:grid-cols-[2.5rem_minmax(0,1.8fr)_1fr_0.8fr_1.1fr_3rem] md:gap-2 md:px-4",
-        "hover:bg-fog/30",
+        "grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 md:grid-cols-[2.5rem_minmax(0,1.8fr)_1fr_0.8fr_1.1fr_3rem] md:gap-2",
+        "hover:bg-[var(--painel-subtle,#eff3f6)]",
         sortable?.isDragging && "relative z-10 bg-[#F7F8FA] shadow-md",
       )}
     >

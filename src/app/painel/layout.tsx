@@ -60,6 +60,7 @@ export default async function PainelLayout({
     <div className="painel-shell flex min-h-screen flex-col font-sans md:h-screen md:flex-row md:overflow-hidden">
       <PainelSidebar
         storeName={store?.name || session.user.name || "Sua confeitaria"}
+        userName={session.user.name || "Confeiteira"}
         storeLogoUrl={store?.logoUrl || null}
         storeSlug={store?.slug || null}
         plan={planLabel}
@@ -76,8 +77,8 @@ export default async function PainelLayout({
             notificationCount={newOrders}
           />
         </PainelTopbarShell>
-        <main className="flex w-full min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-24 sm:px-6 md:pb-8 lg:px-8 xl:px-10">
-          <div className="flex min-h-0 flex-1 flex-col pt-5">
+        <main className="flex w-full min-h-0 flex-1 flex-col overflow-y-auto overflow-x-visible px-4 pb-24 sm:px-6 md:pb-8 lg:px-8 xl:px-10">
+          <div className="flex min-h-0 flex-1 flex-col overflow-x-visible pt-5">
             <SessionGuard />
             {children}
           </div>

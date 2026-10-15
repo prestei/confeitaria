@@ -24,7 +24,7 @@ type ListFilterBarProps<T extends string> = {
   };
 };
 
-/** Barra padrão: busca (pill) à esquerda + chips de filtro à direita. */
+/** Barra padrão: busca em linha própria no mobile; chips em linha com rolagem. */
 export function ListFilterBar<T extends string>({
   className,
   search,
@@ -33,11 +33,11 @@ export function ListFilterBar<T extends string>({
   return (
     <div
       className={cn(
-        "flex w-full min-w-0 items-center gap-2 sm:gap-3",
+        "flex w-full min-w-0 flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3",
         className,
       )}
     >
-      <label className="relative w-full min-w-0 max-w-[280px] shrink-0">
+      <label className="relative block w-full min-w-0 sm:max-w-[280px] sm:shrink-0">
         <Search
           className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--filter-search-icon,#9ca3af)]"
           strokeWidth={1.75}
@@ -59,16 +59,34 @@ export function ListFilterBar<T extends string>({
         />
       </label>
 
-      <FilterChipGroup className="max-w-full shrink-0 flex-nowrap overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {filters.options.map((opt) => (
-          <FilterChip
-            key={opt.value}
-            label={opt.label}
-            active={filters.value === opt.value}
-            onClick={() => filters.onChange(opt.value)}
+      <div
+        className={cn(
+          "max-sm:relative max-sm:left-1/2 max-sm:w-screen max-sm:max-w-[100vw] max-sm:-translate-x-1/2",
+          "sm:min-w-0 sm:flex-1 sm:w-auto sm:max-w-none sm:left-auto sm:translate-x-0",
+        )}
+      >
+        <FilterChipGroup
+          className={cn(
+            "w-full min-w-0 snap-x snap-mandatory scroll-px-4 pb-0.5",
+            "max-sm:px-4",
+            "sm:flex-1 sm:scroll-px-0 sm:px-0",
+          )}
+        >
+          {filters.options.map((opt) => (
+            <FilterChip
+              key={opt.value}
+              label={opt.label}
+              active={filters.value === opt.value}
+              onClick={() => filters.onChange(opt.value)}
+              className="snap-start"
+            />
+          ))}
+          <span
+            className="w-4 shrink-0 max-sm:w-4 sm:w-0"
+            aria-hidden
           />
-        ))}
-      </FilterChipGroup>
+        </FilterChipGroup>
+      </div>
     </div>
   );
 }

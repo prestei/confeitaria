@@ -35,8 +35,8 @@ export function Switch({
         onClick={() => onCheckedChange(!checked)}
         className={cn(
           "relative h-6 w-11 shrink-0 rounded-full transition",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--painel-brand,#483129)]/25",
-          checked ? "bg-[var(--painel-brand,#483129)]" : "bg-[#CED0D4]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--painel-brand,#0f352e)]/25",
+          checked ? "bg-[var(--painel-brand,#0f352e)]" : "bg-[#CED0D4]",
         )}
       >
         <span
