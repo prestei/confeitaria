@@ -13,8 +13,6 @@ export type SettingsHubStatus = {
   isPublished: boolean;
   hasHours: boolean;
   hasAddress: boolean;
-  paymentCount: number;
-  mpConfigured: boolean;
   storeSlug: string | null;
 };
 
@@ -30,18 +28,6 @@ const SECTION_HINT: Record<
     s.hasHours
       ? { label: "Definido", tone: "ok" }
       : { label: "Não definido", tone: "warn" },
-  "/painel/configuracoes/pagamento": (s) => {
-    if (s.mpConfigured) {
-      return { label: "Online ativo", tone: "ok" as const };
-    }
-    if (s.paymentCount > 0) {
-      return {
-        label: `${s.paymentCount} manual${s.paymentCount === 1 ? "" : "is"} · online off`,
-        tone: "warn" as const,
-      };
-    }
-    return { label: "Pendente", tone: "warn" as const };
-  },
   "/painel/configuracoes/geral": (s) => ({
     label: `Plano ${s.planLabel}`,
     tone: "neutral",
@@ -51,7 +37,6 @@ const SECTION_HINT: Record<
 const ICON_TONE: Record<string, string> = {
   "/painel/configuracoes/estabelecimento": "bg-[#EEF2FF] text-[#4338CA]",
   "/painel/configuracoes/horarios": "bg-[#ECFDF5] text-[#047857]",
-  "/painel/configuracoes/pagamento": "bg-[#FFF7ED] text-[#C2410C]",
   "/painel/configuracoes/geral": "bg-[#F0F2F5] text-cocoa",
 };
 

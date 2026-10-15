@@ -582,37 +582,39 @@ export function PainelHome({
           )}
         </section>
 
-        <section className="relative overflow-hidden rounded-xl border border-[#DDF0E4] bg-gradient-to-br from-[#F4FAF7] to-[#E8F5EF] p-4 shadow-[0_1px_2px_rgba(15,53,46,0.04)]">
-          <div className="relative z-[1] max-w-[58%]">
-            <h2 className="text-[15px] font-semibold text-[var(--painel-brand,#0f352e)]">
-              Organize sua produção
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[#5C5652]">
-              Controle seu estoque de insumos e evite desperdícios.
-            </p>
-            <Link
-              href="/painel/agenda"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[var(--painel-brand,#0f352e)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--painel-brand-hover,#164a40)]"
-            >
-              Cadastrar produção
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
+        <section className="relative overflow-hidden rounded-xl border border-[#DDF0E4] bg-gradient-to-br from-[#F4FAF7] to-[#E8F5EF] p-4 shadow-[0_1px_2px_rgba(15,53,46,0.04)] sm:p-5">
+          <div className="relative z-[1] flex items-start gap-3 sm:block">
+            <div className="min-w-0 flex-1 sm:max-w-[58%]">
+              <h2 className="text-[15px] font-semibold text-[var(--painel-brand,#0f352e)]">
+                Organize sua produção
+              </h2>
+              <p className="mt-1.5 text-xs leading-relaxed text-[#5C5652] sm:mt-2 sm:text-sm">
+                Controle seu estoque de insumos e evite desperdícios.
+              </p>
+              <Link
+                href="/painel/agenda"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--painel-brand,#0f352e)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--painel-brand-hover,#164a40)] sm:mt-4 sm:inline-flex sm:w-auto"
+              >
+                Cadastrar produção
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
+            {productionImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={productionImageUrl}
+                alt=""
+                className="pointer-events-none h-20 w-20 shrink-0 rounded-xl object-cover object-center ring-2 ring-white/80 sm:absolute sm:-right-2 sm:bottom-0 sm:h-[85%] sm:w-auto sm:max-w-[48%] sm:rounded-none sm:object-contain sm:object-bottom sm:ring-0"
+              />
+            ) : (
+              <span
+                className="pointer-events-none flex h-20 w-20 shrink-0 items-center justify-center text-4xl sm:absolute sm:-right-1 sm:bottom-2 sm:block sm:h-auto sm:w-auto sm:text-7xl"
+                aria-hidden
+              >
+                🎂
+              </span>
+            )}
           </div>
-          {productionImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={productionImageUrl}
-              alt=""
-              className="pointer-events-none absolute -right-2 bottom-0 h-[85%] w-auto max-w-[48%] object-contain object-bottom"
-            />
-          ) : (
-            <span
-              className="pointer-events-none absolute -right-1 bottom-2 text-7xl opacity-90"
-              aria-hidden
-            >
-              🎂
-            </span>
-          )}
         </section>
       </div>
 
@@ -628,53 +630,89 @@ export function PainelHome({
               Nenhuma movimentação registrada.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--painel-border)] text-[11px] font-semibold uppercase tracking-wide text-[#9A8F88]">
-                    <th className="px-4 py-3">Data</th>
-                    <th className="px-4 py-3">Tipo</th>
-                    <th className="px-4 py-3">Descrição</th>
-                    <th className="px-4 py-3 text-right">Quantidade</th>
-                    <th className="px-4 py-3">Usuário</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {movements.map((m) => {
-                    const pill = MOVEMENT_PILL[m.type];
-                    return (
-                      <tr
-                        key={m.id}
-                        className="border-b border-[#F5F0ED] last:border-0"
-                      >
-                        <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[#6B6560]">
+            <>
+              <ul className="divide-y divide-[var(--painel-border)] md:hidden">
+                {movements.map((m) => {
+                  const pill = MOVEMENT_PILL[m.type];
+                  return (
+                    <li key={m.id} className="px-4 py-3.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                            pill.className,
+                          )}
+                        >
+                          {pill.label}
+                        </span>
+                        <time
+                          className="shrink-0 text-xs tabular-nums text-[var(--painel-muted,#6b7280)]"
+                          dateTime={m.dateLabel}
+                        >
                           {m.dateLabel}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={cn(
-                              "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                              pill.className,
-                            )}
-                          >
-                            {pill.label}
-                          </span>
-                        </td>
-                        <td className="max-w-[200px] truncate px-4 py-3 font-medium text-[#3D2B1F]">
-                          {m.description}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-[#3D2B1F]">
+                        </time>
+                      </div>
+                      <p className="mt-1.5 text-sm font-medium leading-snug text-[#111827]">
+                        {m.description}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-xs text-[var(--painel-muted,#6b7280)]">
+                        <span className="font-semibold tabular-nums text-[#3D2B1F]">
                           {m.quantityLabel}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-[#6B6560]">
-                          {m.userName}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </span>
+                        <span className="truncate">{m.userName}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--painel-border)] text-[11px] font-semibold uppercase tracking-wide text-[var(--painel-muted,#6b7280)]">
+                      <th className="px-4 py-3">Data</th>
+                      <th className="px-4 py-3">Tipo</th>
+                      <th className="px-4 py-3">Descrição</th>
+                      <th className="px-4 py-3 text-right">Quantidade</th>
+                      <th className="px-4 py-3">Usuário</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {movements.map((m) => {
+                      const pill = MOVEMENT_PILL[m.type];
+                      return (
+                        <tr
+                          key={m.id}
+                          className="border-b border-[var(--painel-border)] last:border-0"
+                        >
+                          <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[#6B6560]">
+                            {m.dateLabel}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={cn(
+                                "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                                pill.className,
+                              )}
+                            >
+                              {pill.label}
+                            </span>
+                          </td>
+                          <td className="max-w-[200px] truncate px-4 py-3 font-medium text-[#3D2B1F]">
+                            {m.description}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-[#3D2B1F]">
+                            {m.quantityLabel}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-[#6B6560]">
+                            {m.userName}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </section>
 
@@ -682,14 +720,14 @@ export function PainelHome({
           <h2 className="mb-3 text-[15px] font-semibold text-[var(--painel-brand,#0f352e)]">
             Ações rápidas
           </h2>
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
             {QUICK_ACTIONS.map((action) => {
               const Icon = action.icon;
               return (
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="group flex flex-col gap-2 rounded-xl border border-[var(--painel-border)] bg-[#FAFBFC] p-3 transition hover:border-[#D1D5DB] hover:bg-white hover:shadow-sm"
+                  className="group flex min-w-0 flex-col gap-1.5 rounded-xl border border-[var(--painel-border)] bg-[#FAFBFC] p-2.5 transition hover:border-[#D1D5DB] hover:bg-white hover:shadow-sm sm:gap-2 sm:p-3"
                 >
                   <span
                     className={cn(
@@ -700,15 +738,15 @@ export function PainelHome({
                     <Icon className="h-4 w-4" strokeWidth={1.75} />
                   </span>
                   <div>
-                    <p className="text-[13px] font-semibold text-[#3D2B1F]">
+                    <p className="text-xs font-semibold leading-snug text-[#3D2B1F] sm:text-[13px]">
                       {action.title}
                     </p>
-                    <p className="mt-0.5 text-[11px] leading-snug text-[#8C8682]">
+                    <p className="mt-0.5 text-[10px] leading-snug text-[#8C8682] sm:text-[11px]">
                       {action.description}
                     </p>
                   </div>
                   <ChevronDown
-                    className="ml-auto h-4 w-4 -rotate-90 text-[#C4C0BC] opacity-0 transition group-hover:opacity-100"
+                    className="ml-auto hidden h-4 w-4 -rotate-90 text-[#C4C0BC] opacity-0 transition group-hover:opacity-100 sm:block"
                     aria-hidden
                   />
                 </Link>

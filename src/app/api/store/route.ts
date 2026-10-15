@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { withIds } from "@/lib/serialize";
 import { Store } from "@/models/Store";
 import {
+  MERCADO_PAGO_ONLINE_ENABLED,
   maskSecret,
   prepareMpAccessTokenForStorage,
   prepareMpWebhookSecretForStorage,
@@ -82,18 +83,30 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const data = schema.parse(await req.json());
+    const parsed = schema.parse(await req.json());
     const {
-      mpAccessToken,
-      mpWebhookSecret,
-      mpPublicKey,
+      mpAccessToken: mpAccessTokenIn,
+      mpWebhookSecret: mpWebhookSecretIn,
+      mpPublicKey: mpPublicKeyIn,
+      mpEnabled: mpEnabledIn,
       coverUrl,
       logoUrl,
       instagram,
       whatsappMessage,
       businessHours,
       ...rest
-    } = data;
+    } = parsed;
+
+    const mpAccessToken = MERCADO_PAGO_ONLINE_ENABLED
+      ? mpAccessTokenIn
+      : undefined;
+    const mpWebhookSecret = MERCADO_PAGO_ONLINE_ENABLED
+      ? mpWebhookSecretIn
+      : undefined;
+    const mpPublicKey = MERCADO_PAGO_ONLINE_ENABLED
+      ? mpPublicKeyIn
+      : undefined;
+    const mpEnabled = MERCADO_PAGO_ONLINE_ENABLED ? mpEnabledIn : undefined;
 
     await connectDB();
     const store = await Store.findOneAndUpdate(
@@ -137,6 +150,7 @@ export async function PATCH(req: Request) {
                   : null,
               }
             : {}),
+          ...(mpEnabled !== undefined ? { mpEnabled } : {}),
         },
       },
       { new: true },

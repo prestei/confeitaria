@@ -7,6 +7,7 @@ import {
   Wheat,
   ShoppingBag,
   CalendarDays,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -41,6 +42,11 @@ export const NAV_SECTIONS: NavSection[] = [
       },
       { href: "/painel/pedidos", label: "Pedidos", icon: ShoppingBag },
       { href: "/painel/agenda", label: "Agendamentos", icon: CalendarDays },
+      {
+        href: "/painel/pagamentos",
+        label: "Pagamentos",
+        icon: CreditCard,
+      },
       {
         href: "/painel/configuracoes",
         label: "Configurações",
