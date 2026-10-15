@@ -5,6 +5,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { SETTINGS_SECTIONS } from "@/components/painel/settings-sections";
+import { StorePublishedToggle } from "@/components/painel/store-published-toggle";
 import { cn } from "@/lib/cn";
 
 export type SettingsHubStatus = {
@@ -26,6 +27,10 @@ const SECTION_HINT: Record<
     s.hasAddress
       ? { label: "Completo", tone: "ok" }
       : { label: "Endereço pendente", tone: "warn" },
+  "/painel/configuracoes/aparencia": () => ({
+    label: "Tempo real",
+    tone: "ok" as const,
+  }),
   "/painel/configuracoes/horarios": (s) =>
     s.hasHours
       ? { label: "Definido", tone: "ok" }
@@ -50,6 +55,7 @@ const SECTION_HINT: Record<
 
 const ICON_TONE: Record<string, string> = {
   "/painel/configuracoes/estabelecimento": "bg-[#EEF2FF] text-[#4338CA]",
+  "/painel/configuracoes/aparencia": "bg-[#FDF2F8] text-[#9D174D]",
   "/painel/configuracoes/horarios": "bg-[#ECFDF5] text-[#047857]",
   "/painel/configuracoes/pagamento": "bg-[#FFF7ED] text-[#C2410C]",
   "/painel/configuracoes/geral": "bg-[#F0F2F5] text-[#2D2926]",
@@ -82,22 +88,22 @@ export function SettingsHub({ status }: { status: SettingsHubStatus }) {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#E8E2DE] bg-white px-4 py-3.5">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-[#2D2926]">{status.storeName}</p>
-          <p className="mt-0.5 text-xs text-[#8C8682]">
-            {status.isPublished ? "Vitrine publicada" : "Vitrine oculta"} · Plano{" "}
-            {status.planLabel}
-          </p>
+          <p className="mt-0.5 text-xs text-[#8C8682]">Plano {status.planLabel}</p>
         </div>
-        {status.storeSlug ? (
-          <Link
-            href={`/${status.storeSlug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[#CED0D4] bg-white px-3 py-1.5 text-xs font-semibold text-[#2D2926] transition hover:bg-[#F0F2F5]"
-          >
-            Ver vitrine
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-          </Link>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          <StorePublishedToggle initialPublished={status.isPublished} />
+          {status.storeSlug ? (
+            <Link
+              href={`/${status.storeSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[#CED0D4] bg-white px-3 py-1.5 text-xs font-semibold text-[#2D2926] transition hover:bg-[#F0F2F5]"
+            >
+              Ver vitrine
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

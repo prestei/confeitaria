@@ -44,6 +44,7 @@ export default async function EncomendaPage({
           pickupEnabled: store.pickupEnabled,
           deliveryEnabled: store.deliveryEnabled,
           minAdvanceDays: store.minAdvanceDays,
+          businessHours: store.businessHours,
           deliveryZones: (store.deliveryZones || []).map(
             (z: { name: string; feeCents: number }) => ({
               name: z.name,

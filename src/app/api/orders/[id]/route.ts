@@ -9,6 +9,7 @@ import {
   shouldRestoreStockOnStatus,
 } from "@/lib/stock-order";
 import { Order } from "@/models/Order";
+import { Promotion } from "@/models/Promotion";
 import { z } from "zod";
 
 export async function PATCH(
@@ -52,16 +53,38 @@ export async function PATCH(
   ).lean();
 
   if (shouldDeductStockOnStatus(order.status, status)) {
-    void maybeDeductStockForOrder({
-      orderId: id,
-      storeId,
-      reason: "confirm",
-    }).catch((err) => console.error("[stock:deduct]", err));
+    try {
+      await maybeDeductStockForOrder({
+        orderId: id,
+        storeId,
+        reason: "confirm",
+      });
+    } catch (err) {
+      console.error("[stock:deduct]", err);
+    }
   } else if (shouldRestoreStockOnStatus(order.status, status)) {
-    void maybeRestoreStockForOrder({
-      orderId: id,
-      storeId,
-    }).catch((err) => console.error("[stock:restore]", err));
+    try {
+      await maybeRestoreStockForOrder({
+        orderId: id,
+        storeId,
+      });
+    } catch (err) {
+      console.error("[stock:restore]", err);
+    }
+  }
+
+  if (order.promotionId) {
+    if (order.status !== "CANCELLED" && status === "CANCELLED") {
+      await Promotion.updateOne(
+        { _id: order.promotionId, storeId, usageCount: { $gt: 0 } },
+        { $inc: { usageCount: -1 } },
+      ).catch((err) => console.error("[promo:release]", err));
+    } else if (order.status === "CANCELLED" && status !== "CANCELLED") {
+      await Promotion.updateOne(
+        { _id: order.promotionId, storeId },
+        { $inc: { usageCount: 1 } },
+      ).catch((err) => console.error("[promo:reclaim]", err));
+    }
   }
 
   return NextResponse.json(withIds(updated));

@@ -32,9 +32,13 @@ export default async function CategoriasPage() {
     _count: { products: countMap[c.id] || 0 },
   }));
 
+  const origin = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
   return (
     <CategoriesAdmin
       initialCategories={JSON.parse(JSON.stringify(withCount))}
+      storeSlug={session.storeSlug ?? undefined}
+      origin={origin}
     />
   );
 }

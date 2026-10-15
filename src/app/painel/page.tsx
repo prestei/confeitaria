@@ -324,7 +324,13 @@ export default async function PainelPage() {
       id: "logo",
       label: "Logo adicionada",
       done: Boolean(store.logoUrl),
-      href: "/painel/vitrine",
+      href: "/painel/configuracoes/estabelecimento",
+    },
+    {
+      id: "cover",
+      label: "Banner adicionado",
+      done: Boolean(store.coverUrl),
+      href: "/painel/configuracoes/estabelecimento",
     },
     {
       id: "info",

@@ -28,9 +28,13 @@ export default async function ProductsPage() {
     category: p.categoryId ? catMap[p.categoryId] ?? null : null,
   }));
 
+  const origin = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
   return (
     <ProductsAdmin
       initialProducts={JSON.parse(JSON.stringify(withCategory))}
+      storeSlug={session.storeSlug ?? undefined}
+      origin={origin}
     />
   );
 }

@@ -7,6 +7,7 @@ const customerSchema = baseSchema(
     phone: { type: String, required: true },
     email: { type: String, default: null },
     notes: { type: String, default: null },
+    referenceNote: { type: String, default: null },
   },
   { timestamps: true, tenant: true },
 );
@@ -21,6 +22,7 @@ export type CustomerDoc = {
   phone: string;
   email: string | null;
   notes: string | null;
+  referenceNote: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

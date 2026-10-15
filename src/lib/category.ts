@@ -79,6 +79,37 @@ export function applyCategoryPriceAdjust(
   return Math.max(0, Math.round(priceCents * factor));
 }
 
+const EMOJI_BY_KEYWORD: [string, string][] = [
+  ["personaliz", "🎂"],
+  ["bolo", "🎂"],
+  ["cupcake", "🧁"],
+  ["doce", "🍫"],
+  ["brigadeiro", "🍫"],
+  ["brownie", "🍪"],
+  ["cookie", "🍪"],
+  ["kit", "🎁"],
+  ["cesta", "🎁"],
+  ["comemor", "🎉"],
+  ["natal", "🎄"],
+  ["páscoa", "🥚"],
+  ["pascoa", "🥚"],
+  ["torta", "🥧"],
+  ["café", "☕"],
+  ["cafe", "☕"],
+];
+
+export function resolveCategoryEmoji(
+  name: string,
+  emoji?: string | null,
+) {
+  if (emoji?.trim()) return emoji.trim();
+  const n = name.toLowerCase();
+  for (const [key, icon] of EMOJI_BY_KEYWORD) {
+    if (n.includes(key)) return icon;
+  }
+  return "🍰";
+}
+
 export function formatDisplayDaysShort(
   days: string[] | null | undefined,
 ): string {

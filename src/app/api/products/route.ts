@@ -26,6 +26,7 @@ const schema = z.object({
     "SCHEDULED_DAYS",
   ]),
   featured: z.boolean().optional(),
+  suggestInCart: z.boolean().optional(),
   active: z.boolean().optional(),
   trackStock: z.boolean().optional(),
   stockQty: z.number().int().optional(),
@@ -38,6 +39,8 @@ const schema = z.object({
       z.object({
         name: z.string(),
         required: z.boolean().default(true),
+        minSelect: z.number().int().min(0).optional(),
+        maxSelect: z.number().int().min(0).optional(),
         options: z.array(
           z.object({
             name: z.string(),
@@ -171,6 +174,7 @@ export async function POST(req: Request) {
       promoPriceCents: data.promoPriceCents ?? null,
       availability,
       featured: data.featured ?? false,
+      suggestInCart: data.suggestInCart ?? false,
       active: data.active ?? true,
       trackStock,
       stockQty: data.stockQty ?? 0,
@@ -178,16 +182,22 @@ export async function POST(req: Request) {
       unit: data.unit || "un",
       kitContents: data.kitContents ?? null,
       minAdvanceDays: data.minAdvanceDays ?? null,
-      optionGroups: (data.optionGroups ?? []).map((g, gi) => ({
-        name: g.name,
-        required: g.required,
-        sortOrder: gi,
-        options: g.options.map((o, oi) => ({
-          name: o.name,
-          priceDeltaCents: o.priceDeltaCents,
-          sortOrder: oi,
-        })),
-      })),
+      optionGroups: (data.optionGroups ?? []).map((g, gi) => {
+        const minSelect = g.minSelect ?? (g.required ? 1 : 0);
+        const maxSelect = Math.max(g.maxSelect ?? 1, minSelect);
+        return {
+          name: g.name,
+          required: g.required,
+          minSelect,
+          maxSelect,
+          sortOrder: gi,
+          options: g.options.map((o, oi) => ({
+            name: o.name,
+            priceDeltaCents: o.priceDeltaCents,
+            sortOrder: oi,
+          })),
+        };
+      }),
       addons: (data.addons ?? []).map((a) => ({
         name: a.name,
         priceCents: a.priceCents,

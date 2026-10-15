@@ -10,6 +10,7 @@ import { z } from "zod";
 const patchSchema = z.object({
   active: z.boolean().optional(),
   featured: z.boolean().optional(),
+  suggestInCart: z.boolean().optional(),
   availability: z
     .enum([
       "AVAILABLE",
@@ -39,16 +40,21 @@ const putSchema = z.object({
     "SCHEDULED_DAYS",
   ]),
   featured: z.boolean().optional(),
+  suggestInCart: z.boolean().optional(),
   active: z.boolean().optional(),
   trackStock: z.boolean().optional(),
   stockQty: z.number().int().optional(),
   stockMin: z.number().int().optional(),
   unit: z.string().optional(),
+  kitContents: z.string().optional().nullable(),
+  minAdvanceDays: z.number().int().optional().nullable(),
   optionGroups: z
     .array(
       z.object({
         name: z.string(),
         required: z.boolean().default(true),
+        minSelect: z.number().int().min(0).optional(),
+        maxSelect: z.number().int().min(0).optional(),
         options: z.array(
           z.object({
             name: z.string(),
@@ -137,21 +143,30 @@ export async function PUT(
           promoPriceCents: data.promoPriceCents ?? null,
           availability,
           featured: data.featured ?? false,
+          suggestInCart: data.suggestInCart ?? false,
           active: data.active ?? true,
           trackStock,
           stockQty,
           stockMin,
           unit: data.unit || "un",
-          optionGroups: (data.optionGroups ?? []).map((g, gi) => ({
-            name: g.name,
-            required: g.required,
-            sortOrder: gi,
-            options: g.options.map((o, oi) => ({
-              name: o.name,
-              priceDeltaCents: o.priceDeltaCents,
-              sortOrder: oi,
-            })),
-          })),
+          kitContents: data.kitContents ?? null,
+          minAdvanceDays: data.minAdvanceDays ?? null,
+          optionGroups: (data.optionGroups ?? []).map((g, gi) => {
+            const minSelect = g.minSelect ?? (g.required ? 1 : 0);
+            const maxSelect = Math.max(g.maxSelect ?? 1, minSelect);
+            return {
+              name: g.name,
+              required: g.required,
+              minSelect,
+              maxSelect,
+              sortOrder: gi,
+              options: g.options.map((o, oi) => ({
+                name: o.name,
+                priceDeltaCents: o.priceDeltaCents,
+                sortOrder: oi,
+              })),
+            };
+          }),
           addons: (data.addons ?? []).map((a) => ({
             name: a.name,
             priceCents: a.priceCents,

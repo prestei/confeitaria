@@ -1,4 +1,5 @@
 import { formatBRL, isDepositPaymentMethod } from "./utils";
+import { visibleCustomizations } from "./addons";
 
 type StoreLike = {
   name: string;
@@ -24,6 +25,8 @@ type OrderLike = {
   fulfillment: string;
   deliveryZone?: string | null;
   deliveryFeeCents?: number;
+  discountCents?: number;
+  promoCode?: string | null;
   paymentMethod?: string | null;
   notes?: string | null;
   referenceNote?: string | null;
@@ -71,11 +74,15 @@ export function buildWhatsAppMessage(store: StoreLike, order: OrderLike) {
 
   for (const item of order.items) {
     lines.push(`• ${item.quantity}x ${item.productName}`);
-    const custom = item.customizations as Record<string, unknown> | null;
-    if (custom && typeof custom === "object") {
+    const custom = visibleCustomizations(
+      item.customizations as Record<string, unknown> | null,
+    );
+    if (Object.keys(custom).length) {
       for (const [key, value] of Object.entries(custom)) {
         if (value == null || value === "") continue;
-        if (typeof value === "object") {
+        if (Array.isArray(value)) {
+          lines.push(`  - ${key}: ${value.join(", ")}`);
+        } else if (typeof value === "object") {
           lines.push(`  - ${key}: ${JSON.stringify(value)}`);
         } else {
           lines.push(`  - ${key}: ${String(value)}`);
@@ -90,6 +97,11 @@ export function buildWhatsAppMessage(store: StoreLike, order: OrderLike) {
   lines.push("");
   if ((order.deliveryFeeCents ?? 0) > 0) {
     lines.push(`Taxa de entrega: ${formatBRL(order.deliveryFeeCents!)}`);
+  }
+  if ((order.discountCents ?? 0) > 0) {
+    lines.push(
+      `Desconto${order.promoCode ? ` (${order.promoCode})` : ""}: -${formatBRL(order.discountCents!)}`,
+    );
   }
 
   const priceMap: Record<string, string> = {

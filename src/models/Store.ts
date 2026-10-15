@@ -11,6 +11,22 @@ const deliveryZoneSchema = new mongoose.Schema(
   { _id: true },
 );
 
+const themeColorsSchema = new mongoose.Schema(
+  {
+    background: { type: String, default: "#f8f5f0" },
+    surface: { type: String, default: "#fffdfc" },
+    muted: { type: String, default: "#efe7de" },
+    accent: { type: String, default: "#C45B7A" },
+    accentDeep: { type: String, default: "#9a5966" },
+    text: { type: String, default: "#332522" },
+    textMuted: { type: String, default: "#756761" },
+    secondary: { type: String, default: "#4A2F26" },
+    chrome: { type: String, default: "#2a1f1c" },
+    complement: { type: String, default: "#c98f86" },
+  },
+  { _id: false },
+);
+
 const storeSchema = baseSchema(
   {
     userId: { type: String, required: true, unique: true, index: true },
@@ -25,6 +41,7 @@ const storeSchema = baseSchema(
     coverUrl: { type: String, default: null },
     accentColor: { type: String, default: "#C45B7A" },
     secondaryColor: { type: String, default: "#4A2F26" },
+    themeColors: { type: themeColorsSchema, default: () => ({}) },
     typography: { type: String, default: "elegant" },
     cardStyle: { type: String, default: "soft" },
     pageLayout: { type: String, default: "classic" },
@@ -78,6 +95,18 @@ export type StoreDoc = {
   coverUrl: string | null;
   accentColor: string;
   secondaryColor: string;
+  themeColors: {
+    background: string;
+    surface: string;
+    muted: string;
+    accent: string;
+    accentDeep: string;
+    text: string;
+    textMuted: string;
+    secondary: string;
+    chrome: string;
+    complement: string;
+  };
   typography: string;
   cardStyle: string;
   pageLayout: string;

@@ -12,6 +12,7 @@ import {
   whatsappLink,
 } from "@/lib/utils";
 import type { OrderStatus } from "@/lib/enums";
+import { OrderItemVitrineSpecs } from "@/components/painel/order-item-vitrine-specs";
 
 export type OrderDetailData = {
   id: string;
@@ -37,16 +38,6 @@ export type OrderDetailData = {
     customizations?: Record<string, string> | string | null;
   }>;
 };
-
-function customizationText(
-  customizations: OrderDetailData["items"][number]["customizations"],
-) {
-  if (customizations == null) return null;
-  if (typeof customizations === "string") return customizations;
-  return Object.entries(customizations)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(" · ");
-}
 
 export function OrderDetailSheet({
   order,
@@ -126,7 +117,10 @@ function OrderDetailBody({
         </h3>
         <ul className="divide-y divide-cocoa/6 overflow-hidden rounded-xl border border-cocoa/8 bg-white">
           {order.items.map((item, idx) => {
-            const extras = customizationText(item.customizations);
+            const custom =
+              typeof item.customizations === "string"
+                ? null
+                : (item.customizations as Record<string, unknown> | null);
             return (
               <li
                 key={item.id || `${item.productName}-${idx}`}
@@ -136,9 +130,13 @@ function OrderDetailBody({
                   <p className="text-sm font-medium text-cocoa">
                     {item.quantity}× {item.productName}
                   </p>
-                  {extras && (
-                    <p className="mt-1 text-xs text-cocoa-soft/60">{extras}</p>
-                  )}
+                  <OrderItemVitrineSpecs customizations={custom} className="mt-2" />
+                  {typeof item.customizations === "string" &&
+                    item.customizations.trim() && (
+                      <p className="mt-1 text-xs text-cocoa-soft/60">
+                        {item.customizations}
+                      </p>
+                    )}
                 </div>
                 {typeof item.lineTotalCents === "number" && (
                   <p className="shrink-0 text-sm font-medium text-cocoa">

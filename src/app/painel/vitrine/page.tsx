@@ -8,7 +8,11 @@ import { Product } from "@/models/Product";
 import { PageHeader } from "@/components/painel/page-header";
 import { VitrineEditor } from "@/components/painel/vitrine-editor";
 
-export default async function VitrinePage() {
+export default async function VitrinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const session = await requireStoreSession();
   await connectDB();
 
@@ -25,14 +29,17 @@ export default async function VitrinePage() {
   );
 
   const origin = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const { tab } = await searchParams;
+  const initialTab = tab === "appearance" ? "appearance" : "identity";
 
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Minha vitrine"
-        description="Configure a identidade e a aparência da sua loja digital. Cadastre uma vez e reutilize em todos os canais."
+        title="Perfil da loja"
+        description="Tagline, Instagram, publicação da vitrine, mensagem do WhatsApp e identidade pública. Use a aba Cores e aparência para o visual do cardápio."
       />
       <VitrineEditor
+        initialTab={initialTab}
         store={{
           slug: store.slug,
           name: store.name,
@@ -45,6 +52,7 @@ export default async function VitrinePage() {
           coverUrl: store.coverUrl,
           accentColor: store.accentColor,
           secondaryColor: store.secondaryColor,
+          themeColors: store.themeColors,
           typography: store.typography,
           cardStyle: store.cardStyle,
           pageLayout: store.pageLayout,

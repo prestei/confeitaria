@@ -5,6 +5,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ProductConfigurator } from "@/components/store/product-configurator";
 import { useToast } from "@/components/ui/toast";
 import type { PriceMode, ProductType } from "@/lib/enums";
+import type { ResolvedAddon } from "@/lib/addons";
 
 type ProductOption = {
   id: string;
@@ -23,12 +24,7 @@ type OptionGroup = {
   options: ProductOption[];
 };
 
-type Addon = {
-  id: string;
-  name: string;
-  priceCents: number;
-  maxQty: number;
-};
+type Addon = ResolvedAddon;
 
 type ProductDetail = {
   id: string;
@@ -39,6 +35,7 @@ type ProductDetail = {
   productType: ProductType;
   priceMode: PriceMode;
   priceCents: number | null;
+  promoPriceCents?: number | null;
   kitContents: string | null;
   minAdvanceDays: number | null;
   trackStock?: boolean;
@@ -54,11 +51,13 @@ export function ProductAddModal({
   onOpenChange,
   storeSlug,
   productSlug,
+  storeOpen = true,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   storeSlug: string;
   productSlug: string | null;
+  storeOpen?: boolean;
 }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -125,6 +124,7 @@ export function ProductAddModal({
             storeSlug={storeSlug}
             product={product}
             minAdvanceDays={minAdvanceDays}
+            storeOpen={storeOpen}
             compact
             onSuccess={() => {
               onOpenChange(false);

@@ -12,6 +12,7 @@ const createSchema = z.object({
   phone: z.string().min(8),
   email: z.string().email().optional().or(z.literal("")),
   notes: z.string().optional(),
+  referenceNote: z.string().optional(),
 });
 
 export async function GET() {
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
       phone,
       email: data.email?.trim() || null,
       notes: data.notes?.trim() || null,
+      referenceNote: data.referenceNote?.trim() || null,
     });
 
     void notifyNewCustomer({

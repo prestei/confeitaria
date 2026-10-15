@@ -17,6 +17,15 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { OFFLINE_PAYMENT_PRESETS } from "@/lib/utils";
+import {
+  DAY_KEYS,
+  defaultWeek,
+  formatWeek,
+  parseWeek,
+  type DayKey,
+  type DaySchedule,
+  type WeekSchedule,
+} from "@/lib/hours";
 
 async function patchStore(payload: Record<string, unknown>) {
   return fetch("/api/store", {
@@ -89,78 +98,6 @@ function ToggleRow({
   );
 }
 
-const DAY_KEYS = [
-  { key: "seg", label: "Segunda", short: "Seg" },
-  { key: "ter", label: "Terça", short: "Ter" },
-  { key: "qua", label: "Quarta", short: "Qua" },
-  { key: "qui", label: "Quinta", short: "Qui" },
-  { key: "sex", label: "Sexta", short: "Sex" },
-  { key: "sab", label: "Sábado", short: "Sáb" },
-  { key: "dom", label: "Domingo", short: "Dom" },
-] as const;
-
-type DayKey = (typeof DAY_KEYS)[number]["key"];
-
-type DaySchedule = {
-  open: boolean;
-  start: string;
-  end: string;
-};
-
-type WeekSchedule = Record<DayKey, DaySchedule>;
-
-const DEFAULT_DAY: DaySchedule = { open: true, start: "09:00", end: "18:00" };
-
-function defaultWeek(): WeekSchedule {
-  return {
-    seg: { ...DEFAULT_DAY },
-    ter: { ...DEFAULT_DAY },
-    qua: { ...DEFAULT_DAY },
-    qui: { ...DEFAULT_DAY },
-    sex: { ...DEFAULT_DAY },
-    sab: { open: true, start: "09:00", end: "13:00" },
-    dom: { open: false, start: "09:00", end: "18:00" },
-  };
-}
-
-function formatWeek(week: WeekSchedule): string {
-  return DAY_KEYS.map(({ key, short }) => {
-    const d = week[key];
-    if (!d.open) return `${short} fechado`;
-    return `${short} ${d.start}–${d.end}`;
-  }).join(" · ");
-}
-
-function parseWeek(value: string): WeekSchedule | null {
-  if (!value.trim()) return null;
-  const week = defaultWeek();
-  let matched = 0;
-  for (const { key, short } of DAY_KEYS) {
-    const re = new RegExp(
-      `${short}\\s+(fechado|(\\d{1,2}:\\d{2})\\s*[–-]\\s*(\\d{1,2}:\\d{2}))`,
-      "i",
-    );
-    const m = value.match(re);
-    if (!m) continue;
-    matched += 1;
-    if (m[1].toLowerCase() === "fechado") {
-      week[key] = { ...week[key], open: false };
-    } else {
-      week[key] = {
-        open: true,
-        start: normalizeTime(m[2]),
-        end: normalizeTime(m[3]),
-      };
-    }
-  }
-  return matched >= 3 ? week : null;
-}
-
-function normalizeTime(t: string): string {
-  const [h, m] = t.split(":");
-  return `${h.padStart(2, "0")}:${m.padStart(2, "0")}`;
-}
-
 const PAYMENT_PRESETS = OFFLINE_PAYMENT_PRESETS;
 
 export function EstablishmentForm({
@@ -170,6 +107,7 @@ export function EstablishmentForm({
     name: string;
     description: string;
     logoUrl: string;
+    coverUrl: string;
     whatsapp: string;
     address: string;
     city: string;
@@ -178,6 +116,7 @@ export function EstablishmentForm({
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [logoUrl, setLogoUrl] = useState(store.logoUrl);
+  const [coverUrl, setCoverUrl] = useState(store.coverUrl);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -188,6 +127,7 @@ export function EstablishmentForm({
       whatsapp: String(fd.get("whatsapp")),
       description: String(fd.get("description") || ""),
       logoUrl,
+      coverUrl,
       address: String(fd.get("address") || ""),
       city: String(fd.get("city") || ""),
     });
@@ -245,7 +185,27 @@ export function EstablishmentForm({
               label="Logo"
               value={logoUrl}
               onChange={setLogoUrl}
+              hint="Aparece no card da loja, sobre o banner. JPEG, PNG, WebP ou GIF · até 5 MB"
             />
+          </div>
+          <div className="sm:col-span-2">
+            <ImageField
+              label="Banner"
+              value={coverUrl}
+              onChange={setCoverUrl}
+              previewClassName="h-28 w-full max-w-md sm:h-32"
+              hint="Foto de capa no topo da vitrine. Use uma imagem larga (cerca de 1600×400). JPEG, PNG, WebP ou GIF · até 5 MB"
+            />
+            <p className="mt-3 text-xs text-[#8C8682]">
+              Para fundo, botões e textos do cardápio, use{" "}
+              <Link
+                href="/painel/configuracoes/aparencia"
+                className="font-semibold text-[#2D2926] underline-offset-2 hover:underline"
+              >
+                Cores do cardápio
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </SectionCard>
@@ -440,7 +400,9 @@ export function HoursForm({ businessHours }: { businessHours: string }) {
                 placeholder="Ex.: Seg–Sex 9h–18h · Sáb 9h–13h"
               />
               <FieldHint>
-                Texto livre exibido na vitrine e no painel.
+                Texto livre só aparece na vitrine — não bloqueia pedidos. Use
+                &quot;Por dia&quot; para fechar a loja automaticamente fora do
+                horário.
               </FieldHint>
             </div>
           )}
@@ -452,6 +414,13 @@ export function HoursForm({ businessHours }: { businessHours: string }) {
               </p>
               <p className="mt-1 text-sm text-[#2D2926]">{preview}</p>
             </div>
+          ) : null}
+
+          {mode === "week" ? (
+            <p className="mt-4 text-xs leading-relaxed text-[#8C8682]">
+              Com a grade por dia, a vitrine mostra Aberto/Fechado em tempo real
+              (fuso de São Paulo) e o checkout bloqueia pedidos fora do horário.
+            </p>
           ) : null}
         </div>
         <FormFooter saving={saving} label="Salvar horários" />

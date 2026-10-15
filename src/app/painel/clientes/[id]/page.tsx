@@ -7,9 +7,13 @@ import { formatBRL } from "@/lib/utils";
 import { requireStoreSession } from "@/lib/tenant";
 import { Customer } from "@/models/Customer";
 import { Order } from "@/models/Order";
-import { PageHeader, SectionCard } from "@/components/painel/page-header";
+import { PageHeader, SectionCard, StatTile } from "@/components/painel/page-header";
 import { OrderStatusBadge } from "@/components/ui/order-status";
-import { CustomerNotesForm } from "@/components/painel/customer-notes-form";
+import { CustomerProfileForm } from "@/components/painel/customer-profile-form";
+import {
+  CustomerSourceBadge,
+  CustomerWhatsappButton,
+} from "@/components/painel/customer-actions";
 
 export default async function CustomerDetailPage({
   params,
@@ -26,7 +30,10 @@ export default async function CustomerDetailPage({
   if (!customer) notFound();
 
   const orders = leanList(
-    await Order.find({ storeId: session.storeId, customerId: id })
+    await Order.find({
+      storeId: session.storeId,
+      $or: [{ customerId: id }, { customerPhone: customer.phone }],
+    })
       .sort({ createdAt: -1 })
       .lean(),
   );
@@ -39,36 +46,49 @@ export default async function CustomerDetailPage({
     <div className="space-y-4">
       <PageHeader
         title={customer.name}
-        description={`${customer.phone}${customer.email ? ` · ${customer.email}` : ""}`}
+        description="Perfil no CRM — alinhado ao checkout da vitrine."
         actions={
-          <Link href="/painel/clientes" className="btn-secondary !py-2.5 text-sm">
-            Voltar
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <CustomerWhatsappButton name={customer.name} phone={customer.phone} />
+            <Link
+              href="/painel/clientes"
+              className="btn-secondary !py-2.5 text-sm"
+            >
+              Voltar
+            </Link>
+          </div>
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-cocoa/8 bg-white px-4 py-4">
-          <p className="text-xs text-cocoa-soft/55">Pedidos</p>
-          <p className="mt-1 font-display text-2xl text-cocoa">
-            {orders.length}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-cocoa/8 bg-white px-4 py-4">
-          <p className="text-xs text-cocoa-soft/55">Total gasto</p>
-          <p className="mt-1 font-display text-2xl text-cocoa">{formatBRL(spent)}</p>
-        </div>
-        <div className="rounded-2xl border border-cocoa/8 bg-white px-4 py-4">
-          <p className="text-xs text-cocoa-soft/55">Última compra</p>
-          <p className="mt-1 font-display text-2xl text-cocoa">
-            {orders[0] ? format(orders[0].createdAt, "dd/MM/yy") : "—"}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <CustomerSourceBadge source="registered" />
+        <span className="text-sm text-cocoa-soft/70">
+          {customer.phone}
+          {customer.email ? ` · ${customer.email}` : ""}
+        </span>
       </div>
 
-      <SectionCard title="Observações">
+      <div className="grid gap-2 sm:grid-cols-3">
+        <StatTile label="Pedidos" value={orders.length} />
+        <StatTile label="Total gasto" value={formatBRL(spent)} />
+        <StatTile
+          label="Última compra"
+          value={orders[0] ? format(orders[0].createdAt, "dd/MM/yy") : "—"}
+        />
+      </div>
+
+      <SectionCard title="Dados do cliente">
         <div className="p-5">
-          <CustomerNotesForm customerId={customer.id} notes={customer.notes || ""} />
+          <CustomerProfileForm
+            customerId={customer.id}
+            initial={{
+              name: customer.name,
+              phone: customer.phone,
+              email: customer.email,
+              notes: customer.notes,
+              referenceNote: customer.referenceNote ?? null,
+            }}
+          />
         </div>
       </SectionCard>
 

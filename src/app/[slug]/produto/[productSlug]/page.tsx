@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/db";
 import { applyCategoryPriceAdjust } from "@/lib/category";
-import { leanDoc, type LeanDoc } from "@/lib/serialize";
+import { leanDoc, leanList, type LeanDoc } from "@/lib/serialize";
 import { Store } from "@/models/Store";
 import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
-import { ProductConfigurator } from "@/components/store/product-configurator";
+import { CatalogAddon } from "@/models/Addon";
+import { ProductPageClient } from "@/components/store/product-page-client";
+import { isStoreOpenNow } from "@/lib/hours";
+import { mergeProductAddons } from "@/lib/addons";
 
 function sortProductEmbeds(product: LeanDoc): LeanDoc {
   const optionGroups = [...(product.optionGroups || [])]
@@ -41,7 +44,16 @@ export default async function ProductPage({
   );
   if (!raw) notFound();
 
-  let product = sortProductEmbeds(raw);
+  const catalog = leanList(
+    await CatalogAddon.find({ storeId: store.id, active: true })
+      .sort({ sortOrder: 1, name: 1 })
+      .lean(),
+  );
+
+  let product = {
+    ...sortProductEmbeds(raw),
+    addons: mergeProductAddons(raw.addons, catalog, raw.categoryId),
+  };
 
   if (product.categoryId) {
     const cat = leanDoc(
@@ -72,10 +84,11 @@ export default async function ProductPage({
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-10">
-      <ProductConfigurator
+      <ProductPageClient
         storeSlug={store.slug}
         product={product as any}
         minAdvanceDays={store.minAdvanceDays}
+        storeOpen={isStoreOpenNow(store.businessHours)}
       />
     </main>
   );

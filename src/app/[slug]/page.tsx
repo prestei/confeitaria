@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import {
   applyCategoryPriceAdjust,
   isCategoryVisibleToday,
+  resolveCategoryEmoji,
 } from "@/lib/category";
 import { leanDoc, leanList } from "@/lib/serialize";
 import { Store } from "@/models/Store";
@@ -15,6 +16,9 @@ import { StoreCustomOrderBanner } from "@/components/store/store-custom-order-ba
 import { StoreFeaturedBanners } from "@/components/store/store-featured-banners";
 import { StoreCategoryPills } from "@/components/store/store-category-pills";
 import { StoreCategorySection } from "@/components/store/store-category-section";
+import { isStoreOpenNow } from "@/lib/hours";
+import { normalizePageLayout } from "@/lib/store-appearance";
+import { cn } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +48,7 @@ export default async function StorePage({
 
   const categories = allCategories.filter((c) => isCategoryVisibleToday(c));
   const categoryById = new Map(allCategories.map((c) => [c.id, c]));
+  const storeOpen = isStoreOpenNow(store.businessHours);
 
   function withCategoryPrice<T extends { categoryId?: string | null; priceCents: number | null; promoPriceCents?: number | null }>(
     p: T,
@@ -66,10 +71,20 @@ export default async function StorePage({
   }
 
   const featured = products.filter((p) => p.featured).map(withCategoryPrice);
+  const pageLayout = normalizePageLayout(store.pageLayout);
+  const showFeaturedTop =
+    featured.length > 0 && pageLayout !== "catalog";
+
+  const productGridClass =
+    pageLayout === "catalog"
+      ? "grid grid-cols-2 gap-3 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6"
+      : pageLayout === "showcase"
+        ? "flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6"
+        : "flex flex-col md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6";
 
   return (
     <main className="relative">
-      {featured.length > 0 && (
+      {showFeaturedTop && (
         <div className="pt-5 pb-2 sm:pt-6">
           <StoreFeaturedBanners storeSlug={store.slug} products={featured as any} />
         </div>
@@ -80,9 +95,10 @@ export default async function StorePage({
         <StoreCategoryPills
           categories={categories as any}
           showFeatured={featured.length > 0}
+          customOrderHref={`/${store.slug}/encomenda`}
         />
 
-        <div className="relative bg-[#fafcfe]">
+        <div className="relative bg-ivory">
           {categories.map((cat, idx) => {
             const catProducts = products
               .filter((p) => p.categoryId === cat.id)
@@ -95,11 +111,17 @@ export default async function StorePage({
                 id={`cat-${cat.slug}`}
                 index={idx}
                 name={cat.name}
-                emoji={cat.emoji}
+                emoji={resolveCategoryEmoji(cat.name, cat.emoji)}
+                emphasize={pageLayout === "catalog"}
               >
-                <StoreProductGrid className="flex flex-col md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6">
+                <StoreProductGrid className={cn(productGridClass)}>
                   {catProducts.map((p) => (
-                    <ProductCard key={p.id} storeSlug={store.slug} product={p as any} />
+                    <ProductCard
+                      key={p.id}
+                      storeSlug={store.slug}
+                      product={p as any}
+                      storeOpen={storeOpen}
+                    />
                   ))}
                 </StoreProductGrid>
               </StoreCategorySection>

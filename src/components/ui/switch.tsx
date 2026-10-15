@@ -8,18 +8,21 @@ export function Switch({
   label,
   disabled,
   id,
+  size = "md",
 }: {
   checked: boolean;
   onCheckedChange: (v: boolean) => void;
   label?: string;
   disabled?: boolean;
   id?: string;
+  size?: "sm" | "md";
 }) {
+  const sm = size === "sm";
   return (
     <label
       htmlFor={id}
       className={cn(
-        "inline-flex cursor-pointer items-center gap-3",
+        "inline-flex cursor-pointer items-center gap-2",
         disabled && "cursor-not-allowed opacity-50",
       )}
     >
@@ -31,15 +34,17 @@ export function Switch({
         disabled={disabled}
         onClick={() => onCheckedChange(!checked)}
         className={cn(
-          "relative h-6 w-11 shrink-0 rounded-full transition",
+          "relative shrink-0 rounded-full transition",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#483129]/25",
+          sm ? "h-5 w-9" : "h-6 w-11",
           checked ? "bg-[#483129]" : "bg-[#CED0D4]",
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition",
-            checked && "translate-x-5",
+            "absolute top-0.5 left-0.5 rounded-full bg-white shadow-sm transition",
+            sm ? "h-4 w-4" : "h-5 w-5",
+            checked && (sm ? "translate-x-4" : "translate-x-5"),
           )}
         />
       </button>

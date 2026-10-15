@@ -4,7 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PORT="${MONGO_PORT:-27017}"
-DBPATH="${MONGO_DBPATH:-.data/mongo-run}"
+# Same path as docker-compose (.data/mongo) so seed and app share one database.
+DBPATH="${MONGO_DBPATH:-.data/mongo}"
 ABS_DBPATH="$(pwd)/${DBPATH}"
 LOG="${MONGO_LOG:-/tmp/confeitaria-mongod.log}"
 
@@ -59,5 +60,6 @@ fi
 mkdir -p "$DBPATH"
 
 echo "Mongo starting on :${PORT} (dbpath=${DBPATH})"
-# Quiet JSON spam in the Next terminal — logs go to $LOG
-exec "$MONGOD" --port "$PORT" --dbpath "$ABS_DBPATH" --storageEngine wiredTiger --bind_ip 127.0.0.1 --noauth >>"$LOG" 2>&1
+# Fork so the process survives when the launching terminal/agent shell exits.
+"$MONGOD" --port "$PORT" --dbpath "$ABS_DBPATH" --storageEngine wiredTiger \
+  --bind_ip 127.0.0.1 --noauth --fork --logpath "$LOG"

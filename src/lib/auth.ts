@@ -22,7 +22,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
 
-        await connectDB();
+        try {
+          await connectDB();
+        } catch (err) {
+          console.error("[auth] MongoDB unavailable", err);
+          throw new Error("DatabaseUnavailable");
+        }
         const user = await User.findOne({
           email: parsed.data.email.toLowerCase(),
         }).lean();

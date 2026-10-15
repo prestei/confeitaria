@@ -10,7 +10,14 @@ import {
   storeHasMercadoPago,
 } from "@/lib/mercadopago";
 import { mediaUrlSchema } from "@/lib/media-url";
+import {
+  HEX_COLOR,
+  resolveStoreTheme,
+  sanitizeThemePartial,
+} from "@/lib/store-theme";
 import { z } from "zod";
+
+const hexColor = z.string().regex(HEX_COLOR);
 
 const schema = z.object({
   name: z.string().min(2).optional(),
@@ -23,8 +30,22 @@ const schema = z.object({
   city: z.string().optional(),
   coverUrl: mediaUrlSchema,
   logoUrl: mediaUrlSchema,
-  accentColor: z.string().optional(),
-  secondaryColor: z.string().optional(),
+  accentColor: hexColor.optional(),
+  secondaryColor: hexColor.optional(),
+  themeColors: z
+    .object({
+      background: hexColor.optional(),
+      surface: hexColor.optional(),
+      muted: hexColor.optional(),
+      accent: hexColor.optional(),
+      accentDeep: hexColor.optional(),
+      text: hexColor.optional(),
+      textMuted: hexColor.optional(),
+      secondary: hexColor.optional(),
+      chrome: hexColor.optional(),
+      complement: hexColor.optional(),
+    })
+    .optional(),
   typography: z.string().optional(),
   cardStyle: z.string().optional(),
   pageLayout: z.string().optional(),
@@ -85,15 +106,37 @@ export async function PATCH(req: Request) {
       instagram,
       whatsappMessage,
       businessHours,
+      themeColors,
+      accentColor,
+      secondaryColor,
       ...rest
     } = data;
 
     await connectDB();
+    const current = await Store.findById(session.user.storeId).lean();
+    if (!current) {
+      return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
+    }
+
+    const nextTheme = resolveStoreTheme({
+      accentColor: accentColor ?? current.accentColor,
+      secondaryColor: secondaryColor ?? current.secondaryColor,
+      themeColors: {
+        ...sanitizeThemePartial(current.themeColors),
+        ...sanitizeThemePartial(themeColors),
+        ...(accentColor ? { accent: accentColor } : {}),
+        ...(secondaryColor ? { secondary: secondaryColor } : {}),
+      },
+    });
+
     const store = await Store.findOneAndUpdate(
       { _id: session.user.storeId },
       {
         $set: {
           ...rest,
+          themeColors: nextTheme,
+          accentColor: nextTheme.accent,
+          secondaryColor: nextTheme.secondary,
           ...(coverUrl !== undefined
             ? { coverUrl: coverUrl === "" ? null : coverUrl }
             : {}),

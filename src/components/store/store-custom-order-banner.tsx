@@ -52,15 +52,19 @@ export function StoreCustomOrderBanner({ slug }: { slug: string }) {
             Informe tema, data e quantidade de pessoas. Você recebe um pedido
             estruturado no WhatsApp — sem idas e vindas desnecessárias.
           </p>
-          <motion.div
-            className="mt-8"
-            whileHover={reduced ? undefined : { y: -1 }}
-            whileTap={reduced ? undefined : { scale: 0.985 }}
-          >
-            <Link href={`/${slug}/encomenda`} className="btn-berry inline-flex">
-              Personalizar encomenda
-            </Link>
-          </motion.div>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <motion.div
+              whileHover={reduced ? undefined : { y: -1 }}
+              whileTap={reduced ? undefined : { scale: 0.985 }}
+            >
+              <Link
+                href={`/${slug}/encomenda`}
+                className="btn-berry inline-flex"
+              >
+                Personalizar encomenda
+              </Link>
+            </motion.div>
+          </div>
         </div>
         <div
           className="min-h-[240px] bg-cover bg-center lg:min-h-[22rem]"
