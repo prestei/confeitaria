@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { withIds } from "@/lib/serialize";
+import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
+import { StockItem } from "@/models/StockItem";
 import { StockMovement } from "@/models/StockMovement";
 import { maybeNotifyLowStockTransition } from "@/lib/notify";
 import { z } from "zod";
@@ -15,31 +17,57 @@ export async function GET() {
 
   await connectDB();
   const storeId = session.user.storeId;
-  const [products, movements] = await Promise.all([
+  const [products, categories, movements] = await Promise.all([
     Product.find({ storeId, trackStock: true }).sort({ name: 1 }).lean(),
-    StockMovement.find({ storeId }).sort({ createdAt: -1 }).limit(40).lean(),
+    Category.find({ storeId }).select({ name: 1, sortOrder: 1 }).lean(),
+    StockMovement.find({ storeId }).sort({ createdAt: -1 }).limit(80).lean(),
   ]);
+  const catMap = new Map(
+    categories.map((c) => [String(c._id), { id: String(c._id), name: c.name }]),
+  );
+  const productsWithCategory = withIds(products).map((p) => ({
+    ...p,
+    category: p.categoryId ? catMap.get(p.categoryId) ?? null : null,
+  }));
 
   const productIds = [
     ...new Set(movements.map((m) => m.productId).filter(Boolean)),
   ];
-  const movementProducts = productIds.length
-    ? await Product.find({ _id: { $in: productIds }, storeId })
-        .select({ name: 1 })
-        .lean()
-    : [];
-  const nameMap = new Map(
+  const stockItemIds = [
+    ...new Set(movements.map((m) => m.stockItemId).filter(Boolean)),
+  ];
+  const [movementProducts, movementItems] = await Promise.all([
+    productIds.length
+      ? Product.find({ _id: { $in: productIds }, storeId })
+          .select({ name: 1 })
+          .lean()
+      : [],
+    stockItemIds.length
+      ? StockItem.find({ _id: { $in: stockItemIds }, storeId })
+          .select({ name: 1 })
+          .lean()
+      : [],
+  ]);
+  const productNameMap = new Map(
     movementProducts.map((p) => [String(p._id), p.name as string]),
+  );
+  const itemNameMap = new Map(
+    movementItems.map((item) => [String(item._id), item.name as string]),
   );
 
   const movementsWithId = withIds(movements) as Array<
     (typeof movements)[number] & { id: string }
   >;
   return NextResponse.json({
-    products: withIds(products),
+    products: productsWithCategory,
     movements: movementsWithId.map((m) => ({
       ...m,
-      product: { name: nameMap.get(m.productId || "") ?? "" },
+      product: m.productId
+        ? { name: productNameMap.get(m.productId) ?? "" }
+        : null,
+      stockItem: m.stockItemId
+        ? { name: itemNameMap.get(m.stockItemId) ?? "" }
+        : null,
     })),
   });
 }

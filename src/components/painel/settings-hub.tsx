@@ -2,6 +2,9 @@ import Link from "next/link";
 import {
   ChevronRight,
   ExternalLink,
+  Info,
+  ShieldCheck,
+  Store,
   type LucideIcon,
 } from "lucide-react";
 import { SETTINGS_SECTIONS } from "@/components/painel/settings-sections";
@@ -11,95 +14,106 @@ export type SettingsHubStatus = {
   storeName: string;
   planLabel: string;
   isPublished: boolean;
-  hasHours: boolean;
-  hasAddress: boolean;
   storeSlug: string | null;
 };
 
-const SECTION_HINT: Record<
-  string,
-  (s: SettingsHubStatus) => { label: string; tone: "ok" | "warn" | "neutral" }
-> = {
-  "/painel/configuracoes/estabelecimento": (s) =>
-    s.hasAddress
-      ? { label: "Completo", tone: "ok" }
-      : { label: "Endereço pendente", tone: "warn" },
-  "/painel/configuracoes/horarios": (s) =>
-    s.hasHours
-      ? { label: "Definido", tone: "ok" }
-      : { label: "Não definido", tone: "warn" },
-  "/painel/configuracoes/geral": (s) => ({
-    label: `Plano ${s.planLabel}`,
-    tone: "neutral",
-  }),
+const SECTION_ICON_TONE: Record<string, string> = {
+  "/painel/configuracoes/estabelecimento":
+    "bg-[#E8F3EF] text-[var(--painel-brand,#0f352e)]",
+  "/painel/configuracoes/atendimento": "bg-[#FFF4E8] text-[#C45C26]",
+  "/painel/configuracoes/horarios": "bg-[#E8F3EF] text-[#1e6b5c]",
+  "/painel/configuracoes/agendamento": "bg-[#F3EEF9] text-[#6B4E9B]",
+  "/painel/configuracoes/geral": "bg-[#E8F0FA] text-[#3B6EA8]",
 };
-
-const ICON_TONE: Record<string, string> = {
-  "/painel/configuracoes/estabelecimento": "bg-[#EEF2FF] text-[#4338CA]",
-  "/painel/configuracoes/horarios": "bg-[#ECFDF5] text-[#047857]",
-  "/painel/configuracoes/geral": "bg-[#F0F2F5] text-cocoa",
-};
-
-function StatusPill({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "ok" | "warn" | "neutral";
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold",
-        tone === "ok" && "bg-emerald-50 text-success",
-        tone === "warn" && "bg-amber-50 text-warning",
-        tone === "neutral" && "bg-[#F0F2F5] text-[#65676B]",
-      )}
-    >
-      {label}
-    </span>
-  );
-}
 
 export function SettingsHub({ status }: { status: SettingsHubStatus }) {
+  const planLine = `Plano ${status.planLabel} · Sua vitrine online e profissional`;
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--painel-border)] bg-white px-4 py-3.5">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-cocoa">{status.storeName}</p>
-          <p className="mt-0.5 text-xs text-[#8C8682]">
-            {status.isPublished ? "Vitrine publicada" : "Vitrine oculta"} · Plano{" "}
-            {status.planLabel}
-          </p>
+      <div
+        className="flex flex-col gap-4 rounded-xl border border-[var(--painel-border)] bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+      >
+        <div className="flex min-w-0 items-start gap-3.5 sm:items-center">
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E8F3EF] text-[var(--painel-brand,#0f352e)]"
+            aria-hidden
+          >
+            <Store className="h-6 w-6" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-base font-bold text-[var(--painel-brand,#0f352e)]">
+                {status.storeName}
+              </p>
+              <span
+                className={cn(
+                  "inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold",
+                  status.isPublished
+                    ? "bg-[#E8F3EF] text-[#1e6b5c]"
+                    : "bg-[#F0F2F5] text-[#65676B]",
+                )}
+              >
+                {status.isPublished ? "Vitrine publicada" : "Vitrine oculta"}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-[var(--painel-muted,#6b7280)]">
+              {planLine}
+            </p>
+          </div>
         </div>
         {status.storeSlug ? (
           <Link
             href={`/${status.storeSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[#CED0D4] bg-white px-3 py-1.5 text-xs font-semibold text-cocoa transition hover:bg-[#F0F2F5]"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#CED0D4] bg-white px-4 py-2 text-sm font-semibold text-[var(--painel-brand,#0f352e)] transition hover:bg-[#F9FAFB]"
           >
             Ver vitrine
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+            <ExternalLink className="h-4 w-4" aria-hidden />
           </Link>
         ) : null}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {SETTINGS_SECTIONS.map(({ href, title, description, icon: Icon }) => {
-          const hint = SECTION_HINT[href]?.(status);
-          return (
-            <SettingsCard
-              key={href}
-              href={href}
-              title={title}
-              description={description}
-              icon={Icon}
-              iconClass={ICON_TONE[href]}
-              hint={hint}
-            />
-          );
-        })}
+        {SETTINGS_SECTIONS.map(({ href, title, description, icon: Icon }) => (
+          <SettingsCard
+            key={href}
+            href={href}
+            title={title}
+            description={description}
+            icon={Icon}
+            iconClass={SECTION_ICON_TONE[href]}
+          />
+        ))}
+      </div>
+
+      <div
+        className="flex flex-col gap-3 rounded-xl border border-[#C5E0D8] bg-[#EEF7F4] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+      >
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D4EBE4] text-[#1e6b5c]"
+            aria-hidden
+          >
+            <Info className="h-4 w-4" />
+          </span>
+          <p className="text-sm leading-snug text-[var(--painel-brand,#0f352e)]">
+            <span className="font-semibold">
+              Todas as alterações são salvas automaticamente.
+            </span>{" "}
+            <span className="text-[var(--painel-muted,#6b7280)]">
+              Mantenha seus dados sempre atualizados para garantir o melhor
+              funcionamento da sua loja.
+            </span>
+          </p>
+        </div>
+        <p
+          className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-[#1e6b5c] sm:pl-2"
+        >
+          <ShieldCheck className="h-4 w-4" aria-hidden />
+          Ambiente seguro
+        </p>
       </div>
     </div>
   );
@@ -111,19 +125,17 @@ function SettingsCard({
   description,
   icon: Icon,
   iconClass,
-  hint,
 }: {
   href: string;
   title: string;
   description: string;
   icon: LucideIcon;
   iconClass?: string;
-  hint?: { label: string; tone: "ok" | "warn" | "neutral" };
 }) {
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3.5 rounded-lg border border-[var(--painel-border)] bg-white p-4 transition hover:border-[#CED0D4] hover:bg-[#FAFAF9]"
+      className="group flex items-center gap-3.5 rounded-xl border border-[var(--painel-border)] bg-white p-4 transition hover:border-[#CED0D4] hover:bg-[#FAFAF9] sm:p-5"
     >
       <div
         className={cn(
@@ -134,24 +146,17 @@ function SettingsCard({
         <Icon className="h-5 w-5" aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-cocoa">{title}</h2>
-            {hint ? (
-              <div className="mt-1">
-                <StatusPill label={hint.label} tone={hint.tone} />
-              </div>
-            ) : null}
-          </div>
-          <ChevronRight
-            className="mt-0.5 h-4 w-4 shrink-0 text-[#8C8682] transition group-hover:translate-x-0.5 group-hover:text-cocoa"
-            aria-hidden
-          />
-        </div>
-        <p className="mt-1.5 text-sm leading-snug text-[#8C8682]">
+        <h2 className="text-sm font-bold text-[var(--painel-brand,#0f352e)]">
+          {title}
+        </h2>
+        <p className="mt-1 text-sm leading-snug text-[var(--painel-muted,#6b7280)]">
           {description}
         </p>
       </div>
+      <ChevronRight
+        className="h-5 w-5 shrink-0 text-[#B0AAA6] transition group-hover:translate-x-0.5 group-hover:text-[var(--painel-brand,#0f352e)]"
+        aria-hidden
+      />
     </Link>
   );
 }

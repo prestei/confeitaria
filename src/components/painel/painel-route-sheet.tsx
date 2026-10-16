@@ -9,18 +9,20 @@ import {
   SheetHeader,
 } from "@/components/ui/sheet";
 
-export type PainelSheetSize = "sm" | "md" | "lg" | "xl" | "2xl";
+export type PainelSheetSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
 
 /** Sheet lateral aberto por rota; ao fechar, volta para `backHref`. */
 export function PainelRouteSheet({
   backHref,
   title,
+  description,
   size = "md",
   children,
   bodyClassName,
 }: {
   backHref: string;
   title: string;
+  description?: string;
   size?: PainelSheetSize;
   children: ReactNode;
   bodyClassName?: string;
@@ -41,7 +43,7 @@ export function PainelRouteSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent size={size} side="right">
-        <SheetHeader title={title} />
+        <SheetHeader title={title} description={description} />
         <SheetBody className={bodyClassName}>{children}</SheetBody>
       </SheetContent>
     </Sheet>

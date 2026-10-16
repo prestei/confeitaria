@@ -149,7 +149,7 @@ function TrendLine({
   return (
     <p
       className={cn(
-        "mt-1 flex items-center gap-0.5 text-xs font-medium",
+        "flex items-center gap-0.5 text-[10px] font-medium leading-tight sm:text-xs",
         up ? "text-[#2D7A4A]" : "text-[#C44B4B]",
       )}
     >
@@ -464,7 +464,7 @@ export function PainelHome({
           >
             <Link
               href="/painel/insumos"
-              className="mt-1 inline-flex items-center gap-0.5 text-xs font-semibold text-[var(--painel-accent,#1e6b5c)] hover:underline"
+              className="inline-flex items-center gap-0.5 text-[10px] font-semibold leading-tight text-[var(--painel-accent,#1e6b5c)] hover:underline sm:text-xs"
             >
               Ver insumos
               <ArrowRight className="h-3.5 w-3.5" aria-hidden />

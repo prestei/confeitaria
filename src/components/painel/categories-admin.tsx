@@ -77,21 +77,27 @@ function CategoryFormSection({
 }) {
   return (
     <section className="rounded-xl border border-[var(--painel-border)] bg-white p-4">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex min-w-0 gap-3">
-          {Icon ? (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--painel-subtle,#eff3f6)] text-[var(--painel-brand,#0f352e)]">
-              <Icon className="h-4 w-4" aria-hidden />
-            </span>
-          ) : null}
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-cocoa">{title}</h3>
-            <p className="mt-0.5 text-xs leading-relaxed text-[#8C8682]">
-              {description}
-            </p>
+      <div className="mb-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-1 gap-3">
+            {Icon ? (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--painel-subtle,#eff3f6)] text-[var(--painel-brand,#0f352e)]">
+                <Icon className="h-4 w-4" aria-hidden />
+              </span>
+            ) : null}
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold text-cocoa">{title}</h3>
+              <p className="mt-0.5 hidden text-xs leading-relaxed text-[#8C8682] sm:block">
+                {description}
+              </p>
+            </div>
           </div>
+          {action ? <div className="hidden shrink-0 sm:block">{action}</div> : null}
         </div>
-        {action}
+        <p className="mt-2 text-xs leading-relaxed text-[#8C8682] sm:hidden">
+          {description}
+        </p>
+        {action ? <div className="mt-2 sm:hidden">{action}</div> : null}
       </div>
       {children}
     </section>
@@ -310,11 +316,25 @@ export function CategoriesAdmin({
     <PageShell>
       <PageHeader
         title="Categorias"
-        description="Ordene, defina desconto ou acréscimo e os dias de exibição na vitrine."
+        description={
+          <>
+            <span className="sm:hidden">
+              Arraste para ordenar e defina dias na vitrine.
+            </span>
+            <span className="hidden sm:inline">
+              Ordene, defina desconto ou acréscimo e os dias de exibição na
+              vitrine.
+            </span>
+          </>
+        }
         actions={
-          <PageAction onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Nova categoria
+          <PageAction
+            onClick={openCreate}
+            aria-label="Nova categoria"
+            className="max-sm:h-9 max-sm:w-9 max-sm:gap-0 max-sm:px-0"
+          >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="hidden sm:inline">Nova categoria</span>
           </PageAction>
         }
       />
@@ -461,7 +481,7 @@ export function CategoriesAdmin({
                   </button>
                 }
               >
-                <div className="flex flex-wrap gap-1.5">
+                <div className="grid grid-cols-7 gap-1 max-[380px]:gap-0.5 sm:flex sm:flex-wrap sm:gap-1.5">
                   {CATEGORY_DAY_LABELS.map(({ key, short }) => {
                     const selected = form.displayDays.includes(key);
                     return (
@@ -470,7 +490,7 @@ export function CategoriesAdmin({
                         type="button"
                         onClick={() => toggleDay(key)}
                         className={cn(
-                          "inline-flex size-10 shrink-0 items-center justify-center rounded-full border p-0 text-xs font-semibold transition",
+                          "inline-flex aspect-square w-full max-w-10 items-center justify-center rounded-full border p-0 text-[10px] font-semibold transition max-sm:mx-auto sm:size-10 sm:text-xs",
                           selected
                             ? "border-[var(--painel-brand)] bg-[var(--painel-brand)] text-white"
                             : "border-[#CED0D4] bg-white text-[#5C5652] hover:border-[#B0AAA6] hover:bg-[#F7F8FA]",

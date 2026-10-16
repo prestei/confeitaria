@@ -181,6 +181,8 @@ export function PainelMetricCard({
   className?: string;
   children?: ReactNode;
 }) {
+  const valueText = String(value);
+
   const body = (
     <>
       {Icon ? (
@@ -204,7 +206,10 @@ export function PainelMetricCard({
         >
           {label}
         </p>
-        <p className="mt-0.5 text-base font-bold tabular-nums leading-none text-[#111827] sm:mt-0 sm:text-2xl sm:leading-tight">
+        <p
+          className="mt-0.5 min-w-0 truncate text-base font-bold tabular-nums leading-tight text-[#111827] sm:mt-0 sm:text-2xl"
+          title={valueText}
+        >
           {value}
         </p>
         {hint ? (
@@ -212,7 +217,9 @@ export function PainelMetricCard({
             {hint}
           </p>
         ) : null}
-        {children}
+        {children ? (
+          <div className="mt-1 min-w-0 leading-tight">{children}</div>
+        ) : null}
       </div>
     </>
   );

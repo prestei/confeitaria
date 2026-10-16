@@ -393,7 +393,7 @@ export default function ProductsAdminPage({
           [1, 2, 3, 4].map((i) => (
             <PainelMetricSlide key={i}>
               <div
-                className="h-[4.25rem] animate-pulse rounded-xl border border-[var(--painel-border)] bg-white sm:h-[5.5rem]"
+                className="min-h-[4.5rem] animate-pulse rounded-xl border border-[var(--painel-border)] bg-white sm:min-h-[5.5rem]"
               />
             </PainelMetricSlide>
           ))

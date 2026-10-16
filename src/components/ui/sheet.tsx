@@ -73,7 +73,7 @@ export function SheetContent({
   children: ReactNode;
   className?: string;
   /** Largura do painel. */
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
   side?: "right" | "left";
 }) {
   const { open, setOpen, titleId } = useSheet();
@@ -89,6 +89,7 @@ export function SheetContent({
     lg: "max-w-lg",
     xl: "max-w-2xl",
     "2xl": "max-w-3xl",
+    "3xl": "max-w-5xl",
   };
   const fromRight = side === "right";
 
