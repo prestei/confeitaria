@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { MoreHorizontal, type LucideIcon } from "lucide-react";
+import { MoreHorizontal, MoreVertical, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export type RowActionItem = {
@@ -18,10 +18,12 @@ export function RowActionsMenu({
   items,
   align = "end",
   label = "Ações",
+  icon = "horizontal",
 }: {
   items: RowActionItem[];
   align?: "start" | "end";
   label?: string;
+  icon?: "horizontal" | "vertical";
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -60,7 +62,11 @@ export function RowActionsMenu({
           open && "bg-[#F0F2F5] text-cocoa",
         )}
       >
-        <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
+        {icon === "vertical" ? (
+          <MoreVertical className="h-4 w-4" strokeWidth={1.75} />
+        ) : (
+          <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
+        )}
       </button>
 
       {open ? (

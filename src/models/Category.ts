@@ -11,6 +11,8 @@ export { ALL_CATEGORY_DAYS, CATEGORY_DAY_KEYS, type CategoryDayKey };
 const categorySchema = baseSchema(
   {
     name: { type: String, required: true },
+    /** Texto curto exibido na lista do painel (opcional). */
+    description: { type: String, default: null },
     emoji: { type: String, default: null },
     slug: { type: String, required: true },
     sortOrder: { type: Number, default: 0 },
@@ -35,6 +37,7 @@ export type CategoryDoc = {
   id: string;
   storeId: string;
   name: string;
+  description: string | null;
   emoji: string | null;
   slug: string;
   sortOrder: number;

@@ -18,38 +18,42 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   differenceInCalendarDays,
   differenceInMinutes,
-  format,
   isToday,
-  isTomorrow,
 } from "date-fns";
+import Image from "next/image";
 import {
-  Bike,
+  ArrowDown,
+  ArrowUp,
   CalendarDays,
   Check,
   ChefHat,
-  History,
-  MessageSquare,
+  ChevronDown,
+  Clock,
+  Globe,
+  MessageCircle,
+  Minus,
   Move,
+  Package,
+  Search,
   ShoppingBag,
-  Store,
+  SlidersHorizontal,
   Truck,
-  X,
 } from "lucide-react";
-import { canTransitionStatus } from "@/lib/order-status";
+import { allowedStatuses, canTransitionStatus } from "@/lib/order-status";
 import {
   formatBRL,
-  isOnlinePaymentOutstanding,
-  ONLINE_PAYMENT_METHOD,
+  formatPhone,
   ORDER_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
 } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader, PageShell } from "@/components/painel/page-header";
 import {
-  PageAction,
-  PageHeader,
-  PageShell,
-} from "@/components/painel/page-header";
+  RowActionsMenu,
+  type RowActionItem,
+} from "@/components/painel/row-actions-menu";
 import { OrderDetailSheet } from "@/components/painel/order-detail-sheet";
+import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 
@@ -58,10 +62,12 @@ type PaymentStatus = keyof typeof PAYMENT_STATUS_LABELS;
 
 type OrderItem = {
   id?: string;
+  productId?: string | null;
   productName: string;
   quantity: number;
   lineTotalCents?: number;
   customizations?: Record<string, string> | null;
+  referenceImage?: string | null;
 };
 
 type Order = {
@@ -90,57 +96,169 @@ type Order = {
 
 const POLL_MS = 3000;
 
-const KANBAN_COLUMNS = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[];
+/** Colunas do quadro operacional (entregues/cancelados ficam no histórico). */
+const BOARD_COLUMNS = [
+  "NEW",
+  "REVIEWING",
+  "CONFIRMED",
+  "IN_PRODUCTION",
+  "READY",
+] as const satisfies readonly OrderStatus[];
+
+type BoardStatus = (typeof BOARD_COLUMNS)[number];
+type StatusFilter = "ALL" | BoardStatus;
+type ChannelFilter = "ALL" | "WHATSAPP" | "SITE" | "BALCAO";
+type SortOrder = "newest" | "oldest";
+type DateRangeDays = 7 | 30 | 90;
+
+const STATUS_TAB_LABELS: Record<BoardStatus, string> = {
+  NEW: "Aguardando confirmação",
+  REVIEWING: "Em análise",
+  CONFIRMED: "Confirmados",
+  IN_PRODUCTION: "Em produção",
+  READY: "Prontos",
+};
 
 const COLUMN_THEME: Record<
-  OrderStatus,
-  { dot: string; badge: string; accent: string }
+  BoardStatus,
+  {
+    columnBg: string;
+    headerIcon: string;
+    cardBg: string;
+    cardBorder: string;
+    badge: string;
+    metricBg: string;
+    metricIcon: string;
+  }
 > = {
   NEW: {
-    dot: "bg-[#F0A04B]",
-    badge: "bg-[#FDE9C8] text-[#B8751A]",
-    accent: "border-l-[#F0A04B]",
+    columnBg: "bg-[#FDF3F4]",
+    headerIcon: "bg-[#F8D4DC] text-[#C45A6A]",
+    cardBg: "bg-[#FFFBFC]",
+    cardBorder: "border-[#F3DDE3]",
+    badge: "bg-[#F8D4DC] text-[#9E3D52]",
+    metricBg: "bg-[#FDF3F4] border-[#F5DDE2]",
+    metricIcon: "bg-[#F8D4DC] text-[#C45A6A]",
   },
   REVIEWING: {
-    dot: "bg-[#E8A06A]",
-    badge: "bg-[#F8E6D4] text-[#9A5C28]",
-    accent: "border-l-[#E8A06A]",
+    columnBg: "bg-[#FBF6EE]",
+    headerIcon: "bg-[#F5E4C8] text-[#B8862E]",
+    cardBg: "bg-[#FFFCF7]",
+    cardBorder: "border-[#EDE4D4]",
+    badge: "bg-[#F5E4C8] text-[#8A6420]",
+    metricBg: "bg-[#FBF6EE] border-[#EDE4D4]",
+    metricIcon: "bg-[#F5E4C8] text-[#B8862E]",
   },
   CONFIRMED: {
-    dot: "bg-[#5B9FD4]",
+    columnBg: "bg-[#F2F7FC]",
+    headerIcon: "bg-[#D6EAF8] text-[#3B7CB8]",
+    cardBg: "bg-[#FAFCFE]",
+    cardBorder: "border-[#DDE8F2]",
     badge: "bg-[#D6EAF8] text-[#2E6F9E]",
-    accent: "border-l-[#5B9FD4]",
+    metricBg: "bg-[#F2F7FC] border-[#DDE8F2]",
+    metricIcon: "bg-[#D6EAF8] text-[#3B7CB8]",
   },
   IN_PRODUCTION: {
-    dot: "bg-[#8B7EC8]",
-    badge: "bg-[#E8E4F5] text-[#5F5299]",
-    accent: "border-l-[#8B7EC8]",
+    columnBg: "bg-[#F5F2FA]",
+    headerIcon: "bg-[#E4DCF5] text-[#6F5BA8]",
+    cardBg: "bg-[#FAF8FD]",
+    cardBorder: "border-[#E4DCF5]",
+    badge: "bg-[#E4DCF5] text-[#5F5299]",
+    metricBg: "bg-[#F5F2FA] border-[#E4DCF5]",
+    metricIcon: "bg-[#E4DCF5] text-[#6F5BA8]",
   },
   READY: {
-    dot: "bg-emerald-500",
-    badge: "bg-emerald-100 text-emerald-700",
-    accent: "border-l-emerald-500",
-  },
-  DELIVERED: {
-    dot: "bg-emerald-700",
-    badge: "bg-emerald-50 text-emerald-800",
-    accent: "border-l-emerald-700",
-  },
-  CANCELLED: {
-    dot: "bg-[#B0AAA6]",
-    badge: "bg-[#EFECEA] text-[#6B6560]",
-    accent: "border-l-[#B0AAA6]",
+    columnBg: "bg-[#EFF8F2]",
+    headerIcon: "bg-[#D4EDDC] text-[#3D8A5A]",
+    cardBg: "bg-[#F8FCF9]",
+    cardBorder: "border-[#D4EDDC]",
+    badge: "bg-[#D4EDDC] text-[#2F7A4A]",
+    metricBg: "bg-[#EFF8F2] border-[#D4EDDC]",
+    metricIcon: "bg-[#D4EDDC] text-[#3D8A5A]",
   },
 };
 
-function isColumnId(id: string | number): id is OrderStatus {
-  return KANBAN_COLUMNS.includes(String(id) as OrderStatus);
+const METRIC_ICONS: Record<BoardStatus, typeof Clock> = {
+  NEW: Clock,
+  REVIEWING: ChefHat,
+  CONFIRMED: Package,
+  IN_PRODUCTION: Truck,
+  READY: Check,
+};
+
+function isColumnId(id: string | number): id is BoardStatus {
+  return BOARD_COLUMNS.includes(String(id) as BoardStatus);
 }
 
 function orderCode(id: string) {
   let n = 0;
   for (let i = 0; i < id.length; i++) n = (n * 31 + id.charCodeAt(i)) >>> 0;
-  return String(1000 + (n % 9000));
+  const num = 1000 + (n % 9000);
+  return String(num).padStart(4, "0");
+}
+
+function orderChannel(order: Order): ChannelFilter {
+  if (order.kind === "QUOTE") return "WHATSAPP";
+  if (order.fulfillment === "PICKUP") {
+    const when = order.eventDate ? new Date(order.eventDate) : null;
+    if (when && isToday(when)) return "BALCAO";
+  }
+  return "SITE";
+}
+
+function channelDisplay(order: Order) {
+  const ch = orderChannel(order);
+  if (ch === "WHATSAPP") {
+    return {
+      label: "WhatsApp",
+      icon: MessageCircle,
+      className: "text-[#25A866]",
+    };
+  }
+  if (ch === "BALCAO") {
+    return { label: "Balcão", icon: ShoppingBag, className: "text-[#6B6560]" };
+  }
+  return { label: "Site", icon: Globe, className: "text-[#5B8FB8]" };
+}
+
+function weeklyTrend(orders: Order[], status: BoardStatus) {
+  const now = new Date();
+  const thisWeek = orders.filter((o) => {
+    if (o.status !== status) return false;
+    const days = differenceInCalendarDays(now, new Date(o.createdAt));
+    return days <= 7;
+  }).length;
+  const lastWeek = orders.filter((o) => {
+    if (o.status !== status) return false;
+    const days = differenceInCalendarDays(now, new Date(o.createdAt));
+    return days > 7 && days <= 14;
+  }).length;
+  const delta = thisWeek - lastWeek;
+  if (delta > 0) {
+    return {
+      text: `+${delta} esta semana`,
+      Icon: ArrowUp,
+      className: "text-[#3D8A5A]",
+    };
+  }
+  if (delta < 0) {
+    return {
+      text: `${delta} esta semana`,
+      Icon: ArrowDown,
+      className: "text-[#C45A5A]",
+    };
+  }
+  return {
+    text: "0 esta semana",
+    Icon: Minus,
+    className: "text-[#8C8682]",
+  };
+}
+
+function firstItemImage(order: Order) {
+  const item = order.items[0];
+  if (!item?.referenceImage) return null;
+  return item.referenceImage;
 }
 
 function relativeAge(date: string) {
@@ -153,98 +271,23 @@ function relativeAge(date: string) {
   return `há ${days}d`;
 }
 
-function formatEventWhen(eventDate: string | null, eventTime: string | null) {
-  if (!eventDate) return null;
-  const d = new Date(eventDate);
-  const time = eventTime || format(d, "HH:mm");
-  if (isToday(d)) return `Hoje, ${time}`;
-  if (isTomorrow(d)) return `Amanhã, ${time}`;
-  return `${format(d, "dd/MM")} às ${time}`;
-}
-
-function paymentBadge(order: Order) {
-  const method = order.paymentMethod;
-  const pay = order.paymentStatus || "NONE";
-
-  if (method === ONLINE_PAYMENT_METHOD) {
-    if (pay === "APPROVED") {
-      return { label: "Pago · Mercado Pago", className: "bg-[#E5F6E8] text-[#2F8A3E]" };
-    }
-    if (pay === "PENDING") {
-      return {
-        label: "Aguardando pagamento",
-        className: "bg-[#FBF0C8] text-[#9A7A1A]",
-      };
-    }
-    if (pay === "REJECTED") {
-      return {
-        label: "Pagamento recusado",
-        className: "bg-[#FDE8E8] text-[#B33A3A]",
-      };
-    }
-    return {
-      label: PAYMENT_STATUS_LABELS[pay] || "Mercado Pago",
-      className: "bg-[#DCEAF8] text-[#2E6F9E]",
-    };
-  }
-
-  const m = (method || "").toLowerCase();
-  if (m.includes("pix")) {
-    return { label: "PIX", className: "bg-[#E5F6E8] text-[#2F8A3E]" };
-  }
-  if (m.includes("cartão") || m.includes("cartao") || m.includes("card")) {
-    return { label: "Cartão", className: "bg-[#DCEAF8] text-[#2E6F9E]" };
-  }
-  if (m.includes("sinal")) {
-    return { label: "Sinal 50%", className: "bg-[#FBF0C8] text-[#9A7A1A]" };
-  }
-  if (method) {
-    return { label: method, className: "bg-[#F0F2F5] text-[#5C656F]" };
-  }
-  return null;
-}
-
-function channelLabel(order: Order) {
-  if (order.kind === "QUOTE") return "WhatsApp";
-  if (order.fulfillment === "PICKUP") {
-    const when = order.eventDate ? new Date(order.eventDate) : null;
-    if (when && isToday(when)) return "via Balcão";
-  }
-  return "via Cardápio";
-}
-
-function statusHint(order: Order) {
-  if (order.status === "NEW") {
-    const age = relativeAge(order.createdAt);
-    const mins = differenceInMinutes(new Date(), new Date(order.createdAt));
-    if (mins <= 15) return { label: `Novo (${age})`, tone: "new" as const };
-    return { label: age, tone: "muted" as const };
-  }
-  if (order.status === "CONFIRMED") {
-    const days = order.eventDate
-      ? differenceInCalendarDays(new Date(order.eventDate), new Date())
-      : 0;
-    if (days >= 1) return { label: "Agendado", tone: "muted" as const };
-    return { label: relativeAge(order.updatedAt), tone: "muted" as const };
-  }
-  if (order.status === "IN_PRODUCTION") {
-    const mins = Math.max(
-      1,
-      differenceInMinutes(new Date(), new Date(order.updatedAt)),
-    );
-    return { label: `${mins}m no forno`, tone: "prod" as const };
-  }
-  return { label: relativeAge(order.updatedAt), tone: "muted" as const };
-}
-
-function customizationLines(item: OrderItem) {
-  const c = item.customizations;
-  if (!c || typeof c !== "object") return [];
-  return Object.entries(c).map(([k, v]) => `${k}: ${v}`);
-}
-
 function stopDrag(e: MouseEvent) {
   e.stopPropagation();
+}
+
+function nextStatusAction(order: Order): OrderStatus | null {
+  const allowed = allowedStatuses(order.status);
+  const preferred: OrderStatus[] = [
+    "REVIEWING",
+    "CONFIRMED",
+    "IN_PRODUCTION",
+    "READY",
+    "DELIVERED",
+  ];
+  for (const s of preferred) {
+    if (allowed.includes(s) && s !== order.status) return s;
+  }
+  return null;
 }
 
 function OrderCardContent({
@@ -252,39 +295,55 @@ function OrderCardContent({
   dragging,
   onAdvance,
   onCancel,
-  busy,
   onOpenDetail,
 }: {
   order: Order;
   dragging?: boolean;
   onAdvance?: (status: OrderStatus) => void;
   onCancel?: () => void;
-  busy?: boolean;
   onOpenDetail?: () => void;
 }) {
-  const pay = paymentBadge(order);
-  const channel = channelLabel(order);
-  const hint = statusHint(order);
-  const when = formatEventWhen(order.eventDate, order.eventTime);
-  const note = order.referenceNote || order.notes;
-  const theme = COLUMN_THEME[order.status];
-  const isNew = order.status === "NEW";
-  const awaitingOnlinePay = isOnlinePaymentOutstanding(order);
-  const paidLooksReady =
-    order.paymentStatus === "APPROVED" ||
-    (order.paymentMethod !== ONLINE_PAYMENT_METHOD &&
-      ((order.paymentMethod || "").toLowerCase().includes("pix") ||
-        (order.paymentMethod || "").toLowerCase() === "pago"));
-  const canAccept = !awaitingOnlinePay;
-  const showActions = Boolean(onAdvance || onCancel);
+  const boardStatus = BOARD_COLUMNS.includes(order.status as BoardStatus)
+    ? (order.status as BoardStatus)
+    : "NEW";
+  const theme = COLUMN_THEME[boardStatus];
+  const channel = channelDisplay(order);
+  const ChannelIcon = channel.icon;
+  const primaryItem = order.items[0];
+  const imageSrc = firstItemImage(order);
+  const next = nextStatusAction(order);
+  const statusLabel =
+    boardStatus in STATUS_TAB_LABELS
+      ? STATUS_TAB_LABELS[boardStatus]
+      : ORDER_STATUS_LABELS[order.status];
+
+  const menuItems: RowActionItem[] = [
+      {
+        label: "Ver detalhes",
+        onClick: () => onOpenDetail?.(),
+      },
+    ];
+  if (next && onAdvance) {
+    menuItems.push({
+      label: `Avançar para ${ORDER_STATUS_LABELS[next]}`,
+      onClick: () => onAdvance(next),
+    });
+  }
+  if (onCancel && order.status !== "CANCELLED") {
+    menuItems.push({
+      label: "Cancelar pedido",
+      tone: "danger",
+      separator: true,
+      onClick: () => onCancel(),
+    });
+  }
 
   return (
     <div
       className={cn(
-        "relative rounded-xl border border-[var(--painel-border)] bg-white p-3.5 shadow-[0_1px_3px_rgba(45,41,38,0.06)]",
-        order.status === "IN_PRODUCTION" && `border-l-[3px] ${theme.accent}`,
-        isNew && paidLooksReady && !awaitingOnlinePay && "border-[#F5D9A8]",
-        awaitingOnlinePay && "border-[#F5D9A8]/80",
+        "relative rounded-xl border p-3 shadow-[0_1px_2px_rgba(45,41,38,0.04)]",
+        theme.cardBg,
+        theme.cardBorder,
         dragging && "shadow-lg ring-2 ring-[var(--painel-brand)]/10",
       )}
     >
@@ -302,223 +361,88 @@ function OrderCardContent({
 
       <div className="relative z-[1] pointer-events-none">
         <div className="flex items-start justify-between gap-2">
-          <p className="min-w-0 truncate text-[13px] font-bold text-cocoa">
-            {order.customerName}{" "}
-            <span className="font-semibold text-[#8C8682]">
-              #{orderCode(order.id)}
-            </span>
+          <p className="text-[12px] font-bold tabular-nums text-[#5C656F]">
+            #{orderCode(order.id)}
           </p>
-          <p className="shrink-0 text-[13px] font-bold tabular-nums text-cocoa">
-            {order.priceLabel === "TO_CONFIRM"
-              ? "A confirmar"
-              : formatBRL(order.totalCents)}
-          </p>
-        </div>
-
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          {pay && (
-            <span
-              className={cn(
-                "inline-flex rounded px-2 py-0.5 text-[10px] font-semibold",
-                pay.className,
-              )}
-            >
-              {pay.label}
-            </span>
-          )}
-          <span className="text-[11px] text-[#8C8682]">{channel}</span>
-          <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-[#8C8682]">
-            {hint.tone === "new" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-[#F0A04B]" />
-            )}
-            <span
-              className={cn(
-                hint.tone === "prod" && "font-medium text-[#3B6EA5]",
-                hint.tone === "new" && "text-[#B8751A]",
-              )}
-            >
-              {hint.label}
-            </span>
-          </span>
-        </div>
-
-        <div className="mt-2.5 space-y-1">
-          {order.items.slice(0, 3).map((item, idx) => {
-            const extras = customizationLines(item);
-            return (
-              <div key={`${item.productName}-${idx}`}>
-                <p className="text-[13px] font-semibold leading-snug text-[#C85A5A]">
-                  <span className="tabular-nums">{item.quantity}×</span>{" "}
-                  {item.productName}
-                </p>
-                {extras.map((line) => (
-                  <p
-                    key={line}
-                    className="text-[11px] italic leading-snug text-[#8C8682]"
-                  >
-                    • {line}
-                  </p>
-                ))}
-              </div>
-            );
-          })}
-          {order.items.length > 3 && (
-            <p className="text-[11px] text-[#B0AAA6]">
-              +{order.items.length - 3} itens
+          <div className="text-right">
+            <p className="text-[13px] font-bold tabular-nums text-cocoa">
+              {order.priceLabel === "TO_CONFIRM"
+                ? "A confirmar"
+                : formatBRL(order.totalCents)}
             </p>
-          )}
+            <p className="text-[11px] text-[#8C8682]">
+              {relativeAge(order.createdAt)}
+            </p>
+          </div>
         </div>
 
-        {note && order.status !== "IN_PRODUCTION" && (
-          <div className="mt-2.5 flex items-start gap-1.5 rounded-lg bg-[#FBF0E4] px-2.5 py-2 text-[11px] leading-snug text-[#7A5A3A]">
-            <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>
-              {order.referenceNote ? (
-                <>Frase: &ldquo;{order.referenceNote}&rdquo;</>
-              ) : (
-                note
-              )}
-            </span>
-          </div>
-        )}
-
-        {order.status === "IN_PRODUCTION" && (
-          <div className="mt-2.5 inline-flex rounded bg-[#EDE8F8] px-2.5 py-1 text-[11px] font-medium text-[#5F5299]">
-            Fase: Produção
-          </div>
-        )}
-
-        <div className="mt-2.5 flex items-center gap-1.5 text-[12px] text-[#5C656F]">
-          {order.fulfillment === "DELIVERY" ? (
-            order.status === "IN_PRODUCTION" ? (
-              <Truck className="h-3.5 w-3.5 shrink-0 text-[#C85A5A]" />
-            ) : (
-              <Bike className="h-3.5 w-3.5 shrink-0 text-[#C85A5A]" />
-            )
-          ) : order.status === "CONFIRMED" ? (
-            <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#5B9FD4]" />
-          ) : (
-            <Store className="h-3.5 w-3.5 shrink-0 text-[#8C8682]" />
-          )}
-          <span className="min-w-0 flex-1 truncate">
-            {order.fulfillment === "DELIVERY"
-              ? `Entrega: ${when || "A combinar"}`
-              : order.status === "CONFIRMED"
-                ? `Para: ${when || "A combinar"}`
-                : `Retirada no Balcão${when ? ` · ${when}` : ""}`}
+        <div className="mt-2 flex items-center gap-1.5">
+          <ChannelIcon
+            className={cn("h-3.5 w-3.5 shrink-0", channel.className)}
+            strokeWidth={2}
+          />
+          <span className="text-[11px] font-medium text-[#5C656F]">
+            {channel.label}
           </span>
-          {(order.deliveryZone || order.fulfillment === "PICKUP") && (
-            <span className="shrink-0 rounded-md bg-[#F0F2F5] px-1.5 py-0.5 text-[10px] font-medium text-[#6B6560]">
-              {order.deliveryZone || "Retirada"}
-            </span>
-          )}
         </div>
 
-        {showActions && (
-          <div className="pointer-events-auto mt-3 flex items-center gap-2">
-            {isNew && awaitingOnlinePay && (
-              <p className="w-full rounded-lg border border-[#F0D48A] bg-[#FFF8E8] px-3 py-2 text-center text-[12px] font-medium text-[#8A6A18]">
-                Aguardando confirmação do Mercado Pago
+        <div className="mt-2">
+          <p className="truncate text-[13px] font-bold text-cocoa">
+            {order.customerName}
+          </p>
+          <p className="text-[12px] text-[#8C8682]">
+            {formatPhone(order.customerPhone)}
+          </p>
+        </div>
+
+        {primaryItem ? (
+          <div className="mt-2.5 flex items-center gap-2.5">
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#F0F2F5]">
+              {imageSrc ? (
+                <Image
+                  src={imageSrc}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="40px"
+                  unoptimized={imageSrc.startsWith("/uploads/")}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[#B0AAA6]">
+                  <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12px] font-semibold leading-snug text-cocoa">
+                {primaryItem.productName}
               </p>
-            )}
-
-            {isNew && canAccept && paidLooksReady && onAdvance && (
-              <>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onPointerDown={stopDrag}
-                  onClick={(e) => {
-                    stopDrag(e);
-                    onAdvance("CONFIRMED");
-                  }}
-                  className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#3FA65A] text-[13px] font-semibold text-white transition hover:bg-[#369650] disabled:opacity-60"
-                >
-                  <Check className="h-4 w-4" strokeWidth={2.5} />
-                  Aceitar
-                </button>
-                {onCancel && (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onPointerDown={stopDrag}
-                    onClick={(e) => {
-                      stopDrag(e);
-                      onCancel();
-                    }}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--painel-border)] bg-white text-[#8C8682] transition hover:bg-[#FDF2F2] hover:text-[#C85A5A] disabled:opacity-60"
-                    aria-label="Recusar"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </>
-            )}
-
-            {isNew && canAccept && !paidLooksReady && onAdvance && (
-              <button
-                type="button"
-                disabled={busy}
-                onPointerDown={stopDrag}
-                onClick={(e) => {
-                  stopDrag(e);
-                  onAdvance("CONFIRMED");
-                }}
-                className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-[#1B2A4A] text-[13px] font-semibold text-white transition hover:bg-[#243656] disabled:opacity-60"
-              >
-                Confirmar pedido
-              </button>
-            )}
-
-            {order.status === "CONFIRMED" && onAdvance && (
-              <button
-                type="button"
-                disabled={busy}
-                onPointerDown={stopDrag}
-                onClick={(e) => {
-                  stopDrag(e);
-                  onAdvance("IN_PRODUCTION");
-                }}
-                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-[#5B9FD4] bg-white text-[13px] font-semibold text-[#3B6EA5] transition hover:bg-[#F0F7FC] disabled:opacity-60"
-              >
-                <ChefHat className="h-4 w-4" />
-                Iniciar produção →
-              </button>
-            )}
-
-            {order.status === "IN_PRODUCTION" && onAdvance && (
-              <button
-                type="button"
-                disabled={busy}
-                onPointerDown={stopDrag}
-                onClick={(e) => {
-                  stopDrag(e);
-                  onAdvance("READY");
-                }}
-                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-[#7BC48A] bg-[#F3FAF4] text-[13px] font-semibold text-[#2F8A3E] transition hover:bg-[#E5F6E8] disabled:opacity-60"
-              >
-                Marcar como Pronto
-                <Check className="h-4 w-4" strokeWidth={2.5} />
-              </button>
-            )}
-
-            {order.status === "READY" && onAdvance && (
-              <button
-                type="button"
-                disabled={busy}
-                onPointerDown={stopDrag}
-                onClick={(e) => {
-                  stopDrag(e);
-                  onAdvance("DELIVERED");
-                }}
-                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-600 bg-white text-[13px] font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
-              >
-                Marcar entregue
-                <Check className="h-4 w-4" strokeWidth={2.5} />
-              </button>
-            )}
+              <p className="text-[11px] text-[#8C8682]">
+                {primaryItem.quantity} un
+                {order.items.length > 1
+                  ? ` · +${order.items.length - 1} itens`
+                  : ""}
+              </p>
+            </div>
           </div>
-        )}
+        ) : null}
+
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <span
+            className={cn(
+              "inline-flex max-w-[70%] truncate rounded-full px-2.5 py-1 text-[10px] font-semibold",
+              theme.badge,
+            )}
+          >
+            {statusLabel}
+          </span>
+          <div
+            className="pointer-events-auto shrink-0"
+            onPointerDown={stopDrag}
+          >
+            <RowActionsMenu items={menuItems} icon="vertical" label="Ações do pedido" />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -529,13 +453,11 @@ function KanbanCard({
   onAdvance,
   onCancel,
   onOpenDetail,
-  busy,
 }: {
   order: Order;
   onAdvance: (status: OrderStatus) => void;
   onCancel: () => void;
   onOpenDetail: () => void;
-  busy: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -559,8 +481,7 @@ function KanbanCard({
         order={order}
         onOpenDetail={onOpenDetail}
         onAdvance={onAdvance}
-        onCancel={order.status === "NEW" ? onCancel : undefined}
-        busy={busy}
+        onCancel={onCancel}
       />
     </div>
   );
@@ -672,15 +593,13 @@ function KanbanColumn({
   status,
   orders,
   isOver,
-  busyId,
   onAdvance,
   onCancel,
   onOpenDetail,
 }: {
-  status: OrderStatus;
+  status: BoardStatus;
   orders: Order[];
   isOver: boolean;
-  busyId: string | null;
   onAdvance: (orderId: string, status: OrderStatus) => void;
   onCancel: (orderId: string) => void;
   onOpenDetail: (orderId: string) => void;
@@ -690,27 +609,32 @@ function KanbanColumn({
     data: { type: "column", status },
   });
   const theme = COLUMN_THEME[status];
-  const totalCents = orders.reduce((sum, o) => sum + (o.totalCents || 0), 0);
+  const HeaderIcon = METRIC_ICONS[status];
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "flex h-fit w-[320px] shrink-0 flex-col rounded-2xl bg-[#F4F6F8] p-2.5",
+        "flex h-fit w-[min(100%,280px)] shrink-0 flex-col rounded-2xl p-2.5 sm:w-[280px]",
+        theme.columnBg,
         isOver && "ring-2 ring-[var(--painel-brand)]/15",
       )}
     >
-      <div className="mb-2.5 flex shrink-0 items-center gap-2 px-1.5 py-1">
-        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", theme.dot)} />
-        <h2 className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-[0.06em] text-[#5C656F]">
-          {ORDER_STATUS_LABELS[status]}
-        </h2>
-        <span className="text-[12px] font-semibold tabular-nums text-[#5C656F]">
-          {formatBRL(totalCents)}
-        </span>
+      <div className="mb-2.5 flex shrink-0 items-center gap-2 px-0.5 py-1">
         <span
           className={cn(
-            "flex h-5 min-w-5 items-center justify-center rounded px-1.5 text-[11px] font-bold",
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+            theme.headerIcon,
+          )}
+        >
+          <HeaderIcon className="h-3.5 w-3.5" strokeWidth={2} />
+        </span>
+        <h2 className="min-w-0 flex-1 truncate text-[12px] font-bold text-cocoa">
+          {STATUS_TAB_LABELS[status]}
+        </h2>
+        <span
+          className={cn(
+            "flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums",
             theme.badge,
           )}
         >
@@ -718,7 +642,7 @@ function KanbanColumn({
         </span>
       </div>
 
-      <div className="scrollbar-kanban flex max-h-[min(640px,calc(100vh-12rem))] flex-col gap-2.5 overflow-y-auto">
+      <div className="scrollbar-kanban flex max-h-[min(640px,calc(100vh-18rem))] flex-col gap-2.5 overflow-y-auto">
         {orders.length === 0 ? (
           <DropHint />
         ) : (
@@ -727,7 +651,6 @@ function KanbanColumn({
               <KanbanCard
                 key={order.id}
                 order={order}
-                busy={busyId === order.id}
                 onAdvance={(next) => onAdvance(order.id, next)}
                 onCancel={() => onCancel(order.id)}
                 onOpenDetail={() => onOpenDetail(order.id)}
@@ -768,9 +691,13 @@ export function OrdersAdmin({
   );
   const [loading, setLoading] = useState(initialOrders.length === 0);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [overColumn, setOverColumn] = useState<OrderStatus | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [overColumn, setOverColumn] = useState<BoardStatus | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>("ALL");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [dateRangeDays, setDateRangeDays] = useState<DateRangeDays>(30);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -807,15 +734,67 @@ export function OrdersAdmin({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const operationalOrders = useMemo(
+    () =>
+      orders.filter(
+        (o) => o.status !== "DELIVERED" && o.status !== "CANCELLED",
+      ),
+    [orders],
+  );
+
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const now = new Date();
+    let list = operationalOrders.filter((order) => {
+      const ageDays = differenceInCalendarDays(now, new Date(order.createdAt));
+      if (ageDays > dateRangeDays) return false;
+      if (channelFilter !== "ALL" && orderChannel(order) !== channelFilter) {
+        return false;
+      }
+      if (!q) return true;
+      const code = orderCode(order.id);
+      return (
+        order.customerName.toLowerCase().includes(q) ||
+        order.customerPhone.includes(q) ||
+        `#${code}`.includes(q) ||
+        code.includes(q) ||
+        order.items.some((i) => i.productName.toLowerCase().includes(q))
+      );
+    });
+
+    list = [...list].sort((a, b) => {
+      const ta = new Date(a.createdAt).getTime();
+      const tb = new Date(b.createdAt).getTime();
+      return sortOrder === "newest" ? tb - ta : ta - tb;
+    });
+    return list;
+  }, [
+    operationalOrders,
+    search,
+    dateRangeDays,
+    channelFilter,
+    sortOrder,
+  ]);
+
   const ordersByStatus = useMemo(() => {
     const map = Object.fromEntries(
-      KANBAN_COLUMNS.map((s) => [s, [] as Order[]]),
-    ) as Record<OrderStatus, Order[]>;
-    for (const order of orders) {
-      map[order.status]?.push(order);
+      BOARD_COLUMNS.map((s) => [s, [] as Order[]]),
+    ) as Record<BoardStatus, Order[]>;
+    for (const order of filteredOrders) {
+      if (BOARD_COLUMNS.includes(order.status as BoardStatus)) {
+        map[order.status as BoardStatus].push(order);
+      }
     }
     return map;
-  }, [orders]);
+  }, [filteredOrders]);
+
+  const visibleColumns = useMemo(
+    () =>
+      statusFilter === "ALL"
+        ? [...BOARD_COLUMNS]
+        : [statusFilter],
+    [statusFilter],
+  );
 
   const activeOrder = useMemo(
     () => (activeId ? orders.find((o) => o.id === activeId) ?? null : null),
@@ -831,9 +810,11 @@ export function OrdersAdmin({
   function resolveColumn(
     id: string | number,
     currentOrders: Order[],
-  ): OrderStatus | null {
+  ): BoardStatus | null {
     if (isColumnId(id)) return id;
-    return currentOrders.find((o) => o.id === id)?.status ?? null;
+    const status = currentOrders.find((o) => o.id === id)?.status;
+    if (status && isColumnId(status)) return status;
+    return null;
   }
 
   async function persistStatus(
@@ -841,13 +822,11 @@ export function OrdersAdmin({
     status: OrderStatus,
     previous: OrderStatus,
   ) {
-    setBusyId(orderId);
     const res = await fetch(`/api/orders/${orderId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
-    setBusyId(null);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setOrders((prev) =>
@@ -919,18 +898,164 @@ export function OrdersAdmin({
     setOverColumn(null);
   }
 
+  const statusFilterOptions: { value: StatusFilter; label: string }[] = [
+    { value: "ALL", label: "Todos" },
+    ...BOARD_COLUMNS.map((s) => ({
+      value: s,
+      label: STATUS_TAB_LABELS[s],
+    })),
+  ];
+
   return (
-    <PageShell className="flex min-h-0 flex-1 flex-col !space-y-3">
-      <PageHeader
-        title="Central de pedidos"
-        description="Kanban da operação — arraste os cards entre os status."
-        actions={
-          <PageAction href="/painel/historico" variant="secondary">
-            <History className="h-4 w-4" />
-            Histórico
-          </PageAction>
-        }
-      />
+    <PageShell className="flex min-h-0 flex-1 flex-col !space-y-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <PageHeader
+          className="min-w-0 flex-1"
+          title="Pedidos"
+          description="Acompanhe e gerencie todos os pedidos da sua loja."
+        />
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:max-w-xl lg:shrink-0">
+          <label className="relative block min-w-0 flex-1">
+            <Search
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por cliente, produto ou número do pedido..."
+              className="h-10 w-full rounded-full border border-[var(--painel-border)] bg-white py-0 pl-10 pr-4 text-sm text-cocoa outline-none transition placeholder:text-[#9CA3AF] focus:border-[var(--painel-brand)]/25 focus:ring-2 focus:ring-[var(--painel-brand)]/10"
+            />
+          </label>
+          <div className="relative shrink-0">
+            <CalendarDays
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B6560]"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <select
+              value={dateRangeDays}
+              onChange={(e) =>
+                setDateRangeDays(Number(e.target.value) as DateRangeDays)
+              }
+              className="h-10 w-full min-w-[10.5rem] cursor-pointer appearance-none rounded-full border border-[var(--painel-border)] bg-white py-0 pl-10 pr-9 text-sm font-medium text-cocoa outline-none focus:border-[var(--painel-brand)]/25 focus:ring-2 focus:ring-[var(--painel-brand)]/10 sm:w-auto"
+              aria-label="Período"
+            >
+              <option value={7}>Últimos 7 dias</option>
+              <option value={30}>Últimos 30 dias</option>
+              <option value={90}>Últimos 90 dias</option>
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B6560]"
+              aria-hidden
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 lg:gap-3">
+        {BOARD_COLUMNS.map((status) => {
+          const theme = COLUMN_THEME[status];
+          const Icon = METRIC_ICONS[status];
+          const count = operationalOrders.filter((o) => o.status === status)
+            .length;
+          const trend = weeklyTrend(operationalOrders, status);
+          const TrendIcon = trend.Icon;
+          return (
+            <button
+              key={status}
+              type="button"
+              onClick={() => setStatusFilter(status)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-xl border px-3 py-3 text-left transition hover:brightness-[0.98] sm:gap-3 sm:px-4 sm:py-3.5",
+                theme.metricBg,
+                statusFilter === status && "ring-2 ring-[var(--painel-brand)]/15",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10",
+                  theme.metricIcon,
+                )}
+              >
+                <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={2} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-[10px] leading-tight text-[#6B6560] sm:text-[11px]">
+                  {STATUS_TAB_LABELS[status]}
+                </p>
+                <p className="mt-0.5 text-xl font-bold tabular-nums text-cocoa sm:text-2xl">
+                  {count}
+                </p>
+                <p
+                  className={cn(
+                    "mt-0.5 flex items-center gap-0.5 text-[10px] font-medium sm:text-[11px]",
+                    trend.className,
+                  )}
+                >
+                  <TrendIcon className="h-3 w-3 shrink-0" strokeWidth={2.5} />
+                  {trend.text}
+                </p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <FilterChipGroup className="min-w-0 flex-1 pb-0.5">
+          {statusFilterOptions.map((opt) => (
+            <FilterChip
+              key={opt.value}
+              label={opt.label}
+              active={statusFilter === opt.value}
+              onClick={() => setStatusFilter(opt.value)}
+            />
+          ))}
+        </FilterChipGroup>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="relative">
+            <SlidersHorizontal
+              className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B6560]"
+              aria-hidden
+            />
+            <select
+              value={channelFilter}
+              onChange={(e) =>
+                setChannelFilter(e.target.value as ChannelFilter)
+              }
+              className="h-9 cursor-pointer appearance-none rounded-full border border-[var(--painel-border)] bg-white py-0 pl-9 pr-8 text-[13px] font-medium text-cocoa outline-none"
+              aria-label="Canal"
+            >
+              <option value="ALL">Todos os canais</option>
+              <option value="WHATSAPP">WhatsApp</option>
+              <option value="SITE">Site</option>
+              <option value="BALCAO">Balcão</option>
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B6560]"
+              aria-hidden
+            />
+          </div>
+          <div className="relative">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+              className="h-9 cursor-pointer appearance-none rounded-full border border-[var(--painel-border)] bg-white py-0 pl-3.5 pr-8 text-[13px] font-medium text-cocoa outline-none"
+              aria-label="Ordenação"
+            >
+              <option value="newest">Mais recentes</option>
+              <option value="oldest">Mais antigos</option>
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B6560]"
+              aria-hidden
+            />
+          </div>
+        </div>
+      </div>
 
       {loading ? (
         <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
@@ -941,7 +1066,7 @@ export function OrdersAdmin({
             />
           ))}
         </div>
-      ) : orders.length === 0 ? (
+      ) : operationalOrders.length === 0 ? (
         <EmptyState
           icon={ShoppingBag}
           title="Nenhum pedido"
@@ -950,6 +1075,12 @@ export function OrdersAdmin({
             label: "Configurar loja",
             href: "/painel/configuracoes/estabelecimento",
           }}
+        />
+      ) : filteredOrders.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="Nenhum resultado"
+          description="Tente outro termo de busca ou ajuste os filtros."
         />
       ) : (
         <DndContext
@@ -961,13 +1092,12 @@ export function OrdersAdmin({
           onDragCancel={onDragCancel}
         >
           <KanbanScroller>
-            {KANBAN_COLUMNS.map((status) => (
+            {visibleColumns.map((status) => (
               <KanbanColumn
                 key={status}
                 status={status}
                 orders={ordersByStatus[status]}
                 isOver={overColumn === status}
-                busyId={busyId}
                 onAdvance={moveOrder}
                 onCancel={(id) => moveOrder(id, "CANCELLED")}
                 onOpenDetail={setSelectedId}

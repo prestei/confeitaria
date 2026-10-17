@@ -20,6 +20,7 @@ const dayKeySchema = z.enum([
 
 const categoryFieldsSchema = {
   name: z.string().min(2).optional(),
+  description: z.string().max(280).nullable().optional(),
   emoji: z.string().nullable().optional(),
   active: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
   const data = z
     .object({
       name: z.string().min(2),
+      description: z.string().max(280).optional(),
       emoji: z.string().optional(),
       discountPercent: z.number().min(0).max(100).optional(),
       surchargePercent: z.number().min(0).max(500).optional(),
@@ -86,6 +88,7 @@ export async function POST(req: Request) {
   const category = await Category.create({
     storeId: session.user.storeId,
     name: data.name,
+    description: data.description?.trim() || null,
     emoji: data.emoji ?? null,
     slug: slugify(data.name),
     sortOrder: (maxSort?.sortOrder || 0) + 1,
@@ -175,6 +178,9 @@ export async function PATCH(req: Request) {
       $set: {
         ...(data.name !== undefined
           ? { name: data.name, slug: slugify(data.name) }
+          : {}),
+        ...(data.description !== undefined
+          ? { description: data.description?.trim() || null }
           : {}),
         ...(data.emoji !== undefined ? { emoji: data.emoji } : {}),
         ...(data.active !== undefined ? { active: data.active } : {}),
